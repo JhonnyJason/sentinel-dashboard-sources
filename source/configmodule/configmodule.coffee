@@ -1,23 +1,9 @@
-configmodule = {name: "configmodule", uimodule: false}
-############################################################
-#region printLogFunctions
-log = (arg) ->
-    if allModules.debugmodule.modulesToDebug["configmodule"]?  then console.log "[configmodule]: " + arg
-    return
-ostr = (obj) -> JSON.stringify(obj, null, 4)
-olog = (obj) -> log "\n" + ostr(obj)
-print = (arg) -> console.log(arg)
-#endregion
+export appVersion = "v0.0.1"
+export heartbeatMS = 120000
 
-########################################################
-configmodule.initialize = ->
-    log "configmodule.initialize"
-    return    
+export backendBaseURL = "https://sentinel-backend.dotv.ee/"
 
-########################################################
-#region exposedProperties
-configmodule.prop = true
-
-#endregion
-
-export default configmodule
+# export backendWSURL = "https://sentinel-backend.dotv.ee/"
+# local testing
+export backendWSURL = "wss://localhost:6999/"
+# export backendWSURL = "https://localhost:6999/"

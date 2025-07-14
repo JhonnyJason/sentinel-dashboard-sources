@@ -2,12 +2,14 @@ import Modules from "./allmodules"
 import domconnect from "./indexdomconnect"
 domconnect.initialize()
 
+############################################################
+import { appLoaded } from "navhandler"
 global.allModules = Modules
 
 ############################################################
 appStartup = ->
-    ## which modules shall be kickstarted?
-    # Modules.appcoremodule.startUp()
+    appLoaded()
+    Modules.datamodule.startHeartbeat()
     return
 
 ############################################################

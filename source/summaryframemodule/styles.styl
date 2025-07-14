@@ -1,0 +1,36 @@
+// summaryframe styles
+#summaryframe
+    padding 30px
+    width 100%
+    box-sizing: border-box
+
+#economic-areas
+    display grid
+    grid-template-columns: repeat(auto-fit, 220px);
+    gap: 50px;
+    grid-auto-rows: auto;
+   
+    .economic-area
+        text-align: left
+        border-radius: 5px
+        box-shadow: 0 0 5px #777
+        padding 15px
+        box-sizing: border-box
+    .economic-area > *
+        display flex
+        justify-content: space-between
+        margin-bottom 5px
+
+    .top
+        margin-bottom 20px
+        align-items: top 
+
+    .title
+        font-size: 13pt
+
+    .flag
+        width 60px
+        height 60px
+    
+    .value
+        font-weight bold
