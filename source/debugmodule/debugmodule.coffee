@@ -5,6 +5,7 @@ export modulesToDebug = {
 
     appcoremodule: true
     datamodule: true
+    economicareasmodule: true
     summaryframemodule: true
 
 }

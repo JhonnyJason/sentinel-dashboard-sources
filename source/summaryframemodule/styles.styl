@@ -1,32 +1,49 @@
+main-spacing = 36px
 // summaryframe styles
 #summaryframe
-    padding 30px
+    padding main-spacing
     width 100%
     box-sizing: border-box
 
 #economic-areas
     display grid
-    grid-template-columns: repeat(auto-fit, 220px);
-    gap: 50px;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: main-spacing
     grid-auto-rows: auto;
    
     .economic-area
+        position relative
         text-align: left
         border-radius: 5px
         box-shadow: 0 0 5px #777
-        padding 15px
+        padding 20px
         box-sizing: border-box
+
     .economic-area > *
         display flex
-        justify-content: space-between
-        margin-bottom 5px
+        margin-bottom 7px
+        align-items: center
 
+    .info-button
+        width: 23px
+        height 23px
+        color: cd-info
+        align-self: center
+        margin-left 3px
+        cursor pointer
+    .info-button.click-button::after
+        background-color: grey
+
+    .label
+        margin-right auto
+        cursor pointer
     .top
         margin-bottom 20px
-        align-items: top 
 
     .title
-        font-size: 13pt
+        font-size: 14pt
+        margin-left auto
+        font-weight: bold
 
     .flag
         width 60px
@@ -34,3 +51,51 @@
     
     .value
         font-weight bold
+
+    .show-info
+        .info-display
+            z-index: 1
+            opacity 1
+            pointer-events: all
+
+    .info-display
+        display block !important
+        position absolute
+        top 0 
+        left 0 
+        width 100%
+        height 100%
+        border-radius: 5px
+        background-color #556
+        z-index: 0
+        opacity 0
+        pointer-events: none
+        color white
+        transition opacity 0.3s
+
+        .info-header
+            display flex
+            justify-content: space-between
+        .info-icon
+            color cd-info            
+        .info-icon
+        .close-button
+            height 33px
+            width 33px
+            padding 10px
+
+        .info-title
+            padding 10px
+            padding-top 5px
+            font-size 13pt
+        .info-description
+            padding 10px
+            line-height 120%
+            padding-top 5px
+            p
+                margin-bottom 5px
+                font-size 11pt
+            a
+                text-decoration: underline
+            .info-date
+                font-size: 10pt

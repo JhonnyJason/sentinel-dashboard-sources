@@ -40,7 +40,7 @@ heartbeat = ->
         log "should only send command 'getAllData'"
     else 
         log "now we create a new Websocket..."
-       createSocket()
+        createSocket()
     return
 
 socketOpened = (evnt) ->
@@ -68,8 +68,8 @@ receiveError = (evnt) ->
 socketClosed = (evnt) ->
     log "socketClosed"
     log evnt.reason
-    socket = null
     socketOpen = false
+    socket = null
     return
 
 

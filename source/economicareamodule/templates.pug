@@ -1,0 +1,24 @@
+.hidden-templates
+    #economic-area-template 
+        .economic-area
+            .top
+                .flag: svg: use(href="{{{icon-href}}}")
+                .title {{{title}}}
+            .inflation-rate
+                p.label Inflation: 
+                p.value {{{inflation}}}
+                .click-button.info-button: svg: use(href="#svg-info-icon")
+            .refinancing-rate
+                p.label Leitzins: 
+                p.value {{{policyRate}}}
+                .click-button.info-button: svg: use(href="#svg-info-icon")
+            .gdp-growth
+                p.label GDP Wachstum: 
+                p.value {{{gdpg}}}
+                .click-button.info-button: svg: use(href="#svg-info-icon")
+            .info-display 
+                .info-header
+                    svg.info-icon: use(href="#svg-info-icon")
+                    .click-button.close-button: svg: use(href="#svg-cross-icon")
+                .info-title Spezial Info
+                .info-description Dise Spezial-info wurde von XY am 20.10.2010 hochgeladen.
