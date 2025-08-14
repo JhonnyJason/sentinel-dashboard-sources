@@ -13,6 +13,7 @@ log currencyPairTemplate
 ############################################################
 import { allAreas as aA } from "./economicareasmodule.js"
 import * as cfg from "./configmodule.js"
+import * as scoreHelper from "./scorehelper.js"
 
 ############################################################
 allCurrencyPairs = {}
@@ -31,13 +32,18 @@ export initialize = ->
 
     setInterval(renderFrame, cfg.uiRerenderMS)
     renderFrame()
+
+    # result = scoreHelper.getInterestScore(2.5, 15.0)
+    # log result
+    # scoreHelper.getInflationScore(5.500001, 14)
+    # scoreHelper.getColorForScore(25)
     return
 
 ############################################################
-scoreSort = (el1, el2) -> 
+scoreSort = (el1, el2) ->
     score1 = parseFloat(el1.score)
     score2 = parseFloat(el2.score)
-    return score1 > score2
+    return score2 - score1
 
 ############################################################
 renderFrame = ->
@@ -56,8 +62,8 @@ class CurrencyPair
     constructor: (@baseArea, @quoteArea) ->
         @short = @baseArea.currencyShort + @quoteArea.currencyShort
         @score = "N/A"
-        @baseArea.addUpdateListener(@updateData)
-        @quoteArea.addUpdateListener(@updateData)
+        @baseArea.addUpdateListener(@updateScore)
+        @quoteArea.addUpdateListener(@updateScore)
 
         cObj = {
             short: @short,
@@ -68,10 +74,12 @@ class CurrencyPair
         virtualContainer = document.createElement("v")
         html = M.render(currencyPairTemplate, cObj)
         virtualContainer.innerHTML = html.trim()
+
         # log html
         @element = virtualContainer.firstChild
+        # @colorFrame = @element.getElementsByClassName("color-frame")[0]
+        @scoreDisplay = @element.getElementsByClassName("score")[0]
 
-        # p = @element.getElementsByClassName("inflation-rate")[0]
         # @inflationEl = p.getElementsByClassName("value")[0]
         # infoButton = p.getElementsByClassName("info-button")[0]
         # infoButton.addEventListener("click", @inflationInfoClicked)
@@ -93,10 +101,24 @@ class CurrencyPair
         # closeButton = p.getElementsByClassName("close-button")[0]
         # closeButton.addEventListener("click", @resetInfoDisplay)
 
-    updateData: () =>
-        # log "#{@short}: updateData"
-        ## TODO implement, basically recalculaten score and update the view
+    updateScore: =>
+        # log "updateScore #{@short}"
+        try
+            interestScore = scoreHelper.getInterestScore(@baseArea.data.mrr, @quoteArea.data.mrr)
+            # log "interestScore: #{interestScore}"
+            inflationScore = scoreHelper.getInflationScore(@baseArea.data.hicp, @quoteArea.data.hicp)
+            # log "inflationScore: #{inflationScore}"
+            gdpScore = scoreHelper.getGDPScore(@baseArea.data.gdpg, @quoteArea.data.gdpg)
+            # log "gdpScore: #{gdpScore}"
+
+            @score = interestScore + inflationScore + gdpScore
+            # log "total score: #{@score}"
+            @scoreDisplay.textContent = @score.toFixed(2)
+        
+            # @colorFrame.style.backgroundColor = scoreHelper.getColorForScore(@score)
+            @element.style.backgroundColor = scoreHelper.getColorForScore(@score)
+
+        catch err then log err
+            # log err
+            # log "Error happened on #{@short}"
         return
-
-
-

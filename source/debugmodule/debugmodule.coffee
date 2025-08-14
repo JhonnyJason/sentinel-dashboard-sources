@@ -8,6 +8,7 @@ export modulesToDebug = {
     # economicareasmodule: true
     # summaryframemodule: true
     currencytrendframemodule: true
+    # scorehelper: true
 }
 
 addModulesToDebug(modulesToDebug)
