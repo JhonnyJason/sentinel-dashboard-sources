@@ -17,6 +17,7 @@ class EconomicArea
         @title = o.title
         @currencyName = o.currencyName
         @currencyShort = o.currencyShort
+        @updateListeners = []
 
         @metaData = {
             hicp: {}
@@ -63,7 +64,6 @@ class EconomicArea
         
         closeButton = p.getElementsByClassName("close-button")[0]
         closeButton.addEventListener("click", @resetInfoDisplay)
-        return
 
     ########################################################
     getHICP: => @data.hicp
@@ -87,6 +87,19 @@ class EconomicArea
 
         @data.gdpg = parseFloat(d.gdpg)
         @gdpgrowthEl.textContent = "#{d.gdpg}"
+        
+        f() for f in @updateListeners         
+        return
+
+    ########################################################
+    addUpdateListener: (fun) =>
+        throw new Error("Not a function!") unless typeof fun == "function" 
+        @updateListeners.push(fun)
+        return
+
+    removeUpdateListener: (fun) =>
+        @updateListeners[i] = null for f,i in @updateListeners when f == fun
+        @updateListeners = @updateListeners.filter((el) -> el?)
         return
 
     ########################################################

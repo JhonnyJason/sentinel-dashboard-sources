@@ -5,7 +5,98 @@ import { createLogFunctions } from "thingy-debug"
 #endregion
 
 ############################################################
+import M from "mustache"
+
+currencyPairTemplate = document.getElementById("currency-pair-template").innerHTML
+log currencyPairTemplate
+
+############################################################
+import { allAreas as aA } from "./economicareasmodule.js"
+import * as cfg from "./configmodule.js"
+
+############################################################
+allCurrencyPairs = {}
+shownCurrencyPairs = []
+
+############################################################
 export initialize = ->
     log "initialize"
-    #Implement or Remove :-)
+    for lblB,base of aA
+        for lblQ,quote of aA when lblB != lblQ
+            pair = new CurrencyPair(base, quote)
+            allCurrencyPairs[pair.short] = pair
+    
+    for label in cfg.shownCurrencyPairLabels
+        shownCurrencyPairs.push(allCurrencyPairs[label])
+
+    setInterval(renderFrame, cfg.uiRerenderMS)
+    renderFrame()
     return
+
+############################################################
+scoreSort = (el1, el2) -> 
+    score1 = parseFloat(el1.score)
+    score2 = parseFloat(el2.score)
+    return score1 > score2
+
+############################################################
+renderFrame = ->
+    log "renderFrame"
+    shownCurrencyPairs.sort(scoreSort)
+    ## TODO check if anything has changed and skip rerendering
+
+    currencytrendframe.innerHTML = ""
+    for pair in shownCurrencyPairs
+        currencytrendframe.appendChild(pair.element)
+    return
+
+############################################################
+class CurrencyPair
+
+    constructor: (@baseArea, @quoteArea) ->
+        @short = @baseArea.currencyShort + @quoteArea.currencyShort
+        @score = "N/A"
+        @baseArea.addUpdateListener(@updateData)
+        @quoteArea.addUpdateListener(@updateData)
+
+        cObj = {
+            short: @short,
+            score: @score,
+            colorCode: "#eee"
+        }
+
+        virtualContainer = document.createElement("v")
+        html = M.render(currencyPairTemplate, cObj)
+        virtualContainer.innerHTML = html.trim()
+        # log html
+        @element = virtualContainer.firstChild
+
+        # p = @element.getElementsByClassName("inflation-rate")[0]
+        # @inflationEl = p.getElementsByClassName("value")[0]
+        # infoButton = p.getElementsByClassName("info-button")[0]
+        # infoButton.addEventListener("click", @inflationInfoClicked)
+
+        # p = @element.getElementsByClassName("refinancing-rate")[0]
+        # @refinancingEl = p.getElementsByClassName("value")[0]
+        # infoButton = p.getElementsByClassName("info-button")[0]
+        # infoButton.addEventListener("click", @refinancingInfoClicked)
+
+        # p = @element.getElementsByClassName("gdp-growth")[0]
+        # @gdpgrowthEl = p.getElementsByClassName("value")[0]
+        # infoButton = p.getElementsByClassName("info-button")[0]
+        # infoButton.addEventListener("click", @gdpGrowthInfoClicked)
+
+        # p = @element.getElementsByClassName("info-display")[0]
+        # @infoTitleEl = p.getElementsByClassName("info-title")[0]
+        # @infoDescriptionEl = p.getElementsByClassName("info-description")[0]
+
+        # closeButton = p.getElementsByClassName("close-button")[0]
+        # closeButton.addEventListener("click", @resetInfoDisplay)
+
+    updateData: () =>
+        # log "#{@short}: updateData"
+        ## TODO implement, basically recalculaten score and update the view
+        return
+
+
+

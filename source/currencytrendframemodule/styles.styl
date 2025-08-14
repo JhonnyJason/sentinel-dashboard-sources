@@ -1,6 +1,37 @@
 // currencytrendframe styles
 #currencytrendframe
-    display none
     width 100%
-    min-height 20px
-    background-color rgba(0, 0, 0, 0.2)
+    padding 20px
+    box-sizing: border-box
+    .info-display
+        position absolute
+        opacity: 0
+        z-index: -1
+        pointer-events: none
+
+    .currency-pair
+        background-color #eee
+        display flex
+        margin-bottom 20px
+        padding-left 40px
+        align-items: center
+        .left
+            text-align: right
+        .title
+            width 100px
+            margin-bottom 3px
+            font-size 14pt
+            font-weight bold
+        .score
+            font-size 11pt
+        .right
+            padding 10px
+        .color-frame 
+            padding 20px
+        .info-button
+            height 25px
+            width 25px
+            cursor: pointer
+            color: cd-info
+            
+

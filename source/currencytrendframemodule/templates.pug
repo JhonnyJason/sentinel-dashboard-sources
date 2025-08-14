@@ -1,0 +1,16 @@
+.hidden-templates
+    #currency-pair-template 
+        .currency-pair
+            .left
+                .color-frame(style="background-color:{{{colorCode}}};")
+                    .title {{{short}}}
+                    .score {{{score}}}
+            .right 
+                .click-button.info-button: svg: use(href="#svg-info-icon")
+
+            .info-display 
+                .info-header
+                    svg.info-icon: use(href="#svg-info-icon")
+                    .click-button.close-button: svg: use(href="#svg-cross-icon")
+                .info-title Spezial Info
+                .info-description Noch undefinierte Spezialinformation.
