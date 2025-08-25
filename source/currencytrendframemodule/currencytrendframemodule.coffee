@@ -108,8 +108,11 @@ class CurrencyPair
             # log "interestScore: #{interestScore}"
             inflationScore = scoreHelper.getInflationScore(@baseArea.data.hicp, @quoteArea.data.hicp)
             # log "inflationScore: #{inflationScore}"
-            gdpScore = scoreHelper.getGDPScore(@baseArea.data.gdpg, @quoteArea.data.gdpg)
+            ## not implemented in this way
+            # gdpScore = scoreHelper.getGDPScore(@baseArea.data.gdpg, @quoteArea.data.gdpg)
             # log "gdpScore: #{gdpScore}"
+            gdpScore = @baseArea.gdpScore - @quoteArea.gdpScore
+            log "@#{@short}: gdpScore is #{gdpScore}"
 
             @score = interestScore + inflationScore + gdpScore
             # log "total score: #{@score}"
@@ -118,7 +121,7 @@ class CurrencyPair
             # @colorFrame.style.backgroundColor = scoreHelper.getColorForScore(@score)
             @element.style.backgroundColor = scoreHelper.getColorForScore(@score)
 
-        catch err then log err
-            # log err
-            # log "Error happened on #{@short}"
+        catch err ## then log err
+            log err
+            log "Error happened on #{@short}"
         return

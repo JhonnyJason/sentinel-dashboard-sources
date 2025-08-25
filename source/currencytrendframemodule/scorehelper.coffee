@@ -71,13 +71,22 @@ getInflationFactor = (baseInfl, quoteInfl) ->
     dif = Math.abs(baseInfl - quoteInfl)
 
     switch
-        when dif <= 0.5 then return 1.5 # A - B 0,5% Faktor 1,5
-        when dif <= 1.0  then return 2 # A - B 1,0% Faktor 2
-        when dif <= 1.5 then return 2.5 # A - B 1,5% Faktor 2,5
-        when dif <= 2.0 then return 3 # A - B 2,0% Faktor 3
-        when dif <= 2.5 then return 3.5 # A - B 2,5% Faktor 3,5
+        ## Here we have a hole at 2.5 - 3.0
+        # when dif <= 0.5 then return 1.5 # A - B 0,5% Faktor 1,5
+        # when dif <= 1.0  then return 2 # A - B 1,0% Faktor 2
+        # when dif <= 1.5 then return 2.5 # A - B 1,5% Faktor 2,5
+        # when dif <= 2.0 then return 3 # A - B 2,0% Faktor 3
+        # when dif <= 2.5 then return 3.5 # A - B 2,5% Faktor 3,5
+        # when dif > 3 then return 4 # A - B >3% Faktor 4
+
+        when dif < 0.75 then return 1.5 # A - B 0,5% Faktor 1,5
+        when dif < 1.25  then return 2 # A - B 1,0% Faktor 2
+        when dif < 1.75 then return 2.5 # A - B 1,5% Faktor 2,5
+        when dif < 2.25 then return 3 # A - B 2,0% Faktor 3
+        when dif < 3 then return 3.5 # A - B 2,5% Faktor 3,5
         when dif > 3 then return 4 # A - B >3% Faktor 4
-        else throw new Error("Unexpected dif: #{dif}")
+
+        else throw new Error("Unexpected dif: #{dif} is of type: #{typeof dif}")
     return
 
 ############################################################
@@ -108,9 +117,9 @@ export getInflationScore = (baseInflation, quoteInflation) ->
     
     return baseScore - quoteScore * fctr
 
-export getGDPScore = (baseGDPG, quoteGDPG) ->
-    log "getGDPScore"
-    return 0
+# export getGDPComparisonScore = (baseGDPG, quoteGDPG) ->
+#     log "getGDPScore"
+#     return 0
 
 ############################################################
 export getColorForScore = (score) ->

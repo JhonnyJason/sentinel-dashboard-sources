@@ -8,6 +8,9 @@ import { createLogFunctions } from "thingy-debug"
 import M from "mustache"
 
 ############################################################
+import * as scoreHelper from "./scorehelper.js"
+
+############################################################
 economicAreaTemplate = document.getElementById("economic-area-template").innerHTML
 
 ############################################################
@@ -18,6 +21,7 @@ class EconomicArea
         @currencyName = o.currencyName
         @currencyShort = o.currencyShort
         @updateListeners = []
+        @calculateGDPScore = o.gdpScoreFunction
 
         @metaData = {
             hicp: {}
@@ -88,6 +92,8 @@ class EconomicArea
         @data.gdpg = parseFloat(d.gdpg)
         @gdpgrowthEl.textContent = "#{d.gdpg}"
         
+        @gdpScore = @calculateGDPScore(@data.gdpg)
+
         f() for f in @updateListeners         
         return
 
@@ -139,7 +145,14 @@ eurozone = new EconomicArea({ #  351.4 mio Citizens
     "key": "eurozone"
     "currencyName": "Euro"
     "currencyShort":"EUR"
-    "populationM": 351.4
+    "populationM": 351.4,
+    "gdpScoreFunction": (gdpg) -> 
+        switch
+            when gdpg < 0.8 then return -1.0
+            when gdpg < 1.5  then return 0.0
+            when gdpg < 2.0 then return 2.0
+            when gdpg < 3 then return 1.0
+            else return -1.0
 })
 
 usa = new EconomicArea({ # 340.1mio Citizens
@@ -148,7 +161,14 @@ usa = new EconomicArea({ # 340.1mio Citizens
     "key": "usa"
     "currencyName": "US-Dollar"
     "currencyShort": "USD"
-    "populationM": 340.1    
+    "populationM": 340.1,
+    "gdpScoreFunction": (gdpg) ->
+        switch
+            when gdpg < 1.5 then return -1.0
+            when gdpg < 2  then return 0.0
+            when gdpg < 2.5 then return 2.0
+            when gdpg < 4 then return 1.0
+            else return -1.0
 })
 
 japan =  new EconomicArea({ # 124mio Citizens
@@ -157,7 +177,15 @@ japan =  new EconomicArea({ # 124mio Citizens
     "key": "japan"
     "currencyName": "Yen"
     "currencyShort": "JPY"
-    "populationM": 124
+    "populationM": 124,
+    "gdpScoreFunction": (gdpg) ->
+        switch
+            when gdpg < 0.0 then return -1.0
+            when gdpg < 1.0  then return 0.0
+            when gdpg < 1.5 then return 2.0
+            when gdpg < 2.5 then return 1.0
+            else return -1.0
+
 })
 
 uk = new EconomicArea({ # 69.2mio Citizens
@@ -166,7 +194,15 @@ uk = new EconomicArea({ # 69.2mio Citizens
     "key": "uk"
     "currencyName": "Pfund"
     "currencyShort": "GBP"
-    "populationM": 69.2
+    "populationM": 69.2,
+    "gdpScoreFunction": (gdpg) ->
+        switch
+            when gdpg < 0.8 then return -1.0
+            when gdpg < 1.5  then return 0.0
+            when gdpg < 2.0 then return 2.0
+            when gdpg < 3.5 then return 1.0
+            else return -1.0
+
 })
 
 canada = new EconomicArea({ # 41.3mio Citizens
@@ -175,7 +211,14 @@ canada = new EconomicArea({ # 41.3mio Citizens
     "key": "canada"
     "currencyName": "Canada Dollar"
     "currencyShort": "CAD"
-    "populationM": 41.3
+    "populationM": 41.3,
+    "gdpScoreFunction": (gdpg) ->
+        switch
+            when gdpg < 1 then return -1.0
+            when gdpg < 1.8  then return 0.0
+            when gdpg < 2.2 then return 2.0
+            when gdpg < 3.5 then return 1.0
+            else return -1.0
 
 })
 
@@ -185,7 +228,14 @@ australia = new EconomicArea({ # 27.4mio Citizens
     "key": "australia"
     "currencyName": "Australia Dollar"
     "currencyShort": "AUD"
-    "populationM": 27.4
+    "populationM": 27.4,
+    "gdpScoreFunction": (gdpg) ->
+        switch
+            when gdpg < 1.5 then return -1.0
+            when gdpg < 2.5  then return 0.0
+            when gdpg < 3 then return 2.0
+            when gdpg < 4 then return 1.0
+            else return -1.0
 })
 
 switzerland = new EconomicArea({ # 9mio Citizens
@@ -194,7 +244,14 @@ switzerland = new EconomicArea({ # 9mio Citizens
     "key": "switzerland"
     "currencyName": "Franken"
     "currencyShort": "CHF"
-    "populationM": 9
+    "populationM": 9,
+    "gdpScoreFunction": (gdpg) ->
+        switch
+            when gdpg < 0.5 then return -1.0
+            when gdpg < 1.5  then return 0.0
+            when gdpg < 2.0 then return 2.0
+            when gdpg < 3.0 then return 1.0
+            else return -1.0
 })
 
 newzealand = new EconomicArea({ # 5.4mio Citizens
@@ -203,7 +260,14 @@ newzealand = new EconomicArea({ # 5.4mio Citizens
     "key": "newzealand"
     "currencyName": "New Zealand Dollar"
     "currencyShort": "NZD"
-    "populationM": 5.4
+    "populationM": 5.4,
+    "gdpScoreFunction": (gdpg) -> 
+        switch
+            when gdpg < 1.5 then return -1.0
+            when gdpg < 2.5  then return 0.0
+            when gdpg < 3.0 then return 2.0
+            when gdpg < 4 then return 1.0
+            else return -1.0
 })
 
 
