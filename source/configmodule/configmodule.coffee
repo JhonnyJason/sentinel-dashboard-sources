@@ -1,4 +1,4 @@
-export appVersion = "v0.0.3"
+export appVersion = "v0.0.4"
 export heartbeatMS = 120000
 
 ############################################################
@@ -13,7 +13,35 @@ export shownCurrencyPairLabels = [
     "EURUSD",
     "NZDUSD",
     "AUDUSD",
-    "GBPUSD"
+    "GBPUSD",
+
+    ## additional crosspairs
+    "EURGBP",
+    "EURCHF",
+    "EURJPY",
+    "EURCAD",
+    "EURAUD",
+    "EURNZD",
+
+    "GBPCHF",
+    "GBPJPY",
+    "GBPCAD",
+    "GBPAUD",
+    "GBPNZD",
+
+    "CHFJPY",
+    "CHFCAD",
+    "CHFAUD",
+    "CHFNZD",
+    
+    "CADJPY",
+    "AUDJPY",
+    "NZDJPY",
+
+    "AUDCAD",
+    "NZDCAD",
+
+    "AUDNZD"
 ]
 
 

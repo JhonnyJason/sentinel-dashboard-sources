@@ -83,7 +83,7 @@ getInflationFactor = (baseInfl, quoteInfl) ->
         when dif < 1.25  then return 2 # A - B 1,0% Faktor 2
         when dif < 1.75 then return 2.5 # A - B 1,5% Faktor 2,5
         when dif < 2.25 then return 3 # A - B 2,0% Faktor 3
-        when dif < 3 then return 3.5 # A - B 2,5% Faktor 3,5
+        when dif <= 3 then return 3.5 # A - B 2,5% Faktor 3,5
         when dif > 3 then return 4 # A - B >3% Faktor 4
 
         else throw new Error("Unexpected dif: #{dif} is of type: #{typeof dif}")
