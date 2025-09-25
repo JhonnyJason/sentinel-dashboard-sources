@@ -107,10 +107,10 @@ class EconomicArea
         @gdpgrowthEl.textContent = "#{d.gdpg}"
 
         @data.cotIndex36 = parseFloat(d.cotIndex36)
-        @cotIndex36El.textContent = "#{Math.round(@data.cotIndex36)}"
+        @cotIndex36El.textContent = "#{Math.round(@data.cotIndex36)}%"
 
         @data.cotIndex6 = parseFloat(d.cotIndex6)
-        @cotIndex6El.textContent = "#{Math.round(@data.cotIndex6)}"
+        @cotIndex6El.textContent = "#{Math.round(@data.cotIndex6)}%"
 
         @gdpScore = @calculateGDPScore(@data.gdpg)
 
