@@ -32,14 +32,20 @@ class EconomicArea
             hicp: "N/A"
             mrr: "N/A"
             gdpg: "N/A"
+            cotIndex36: "N/A"
+            cotIndex6: "N/A"
         }
+
         cObj = {
             "icon-href": o["icon-href"]
             "title": o.title
             "inflation": @data.hicp
             "policyRate": @data.mrr
             "gdpg": @data.gdpg
+            "cotIndex36": @data.cotIndex36
+            "cotIndex6": @data.cotIndex6
         }
+
         virtualContainer = document.createElement("v")
         olog {virtualContainer}
         html = M.render(economicAreaTemplate, cObj)
@@ -62,6 +68,12 @@ class EconomicArea
         infoButton = p.getElementsByClassName("info-button")[0]
         infoButton.addEventListener("click", @gdpGrowthInfoClicked)
 
+        p = @element.getElementsByClassName("cot-index-6")[0]
+        @cotIndex6El = p.getElementsByClassName("value")[0]
+        
+        p = @element.getElementsByClassName("cot-index-36")[0]
+        @cotIndex36El = p.getElementsByClassName("value")[0]
+        
         p = @element.getElementsByClassName("info-display")[0]
         @infoTitleEl = p.getElementsByClassName("info-title")[0]
         @infoDescriptionEl = p.getElementsByClassName("info-description")[0]
@@ -73,6 +85,8 @@ class EconomicArea
     getHICP: => @data.hicp
     getMRR: => @data.mrr
     getGDPG: => @data.gdpg
+    getCOTIndex36: => @data.cotIndex36
+    getCOTIndex6: => @data.cotIndex6
 
     ########################################################
     getElement: => @element
@@ -91,7 +105,13 @@ class EconomicArea
 
         @data.gdpg = parseFloat(d.gdpg)
         @gdpgrowthEl.textContent = "#{d.gdpg}"
-        
+
+        @data.cotIndex36 = parseFloat(d.cotIndex36)
+        @cotIndex36El.textContent = "#{Math.round(@data.cotIndex36)}"
+
+        @data.cotIndex6 = parseFloat(d.cotIndex6)
+        @cotIndex6El.textContent = "#{Math.round(@data.cotIndex6)}"
+
         @gdpScore = @calculateGDPScore(@data.gdpg)
 
         f() for f in @updateListeners         

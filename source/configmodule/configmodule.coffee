@@ -28,15 +28,15 @@ export shownCurrencyPairLabels = [
     "GBPCAD",
     "GBPAUD",
     "GBPNZD",
-
-    "CHFJPY",
-    "CHFCAD",
-    "CHFAUD",
-    "CHFNZD",
     
+    "CHFJPY",
     "CADJPY",
     "AUDJPY",
     "NZDJPY",
+
+    "CADCHF",
+    "AUDCHF",
+    "NZDCHF",
 
     "AUDCAD",
     "NZDCAD",
