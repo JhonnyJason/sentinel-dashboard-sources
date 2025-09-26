@@ -111,15 +111,15 @@ class EconomicArea
         @cotIndex36El.textContent = "#{Math.round(@data.cotIndex36)}%"
         @cotIndex36El.classList.remove("strong")
         @cotIndex36El.classList.remove("weak")
-        if @data.cotIndex36 > 75 then @cotIndex36El.classList.add("strong")
-        if @data.cotIndex36 < 25 then @cotIndex36El.classList.add("weak")
+        if @data.cotIndex36 >= 70 then @cotIndex36El.classList.add("strong")
+        if @data.cotIndex36 <= 30 then @cotIndex36El.classList.add("weak")
 
         @data.cotIndex6 = parseFloat(d.cotIndex6)
         @cotIndex6El.textContent = "#{Math.round(@data.cotIndex6)}%"
         @cotIndex6El.classList.remove("strong")
         @cotIndex6El.classList.remove("weak")
-        if @data.cotIndex6 > 75 then @cotIndex6El.classList.add("strong")
-        if @data.cotIndex6 < 25 then @cotIndex6El.classList.add("weak")
+        if @data.cotIndex6 >= 70 then @cotIndex6El.classList.add("strong")
+        if @data.cotIndex6 <= 30 then @cotIndex6El.classList.add("weak")
 
         @gdpScore = @calculateGDPScore(@data.gdpg)
         @cotScore = @calculateCOTScore(@data.cotIndex6,  @data.cotIndex36)
