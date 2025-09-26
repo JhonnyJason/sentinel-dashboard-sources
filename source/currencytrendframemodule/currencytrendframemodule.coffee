@@ -114,7 +114,11 @@ class CurrencyPair
             gdpScore = @baseArea.gdpScore - @quoteArea.gdpScore
             log "@#{@short}: gdpScore is #{gdpScore}"
 
-            @score = interestScore + inflationScore + gdpScore
+            cotScore = @baseArea.cotScore - @quoteArea.cotScore
+            log "@#{@short}: cotScore is #{cotScore}"
+
+            @score = interestScore + inflationScore + gdpScore + cotScore
+            
             # log "total score: #{@score}"
             @scoreDisplay.textContent = @score.toFixed(2)
         

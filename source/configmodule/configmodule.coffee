@@ -1,4 +1,4 @@
-export appVersion = "v0.0.4"
+export appVersion = "v0.0.5"
 export heartbeatMS = 120000
 
 ############################################################

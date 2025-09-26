@@ -117,6 +117,17 @@ export getInflationScore = (baseInflation, quoteInflation) ->
     
     return baseScore - quoteScore * fctr
 
+export generalCOTScore = (index) ->
+    log "generalCOTScore"
+    switch
+        when index >= 90 then return 2
+        when index >= 75 then return 1
+        when index >= 25 then return 0
+        when index >= 10 then return -1
+        when index >= 0 then return -2
+        else throw new Error("Unexpected Index Value: #{index}")
+    return
+
 # export getGDPComparisonScore = (baseGDPG, quoteGDPG) ->
 #     log "getGDPScore"
 #     return 0

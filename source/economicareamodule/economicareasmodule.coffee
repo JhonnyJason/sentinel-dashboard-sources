@@ -22,6 +22,7 @@ class EconomicArea
         @currencyShort = o.currencyShort
         @updateListeners = []
         @calculateGDPScore = o.gdpScoreFunction
+        @calculateCOTScore = scoreHelper.generalCOTScore
 
         @metaData = {
             hicp: {}
@@ -113,6 +114,7 @@ class EconomicArea
         @cotIndex6El.textContent = "#{Math.round(@data.cotIndex6)}%"
 
         @gdpScore = @calculateGDPScore(@data.gdpg)
+        @cotScore = @calculateCOTScore(@data.cotIndex6,  @data.cotIndex36)
 
         f() for f in @updateListeners         
         return
@@ -166,13 +168,14 @@ eurozone = new EconomicArea({ #  351.4 mio Citizens
     "currencyName": "Euro"
     "currencyShort":"EUR"
     "populationM": 351.4,
-    "gdpScoreFunction": (gdpg) -> 
+    "gdpScoreFunction": (gdpg) ->
         switch
             when gdpg < 0.8 then return -1.0
             when gdpg < 1.5  then return 0.0
             when gdpg < 2.0 then return 2.0
             when gdpg < 3 then return 1.0
             else return -1.0
+    "cotScoreFunction": (index) -> return
 })
 
 usa = new EconomicArea({ # 340.1mio Citizens
@@ -189,6 +192,7 @@ usa = new EconomicArea({ # 340.1mio Citizens
             when gdpg < 2.5 then return 2.0
             when gdpg < 4 then return 1.0
             else return -1.0
+    "cotScoreFunction": (index) -> return
 })
 
 japan =  new EconomicArea({ # 124mio Citizens
@@ -205,7 +209,7 @@ japan =  new EconomicArea({ # 124mio Citizens
             when gdpg < 1.5 then return 2.0
             when gdpg < 2.5 then return 1.0
             else return -1.0
-
+    "cotScoreFunction": (index) -> return
 })
 
 uk = new EconomicArea({ # 69.2mio Citizens
@@ -222,7 +226,7 @@ uk = new EconomicArea({ # 69.2mio Citizens
             when gdpg < 2.0 then return 2.0
             when gdpg < 3.5 then return 1.0
             else return -1.0
-
+    "cotScoreFunction": (index) -> return
 })
 
 canada = new EconomicArea({ # 41.3mio Citizens
@@ -239,7 +243,7 @@ canada = new EconomicArea({ # 41.3mio Citizens
             when gdpg < 2.2 then return 2.0
             when gdpg < 3.5 then return 1.0
             else return -1.0
-
+    "cotScoreFunction": (index) -> return
 })
 
 australia = new EconomicArea({ # 27.4mio Citizens
@@ -256,6 +260,7 @@ australia = new EconomicArea({ # 27.4mio Citizens
             when gdpg < 3 then return 2.0
             when gdpg < 4 then return 1.0
             else return -1.0
+    "cotScoreFunction": (index) -> return
 })
 
 switzerland = new EconomicArea({ # 9mio Citizens
@@ -272,6 +277,7 @@ switzerland = new EconomicArea({ # 9mio Citizens
             when gdpg < 2.0 then return 2.0
             when gdpg < 3.0 then return 1.0
             else return -1.0
+    "cotScoreFunction": (index) -> return
 })
 
 newzealand = new EconomicArea({ # 5.4mio Citizens
@@ -288,6 +294,7 @@ newzealand = new EconomicArea({ # 5.4mio Citizens
             when gdpg < 3.0 then return 2.0
             when gdpg < 4 then return 1.0
             else return -1.0
+    "cotScoreFunction": (index) -> return
 })
 
 
