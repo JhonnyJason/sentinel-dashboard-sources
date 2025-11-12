@@ -5,6 +5,7 @@ import * as contentmodule from "./contentmodule.js"
 import * as currencytrendframemodule from "./currencytrendframemodule.js"
 import * as datamodule from "./datamodule.js"
 import * as debugmodule from "./debugmodule.js"
+import * as noaccountmodule from "./noaccountmodule.js"
 import * as sidenavmodule from "./sidenavmodule.js"
 import * as summaryframemodule from "./summaryframemodule.js"
 import * as uistatemodule from "./uistatemodule.js"
@@ -17,6 +18,7 @@ Modules = {
     currencytrendframemodule,
     datamodule,
     debugmodule,
+    noaccountmodule,
     sidenavmodule,
     summaryframemodule,
     uistatemodule,

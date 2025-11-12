@@ -8,6 +8,7 @@ import { createLogFunctions } from "thingy-debug"
 #region imported UI modules
 import * as content from "./contentmodule.js"
 import * as sideNav from "./sidenavmodule.js"
+import * as noAccount from "./noaccountmodule.js"
 
 #endregion
 
@@ -26,16 +27,31 @@ currentContext = null
 applyBaseState["summary"] = ->
     content.setSummaryState()
     sideNav.setSummaryState()
+    noAccount.hide()
     return
 
 applyBaseState["currencytrend"] = ->
     content.setCurrencytrendState()
     sideNav.setCurrencytrendState()
+    noAccount.hide()
     return
 
 applyBaseState["account"] = ->
     content.setAccountState()
     sideNav.setAccountState()
+    noAccount.hide()
+    return
+
+applyBaseState["noaccount"] = ->
+    content.hide()
+    sideNav.hide()
+    noAccount.noAction()
+    return
+
+applyBaseState["action"] = (ctx) ->
+    content.hide()
+    sideNav.hide()
+    noAccount.finalizeAction(ctx)
     return
 
 #endregion

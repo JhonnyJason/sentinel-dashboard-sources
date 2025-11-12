@@ -19,3 +19,8 @@ export setAccountState = ->
     log "setAccountState"
     content.className = "account"
     return
+
+export hide = ->
+    log "hide"
+    content.className = "hidden"
+    return

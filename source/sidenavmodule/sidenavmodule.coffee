@@ -31,3 +31,8 @@ export setAccountState = ->
     log "setAccountState"
     sidenav.className = "account"
     return
+
+export hide = ->
+    log "hide"
+    sidenav.className = "hidden"
+    return
