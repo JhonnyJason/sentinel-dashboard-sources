@@ -1,0 +1,113 @@
+// accountframe styles
+#accountframe
+    width 100%
+    text-align left
+    padding 25px
+    // padding-left 50px
+    box-sizing: border-box
+    max-width: 600px
+
+    .click-button
+        display block
+        width 100%
+        font-size 12pt
+        color #fff
+        // background-color #000
+        background-color cd-button-dark
+        border solid 2px #fff
+        box-shadow: 0 0 5px #000
+        padding 12px 20px
+        border-radius: 10px
+
+
+
+#account-status-active
+#account-status-inactive
+    // width 200px
+    color white
+    text-align: center
+    padding 12px 0
+    border-radius 3px
+    margin 20px 0
+    display none
+
+#account-status-inactive
+    background-color #c21
+#account-status-active
+    background-color #1b2
+
+#account-automatic-renewal
+    margin-bottom 20px
+    display none
+
+#abonnement-order-buttons
+    text-align: center
+
+#account-status.inactive
+    #account-status-inactive
+        display block
+    #renew-button
+        display none
+
+
+#account-status.active-once
+    #account-status-active
+        display block
+
+    #account-automatic-renewal
+        display block
+    #order-button.click-button
+        display none
+
+#account-status.active-member
+    #account-status-active
+        display block
+
+    #account-automatic-renewal
+        display block
+
+    #abonnement-order-buttons
+        display none
+
+
+#account-status
+    margin-top 36px
+    #account-status-info
+        margin-bottom 30px
+
+#account-management
+    margin-top 120px
+    
+    h2
+        margin 30px 0
+
+    input
+        display: block
+        font-size 12pt
+        width 100%
+        border none
+        outline: none
+        padding: 10px 
+        margin-bottom 20px
+        border-bottom solid 1px transparent
+
+    input:focus
+        border-bottom solid 1px cd-dark-blue
+
+    label
+        display block
+        margin-bottom 5px
+
+    button
+        margin-bottom 50px
+    p
+        margin 20px 0
+        // color #444
+
+    #deletion-button
+        background-color #512
+
+    #approval-section
+        min-height 220px
+        opacity 0
+        pointer-events: none

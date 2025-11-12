@@ -1,5 +1,9 @@
-export appVersion = "v0.0.5"
+export appVersion = "v0.0.6"
 export heartbeatMS = 120000
+
+############################################################
+export urlAccessManager = "https://localhost:6999/"
+# export urlAccessManager = "https://sentinel-access-manager.dotv.ee/"
 
 ############################################################
 export uiRerenderMS = 3000

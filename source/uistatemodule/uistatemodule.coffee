@@ -33,6 +33,11 @@ applyBaseState["currencytrend"] = ->
     sideNav.setCurrencytrendState()
     return
 
+applyBaseState["account"] = ->
+    content.setAccountState()
+    sideNav.setAccountState()
+    return
+
 #endregion
 
 ############################################################

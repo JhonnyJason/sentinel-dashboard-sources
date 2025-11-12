@@ -1,0 +1,37 @@
+//- accountframe structure
+#accountframe
+    h1 Account
+    
+    //- #account-status.inactive
+    //- #account-status.active-member
+    //- #account-status.active-once
+    
+    #account-status.inactive
+        #account-status-inactive Kein Abonnement
+        #account-status-active Abonnement Aktiv
+        #account-status-info Sie haben momentan kein gültiges Abonnement zum Erhalt der Daten. Bitte schließen Sie ein Abonnement ab um den Sentinel richtig nutzen zu können.
+        //- #account-status-info Ihr Abonnement läuft am 11.11.26 ab. Bitte erneuern Sie ihr Abonnement um den Sentinel darüberhinaus nutzen zu können.
+        //- #account-status-info Ihr Abonnement wird am 11.11.26 automatisch erneuert. Vielen Dank!
+
+        #account-automatic-renewal 
+            input#renewal-checkbox(type="checkbox")
+            label#renewal-hint(for="renewal-checkbox") Automatisierte Erneuerungen ausschalten. 
+            //- label#renewal-hint(for="renewal-checkbox") Automatisierte Erneuerungen einschalten. 
+
+        #abonnement-order-buttons 
+            button#order-button.click-button Abonnement Kaufen 
+            button#renew-button.click-button Abonnement Erneuern 
+        
+    form#account-management
+        h2 Account Aktionen
+        p Hinweis: Sie können nur eine der Änderungen gleichzeitig durchführen.
+        label(for="email-input") Neue Emailadresse setzen:
+        input#email-input(type="email" placeholder="asd@ghg.oi")
+        label(for="password-input") Neues Passwort setzen:
+        input#password-input(type="password" placeholder="**********")
+        button#deletion-button.click-button Account Löschen
+
+        #approval-section
+            h2#confirm-action-head Bitte bestätigen Sie das Setzen von ggg@gmail.com als neue Emailadresse:
+            input#old-password-input(type="text" placeholder="Ihr altes Passwort")
+            button#submit-input.click-button Bestätigen

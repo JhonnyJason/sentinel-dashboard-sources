@@ -1,3 +1,4 @@
+import * as accountframemodule from "./accountframemodule.js"
 import * as appcoremodule from "./appcoremodule.js"
 import * as configmodule from "./configmodule.js"
 import * as contentmodule from "./contentmodule.js"
@@ -9,6 +10,7 @@ import * as summaryframemodule from "./summaryframemodule.js"
 import * as uistatemodule from "./uistatemodule.js"
 
 Modules = {
+    accountframemodule,
     appcoremodule,
     configmodule,
     contentmodule,

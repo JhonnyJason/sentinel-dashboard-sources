@@ -13,3 +13,6 @@ export toSummary = ->
 
 export toCurrencytrend = ->
     return nav.toBase("currencytrend")
+
+export toAccount = ->
+    return nav.toBase("account")

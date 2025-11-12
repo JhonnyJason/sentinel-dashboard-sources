@@ -14,3 +14,8 @@ export setCurrencytrendState = ->
     log "etCurrencytrendState"
     content.className = "currencytrend"
     return
+
+export setAccountState = ->
+    log "setAccountState"
+    content.className = "account"
+    return

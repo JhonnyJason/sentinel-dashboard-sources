@@ -8,6 +8,7 @@ indexdomconnect.initialize = () ->
     global.sidenav = document.getElementById("sidenav")
     global.summaryBtn = document.getElementById("summary-btn")
     global.currencytrendBtn = document.getElementById("currencytrend-btn")
+    global.accountBtn = document.getElementById("account-btn")
     return
     
 module.exports = indexdomconnect
