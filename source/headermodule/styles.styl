@@ -1,8 +1,8 @@
 // header styles
 #header
-    background-color #113
+    background-color cd-dark-blue
     color #fff
-    padding 20px
+    padding 15px 0 15px 15px
     width 100%
     box-sizing: border-box
     position fixed
@@ -10,17 +10,33 @@
 
     display flex
     justify-content: flex-start
-    gap 30px
+    gap 15px
 
     h1
-        font-size 30pt
-        line-height: 70px
+        font-size 18pt
+        line-height: 45px
         span
-            font-size 20pt
+            font-size 14pt
+
 #header-logo
-    width: 70px
-    height 70px
-    color #000
+    width: 45px
+    height 45px
+    color cd-light-blue
     svg
         width inherit
         height inherit
+
+
+@media desktopscreen
+    #header-logo
+        width: 60px
+        height 60px
+
+
+    #header
+        padding 20px
+        gap 20px
+
+        h1
+            font-size 25pt
+            line-height: 60px

@@ -1,5 +1,224 @@
 // noaccount styles
-#noaccount
+success-bg = alpha(#5b8, 1.0)
+// success-bg = #6d4
+error-bg = alpha(#d44, 0.6)
+form-bg = alpha(cd-light-blue, 0.2)
+
+#noaccountframe.hidden
+    display none
+
+#noaccountframe
+    display grid
+    // grid-template-columns: minmax(auto, 600px)
+    grid-template-columns: 1fr
     width 100%
-    min-height 20px
-    background-color rgba(0, 0, 0, 0.2)
+    padding 15px
+    padding-top mobile-header-height + 25px
+    box-sizing:  border-box
+    text-align: left
+    gap 30px
+
+    video
+        width 100%
+        max-height 250px
+        margin 50px 0
+
+#introduction-section
+    order 2
+    h1
+        margin-bottom 30px
+        line-height 115%
+
+    p
+        margin-bottom 15px
+
+
+
+
+#login-register-section
+    height 470px
+    order 1
+
+    form
+        padding 15px
+        padding-top 30px
+    form > *
+        display block
+        width 100%
+        box-sizing: border-box
+
+    label
+        margin-bottom 12px
+        padding-left 5px
+
+    input
+        display: block
+        font-size 12pt
+        width 100%
+        box-sizing: border-box
+        border none
+        outline: none
+        padding: 10px 5px
+        margin-bottom 20px !important
+        border-bottom solid 1px transparent
+
+    input:focus
+        border-bottom solid 1px cd-dark-blue
+        padding: 10px 5px
+
+
+#password-reset-button
+#submit-button
+    text-align: center
+    width 100%
+    margin-top 30px
+    font-size 12pt
+    color #fff
+    // background-color #000
+    background-color cd-dark-blue
+    box-sizing: border-box
+    border solid 2px #fff
+    box-shadow: 0 0 5px #000
+    padding 12px 20px
+    border-radius: 10px
+
+
+#login-register-tabs
+    display flex
+
+    .click-button
+        font-size 12pt
+        width 50%
+        padding 15px
+        box-sizing: border-box
+        border-radius: 5px 5px 0 0
+
+
+#feedback
+    padding 15px
+    // p
+    //     font-size: 14pt
+
+#login-failure
+#password-reset-failure
+#password-reset-success
+#register-failure
+#register-success
+    display none
+
+
+#login-register-section.password-reset-success
+    #password-label
+    #password-input
+    #submit-button
+        filter grayscale(100%)
+        pointer-events: none
+        opacity: 0.3    
+    #password-reset-success
+        display block
+    #login-button
+        background-color: success-bg
+        pointer-events: none
+    form
+        background-color: success-bg
+        border-radius: 0 5px 5px 5px
+
+#login-register-section.password-reset-failure
+    #password-label
+    #password-input
+    #submit-button
+        filter grayscale(100%)
+        pointer-events: none
+        opacity: 0.3    
+    #password-reset-failure
+        display block
+    #login-button
+        background-color: error-bg
+        pointer-events: none
+    form
+        background-color error-bg
+        border-radius: 0 5px 5px 5px
+
+#login-register-section.login-failure
+    #submit-button
+        filter grayscale(100%)
+        pointer-events: none
+        opacity: 0.3    
+    #login-failure
+        display block
+    #login-button
+        background-color: error-bg
+        pointer-events: none
+    form
+        background-color error-bg
+        border-radius: 0 5px 5px 5px
+
+#login-register-section.login
+    #login-button
+        background-color: form-bg
+        pointer-events: none
+    form
+        background-color form-bg
+        border-radius: 0 5px 5px 5px
+
+
+#login-register-section.register
+    #register-button
+        background-color: form-bg
+        pointer-events: none
+    form
+        background-color form-bg
+        border-radius: 5px 0 5px 5px
+    #password-input
+    #password-label
+        display none
+
+
+#login-register-section.register-success
+    #submit-button
+        filter grayscale(100%)
+        pointer-events: none
+        opacity: 0.3    
+    #register-success
+        display block
+    #register-button
+        background-color: success-bg
+        pointer-events: none
+    form
+        background-color: success-bg
+        border-radius: 5px 0 5px 5px
+
+    #password-input
+    #password-label
+        display none
+
+#login-register-section.register-failure
+    #submit-button
+        filter grayscale(100%)
+        pointer-events: none
+        opacity: 0.3    
+    #register-failure
+        display block
+    #register-button
+        background-color: error-bg
+        pointer-events: none
+    form
+        background-color error-bg
+        border-radius: 5px 0 5px 5px
+
+    #password-input
+    #password-label
+        display none
+
+
+@media desktopscreen
+    #noaccountframe
+        padding 50px
+        padding-top header-height + 50px
+        grid-template-columns: minmax(auto, 600px) minmax(auto, 500px)
+        grid-template-columns: 1fr 1fr
+        // justify-items center
+    #introduction-section
+        order 1
+    #login-register-section
+        order 2

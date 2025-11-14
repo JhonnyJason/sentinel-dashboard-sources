@@ -3,12 +3,22 @@ indexdomconnect = {name: "indexdomconnect"}
 ############################################################
 indexdomconnect.initialize = () ->
     global.content = document.getElementById("content")
+    global.accountframe = document.getElementById("accountframe")
+    global.newEmailInput = document.getElementById("new-email-input")
     global.currencytrendframe = document.getElementById("currencytrendframe")
     global.economicAreas = document.getElementById("economic-areas")
     global.sidenav = document.getElementById("sidenav")
     global.summaryBtn = document.getElementById("summary-btn")
     global.currencytrendBtn = document.getElementById("currencytrend-btn")
     global.accountBtn = document.getElementById("account-btn")
+    global.noaccountframe = document.getElementById("noaccountframe")
+    global.loginRegisterSection = document.getElementById("login-register-section")
+    global.loginButton = document.getElementById("login-button")
+    global.registerButton = document.getElementById("register-button")
+    global.loginRegisterForm = document.getElementById("login-register-form")
+    global.emailInput = document.getElementById("email-input")
+    global.passwordInput = document.getElementById("password-input")
+    global.passwordResetButton = document.getElementById("password-reset-button")
     return
     
 module.exports = indexdomconnect

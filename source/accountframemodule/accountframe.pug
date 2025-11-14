@@ -25,13 +25,13 @@
     form#account-management
         h2 Account Aktionen
         p Hinweis: Sie können nur eine der Änderungen gleichzeitig durchführen.
-        label(for="email-input") Neue Emailadresse setzen:
-        input#email-input(type="email" placeholder="asd@ghg.oi")
-        label(for="password-input") Neues Passwort setzen:
-        input#password-input(type="password" placeholder="**********")
+        label(for="new-email-input") Neue Emailadresse setzen:
+        input#new-email-input(type="email" placeholder="asd@ghg.oi" autocomplete="email")
+        label(for="new-password-input") Neues Passwort setzen:
+        input#new-password-input(type="password" placeholder="**********" autocomplete="new-password")
         button#deletion-button.click-button Account Löschen
 
         #approval-section
             h2#confirm-action-head Bitte bestätigen Sie das Setzen von ggg@gmail.com als neue Emailadresse:
-            input#old-password-input(type="text" placeholder="Ihr altes Passwort")
-            button#submit-input.click-button Bestätigen
+            input#old-password-input(type="text" placeholder="Ihr altes Passwort" autocomplete="current-password")
+            button#confirmation-buttonn.click-button(type="submit") Bestätigen

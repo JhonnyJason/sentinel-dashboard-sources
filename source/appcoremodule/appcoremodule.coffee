@@ -8,6 +8,7 @@ import { createLogFunctions } from "thingy-debug"
 import * as nav from "navhandler"
 import * as triggers from "./navtriggers.js"
 import * as uiState from "./uistatemodule.js"
+import * as account from "./accountmodule.js"
 
 ############################################################
 import { appVersion } from "./configmodule.js"
@@ -19,10 +20,6 @@ defaultBaseState = "summary"
 appBaseState = "summary"
 appUIMod = "none"
 appContext = {}
-
-############################################################
-validPassphrase = false
-
 
 ############################################################
 #region DOM Cache fix
@@ -74,12 +71,14 @@ setNavState = (navState) ->
     modifier = navState.modifier
     context = navState.context
 
+    if !account.accountExists() and baseState != "noaccount"
+        return triggers.toNoAccount()
+    
     if baseState == "RootState" then baseState = defaultBaseState
 
     setAppState(baseState, modifier, context)
     # S.save("navState", navState)    
     return
-
 
 setAppState = (base, mod, ctx) ->
     log "setAppState"

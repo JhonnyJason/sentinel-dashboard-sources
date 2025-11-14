@@ -1,9 +1,20 @@
-export appVersion = "v0.0.6"
+############################################################
+export appVersion = "v0.0.6a"
 export heartbeatMS = 120000
 
 ############################################################
-export urlAccessManager = "https://localhost:6999/"
-# export urlAccessManager = "https://sentinel-access-manager.dotv.ee/"
+export urlAccessManager = "https://sentinel-access-manager-dev.dotv.ee"
+export urlWebsocketBackend = "https://sentinel-backend.dotv.ee/"
+# export urlWebsocketBackend = "wss://sentinel-backend.dotv.ee/"
+
+# local testing
+# export urlAccessManager = "https://localhost:6999"
+# export urlWebsocketBackend = "wss://localhost:6999/"
+# export urlWebsocketBackend = "https://localhost:6999/"
+
+
+############################################################
+export pwdSalt = "holderradio!...<3)()0981salty"
 
 ############################################################
 export uiRerenderMS = 3000
@@ -47,11 +58,3 @@ export shownCurrencyPairLabels = [
 
     "AUDNZD"
 ]
-
-
-export backendWSURL = "https://sentinel-backend.dotv.ee/"
-# export backendWSURL = "wss://sentinel-backend.dotv.ee/"
-
-# local testing
-# export backendWSURL = "wss://localhost:6999/"
-# export backendWSURL = "https://localhost:6999/"

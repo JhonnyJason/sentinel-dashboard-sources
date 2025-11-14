@@ -9,7 +9,25 @@
         video#tutorial-video(src="/video/tutorial.mp4")
 
         p Registrieren Sie sich einfach und nutzen Sie den Sentinel noch heute!
+    
+    #login-register-section.login
+        #login-register-tabs 
+            button#login-button.click-button Einloggen
+            button#register-button.click-button Registrieren
+        form#login-register-form
+            label(for="email-input") Emailadresse
+            input#email-input(type="email" required placeholder="m.mustermann@sentinel.de" autocomplete="email")
+            label#password-label(for="password-input") Passwort
+            input#password-input(type="password" required placeholder="**********" autocomplete="current-password")
+            button#submit-button.click-button(type="submit") Abschicken
 
-
+        #feedback
+            #login-failure 
+                p Mit Ihren Angaben ist kein Login Möglich, bitte überprüfen Sie Ihre Emailadresse und Passwort auf Korrektheit und versuchen es erneut, oder fordern Sie ein neues Passwort für diese Emailadresse an.
+                button#password-reset-button.click-button Neues Passwort setzen
+            p#password-reset-failure Mit dieser Emailaddresse ist es nicht möglich ein Passwort zu setzen oder sich zu Registrieren, bitte überprüfen Sie Ihre angegebene Emailadresse!
+            p#password-reset-success Sie sollten nun eine Email bekommen.<br>Darin erhalten Sie einen Link, über welchen Sie Ihr Passwort neu setzen können.<br>Falls Sie keine Email bekommen haben, überprüfen Sie bitte auch den Spamorder, oder versuchen Sie sich zuerst zu registrieren.
+            p#register-failure Mit dieser Emailaddresse ist keine Registrierung möglich, bitte überprüfen Sie Ihre angegebene Emailadresse!
+            p#register-success Sie sollten nun eine Email bekommen.<br>Darin erhalten Sie einen Link, über welchen Sie Ihr Passwort setzen können.
 
 

@@ -21,7 +21,7 @@ export initialize = ->
 createSocket = ->
     log "createSocket"
     try
-        socket = new WebSocket(cfg.backendWSURL)
+        socket = new WebSocket(cfg.urlWebsocketBackend)
 
         socket.addEventListener("open", socketOpened)
         socket.addEventListener("message", receiveData)

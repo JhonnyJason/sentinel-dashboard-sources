@@ -45,14 +45,9 @@ applyBaseState["account"] = ->
 applyBaseState["noaccount"] = ->
     content.hide()
     sideNav.hide()
-    noAccount.noAction()
+    noAccount.show()
     return
 
-applyBaseState["action"] = (ctx) ->
-    content.hide()
-    sideNav.hide()
-    noAccount.finalizeAction(ctx)
-    return
 
 #endregion
 
