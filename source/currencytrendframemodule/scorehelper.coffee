@@ -5,8 +5,8 @@ import { createLogFunctions } from "thingy-debug"
 #endregion
 
 ############################################################
-maxScore = 30
-minScore = -30
+maxScore = 25
+minScore = -25
 scoreRange = Math.abs(maxScore - minScore)
 
 ############################################################
@@ -41,7 +41,7 @@ colors = [
     "#33cc00"
     "#55d04b"
     "#79d399"
-    "#eee"
+    "#ddd"
     "#eb803d"
     "#db591e"
     "#cc3300"
