@@ -3,8 +3,8 @@ import { addModulesToDebug } from "thingy-debug"
 ############################################################
 export modulesToDebug = {
 
-    accountmodule: true
-    appcoremodule: true
+    # accountmodule: true
+    # appcoremodule: true
     # datamodule: true
     # economicareasmodule: true
     # summaryframemodule: true
