@@ -72,7 +72,12 @@ setNavState = (navState) ->
     context = navState.context
 
     if !account.accountExists() and baseState != "noaccount"
+        log "no accountData existed!"
         return triggers.toNoAccount()
+    
+    if account.accountExists() and baseState == "noaccount"
+        log "account existed on State 'noaccount'!"
+        return triggers.toSummary()
     
     if baseState == "RootState" then baseState = defaultBaseState
 

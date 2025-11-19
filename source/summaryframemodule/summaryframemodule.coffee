@@ -6,6 +6,7 @@ import { createLogFunctions } from "thingy-debug"
 
 ############################################################
 import { allAreas } from "./economicareasmodule.js"
+import { renderFrame } from "./currencytrendframemodule.js"
 
 ############################################################
 export initialize = ->
@@ -28,4 +29,7 @@ export updateData = (data) ->
         area = allAreas[key]
         if area? then area.updateData(d) 
         else log("No Economic Area by key: #{key}")
+    
+    try renderFrame()
+    catch err then console.error(err)
     return

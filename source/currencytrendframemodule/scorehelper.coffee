@@ -37,10 +37,11 @@ colors = [
     # "#db591e"
     # "#cc3300"
 
-    # 6 pick from
+    # 6 gradient to red and green + grey neutral color
     "#33cc00"
     "#55d04b"
     "#79d399"
+    "#eee"
     "#eb803d"
     "#db591e"
     "#cc3300"
@@ -125,6 +126,7 @@ export generalCOTScore = (index) ->
         when index >= 30 then return 0
         when index >= 10 then return -1
         when index >= 0 then return -2
+        when isNaN(index) then return NaN
         else throw new Error("Unexpected Index Value: #{index}")
     return
 

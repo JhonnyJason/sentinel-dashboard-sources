@@ -9,9 +9,9 @@ export modulesToDebug = {
     # economicareasmodule: true
     # summaryframemodule: true
     # currencytrendframemodule: true
-    navtriggers: true
+    # navtriggers: true
     # scorehelper: true
-    uistatemodule: true
+    # uistatemodule: true
 }
 
 addModulesToDebug(modulesToDebug)

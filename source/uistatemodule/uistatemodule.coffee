@@ -9,6 +9,7 @@ import { createLogFunctions } from "thingy-debug"
 import * as content from "./contentmodule.js"
 import * as sideNav from "./sidenavmodule.js"
 import * as noAccount from "./noaccountmodule.js"
+import * as dataModule from "./datamodule.js"
 
 #endregion
 
@@ -25,27 +26,33 @@ currentContext = null
 #region Base State Application Functions
 
 applyBaseState["summary"] = ->
+    dataModule.heartbeat()
     content.setSummaryState()
     sideNav.setSummaryState()
     noAccount.hide()
+    header.className = "logged-in"
     return
 
 applyBaseState["currencytrend"] = ->
+    dataModule.heartbeat()
     content.setCurrencytrendState()
     sideNav.setCurrencytrendState()
     noAccount.hide()
+    header.className = "logged-in"
     return
 
 applyBaseState["account"] = ->
     content.setAccountState()
     sideNav.setAccountState()
     noAccount.hide()
+    header.className = "logged-in"
     return
 
 applyBaseState["noaccount"] = ->
     content.hide()
     sideNav.hide()
     noAccount.show()
+    header.className = ""
     return
 
 

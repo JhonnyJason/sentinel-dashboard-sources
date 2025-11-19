@@ -1,14 +1,15 @@
 ############################################################
-export appVersion = "v0.0.6a"
-export heartbeatMS = 120000
+export appVersion = "v0.0.6b"
+export heartbeatMS = 120_000 # ~2min
 
 ############################################################
 export urlAccessManager = "https://sentinel-access-manager-dev.dotv.ee"
-export urlWebsocketBackend = "https://sentinel-backend.dotv.ee/"
+export urlWebsocketBackend = "https://sentinel-backend.dotv.ee"
 # export urlWebsocketBackend = "wss://sentinel-backend.dotv.ee/"
 
 # local testing
 # export urlAccessManager = "https://localhost:6999"
+# export urlWebsocketBackend = "http://localhost:3333"
 # export urlWebsocketBackend = "wss://localhost:6999/"
 # export urlWebsocketBackend = "https://localhost:6999/"
 

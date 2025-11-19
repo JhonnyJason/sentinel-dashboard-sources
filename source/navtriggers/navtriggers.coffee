@@ -10,7 +10,7 @@ import * as nav from "navhandler"
 ############################################################
 export toSummary = ->
     log "toSummary"
-    return nav.toRoot()
+    return nav.toBase("summary")
 
 export toCurrencytrend = ->
     log "toCurrencytrend"

@@ -19,6 +19,10 @@ indexdomconnect.initialize = () ->
     global.emailInput = document.getElementById("email-input")
     global.passwordInput = document.getElementById("password-input")
     global.passwordResetButton = document.getElementById("password-reset-button")
+    global.header = document.getElementById("header")
+    global.logoutButton = document.getElementById("logout-button")
+    global.s = document.getElementById("s")
+    global.l = document.getElementById("l")
     return
     
 module.exports = indexdomconnect

@@ -10,6 +10,7 @@
 
     display flex
     justify-content: flex-start
+    align-items: center
     gap 15px
 
     h1
@@ -26,11 +27,35 @@
         width inherit
         height inherit
 
+#logout-button
+    display none
+    margin-left auto
+    margin-right 15px
+    svg
+        color #c21
+        vertical-align: middle
+        width 33px
+        height 33px
+    span
+        color white
+        vertical-align: middle
+        line-height: 36px
+        font-size 16pt
+        margin-left 5px
+
+.logged-in
+    #logout-button
+        display block
 
 @media desktopscreen
     #header-logo
         width: 60px
         height 60px
+
+    #logout-button
+        svg
+            width 42px
+            height 42px
 
 
     #header

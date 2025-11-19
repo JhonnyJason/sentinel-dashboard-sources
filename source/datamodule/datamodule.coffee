@@ -7,10 +7,10 @@ import { createLogFunctions } from "thingy-debug"
 ############################################################
 import * as cfg from "./configmodule.js"
 import * as summary from "./summaryframemodule.js"
+import { getAuthCode } from "./accountmodule.js"
 
 ############################################################
 socket = null
-socketOpen = false
 
 ############################################################
 export initialize = ->
@@ -32,21 +32,23 @@ createSocket = ->
     return
 
 ############################################################
-heartbeat = ->
+export heartbeat = ->
     log "heartbeat"
-    olog { socketOpen }
-    if socketOpen
-        socket.send("getAllData")
-        log "should only send command 'getAllData'"
-    else 
-        log "now we create a new Websocket..."
-        createSocket()
+    if !socket? then return createSocket()
+    
+    if socket.readyState == WebSocket.OPEN
+        socket.send("getAllData #{getAuthCode()}")
+        return
+
+    if socket.readyState == WebSocket.socketClosed
+        destroySocket()
+        return
     return
 
+############################################################
 socketOpened = (evnt) ->
     log "socketOpened"
-    socketOpen = true
-    socket.send("getAllData")
+    socket.send("getAllData #{getAuthCode()}")
     return
 
 receiveData = (evnt) ->
@@ -57,7 +59,7 @@ receiveData = (evnt) ->
         # olog data
         summary.updateData(data)
         ## Update other parts
-    catch err then log err
+    catch err then console.error(err)
     return
 
 receiveError = (evnt) ->
@@ -68,10 +70,17 @@ receiveError = (evnt) ->
 socketClosed = (evnt) ->
     log "socketClosed"
     log evnt.reason
-    socketOpen = false
-    socket = null
+    destroySocket()
     return
 
+destroySocket = ->
+    return unless socket?
+    socket.removeEventListener("open", socketOpened)
+    socket.removeEventListener("message", receiveData)
+    socket.removeEventListener("error", receiveError)
+    socket.removeEventListener("close", socketClosed)
+    socket = null
+    return
 
 ############################################################
 export startHeartbeat = -> setInterval(heartbeat, cfg.heartbeatMS)

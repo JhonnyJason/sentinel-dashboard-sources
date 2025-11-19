@@ -30,7 +30,7 @@ export initialize = ->
     for label in cfg.shownCurrencyPairLabels
         shownCurrencyPairs.push(allCurrencyPairs[label])
 
-    setInterval(renderFrame, cfg.uiRerenderMS)
+    # setInterval(renderFrame, cfg.uiRerenderMS)
     renderFrame()
 
     # result = scoreHelper.getInterestScore(2.5, 15.0)
@@ -46,7 +46,7 @@ scoreSort = (el1, el2) ->
     return score2 - score1
 
 ############################################################
-renderFrame = ->
+export renderFrame = ->
     log "renderFrame"
     shownCurrencyPairs.sort(scoreSort)
     ## TODO check if anything has changed and skip rerendering
