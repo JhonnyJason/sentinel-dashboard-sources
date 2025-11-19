@@ -68,13 +68,14 @@ export initialize = ->
     if accountData? then err = validateAccountData(accountData)
     if err then deleteAccountData()
 
-    if acountData? then setAccountEmail(accountData.email)
+    if accountData? then setAccountEmail(accountData.email)
     checkSession()
     return
 
 ############################################################
 deleteAccountData = ->
     accountData = null
+    setAccountEmail("")
     localStorage.removeItem(dataKey)
     triggers.toNoAccount()
     return
@@ -82,6 +83,8 @@ deleteAccountData = ->
 saveAccountData = ->
     log "saveAccountData"
     if !accountData? then return localStorage.removeItem(dataKey)
+    
+    setAccountEmail(accountData.email)
     dataString = JSON.stringify(accountData)
     return localStorage.setItem(dataKey, dataString)
 
@@ -177,7 +180,6 @@ export executeLogout = ->
     try await sci.logout(authCode)
     catch err then log err
 
-    setAccountEmail("")
     deleteAccountData()
     return
 
@@ -198,8 +200,6 @@ export executeLogin = ( email, password ) ->
         }
     }
     saveAccountData()
-    setAccountEmail(email)
-
     triggers.toSummary()
     return
 
