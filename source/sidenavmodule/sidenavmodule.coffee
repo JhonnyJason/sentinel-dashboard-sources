@@ -12,6 +12,7 @@ export initialize = ->
     log "initialize"
     summaryBtn.addEventListener("click", triggers.toSummary)
     currencytrendBtn.addEventListener("click", triggers.toCurrencytrend)
+    seasonalityBtn.addEventListener("click", triggers.toSeasonality)
     accountBtn.addEventListener("click", triggers.toAccount)
     return
 
@@ -23,8 +24,13 @@ export setSummaryState = ->
     return
 
 export setCurrencytrendState = ->
-    log "etCurrencytrendState"
+    log "setCurrencytrendState"
     sidenav.className = "currencytrend"
+    return
+
+export setSeasonalityState = ->
+    log "setSeasonalityState"
+    sidenav.className = "seasonality"
     return
 
 export setAccountState = ->

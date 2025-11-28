@@ -11,8 +11,13 @@ export setSummaryState = ->
     return
 
 export setCurrencytrendState = ->
-    log "etCurrencytrendState"
+    log "setCurrencytrendState"
     content.className = "currencytrend"
+    return
+
+export setSeasonalityState = ->
+    log "setSeasonalityState"
+    content.className = "seasonality"
     return
 
 export setAccountState = ->

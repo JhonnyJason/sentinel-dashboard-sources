@@ -16,6 +16,10 @@ export toCurrencytrend = ->
     log "toCurrencytrend"
     return nav.toBase("currencytrend")
 
+export toSeasonality =->
+    log "toCurrencytrend"
+    return nav.toBase("seasonality")
+
 export toAccount = ->
     log "toAccount"
     return nav.toBase("account")

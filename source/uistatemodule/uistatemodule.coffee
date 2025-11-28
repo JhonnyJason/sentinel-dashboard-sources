@@ -41,6 +41,14 @@ applyBaseState["currencytrend"] = ->
     header.className = "logged-in"
     return
 
+applyBaseState["seasonality"] = ->
+    # dataModule.heartbeat()
+    content.setSeasonalityState()
+    sideNav.setSeasonalityState()
+    noAccount.hide()
+    header.className = "logged-in"
+    return
+
 applyBaseState["account"] = ->
     content.setAccountState()
     sideNav.setAccountState()

@@ -9,8 +9,11 @@ export modulesToDebug = {
     # economicareasmodule: true
     # summaryframemodule: true
     # currencytrendframemodule: true
+    marketdatamodule: true
+    sampledata: true
     # navtriggers: true
     # scorehelper: true
+    seasonalityframemodule: true
     # uistatemodule: true
 }
 

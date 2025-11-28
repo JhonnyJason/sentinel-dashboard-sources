@@ -1,0 +1,34 @@
+//- currencytrendframe structure
+#seasonalityframe
+    #selection-row
+
+        .select-wrapper: select#stock-select
+            option(value="" selected disabled) Wählen Sie ein Symbol...
+            option(value="goog") Alphabet (GOOG)
+            option(value="nvda") NVIDIA (NVDA)
+            option(value="asml") ASML Holding NV (ASML)
+            option(value="afx") Carl Zeiss Meditec (AFX)
+            option(value="air") Airbus SE (AIR)
+
+        .select-wrapper: select#timeframe-select
+            option(value="5") 5 Jahre
+            option(value="6") 6 Jahre
+            option(value="7") 7 Jahre
+            option(value="8") 8 Jahre
+            option(value="9") 9 Jahre
+            option(value="10" selected) 10 Jahre
+            option(value="11") 11 Jahre
+            option(value="12") 12 Jahre
+            option(value="13") 13 Jahre
+            option(value="14") 14 Jahre
+            option(value="15") 15 Jahre
+            option(value="16") 16 Jahre
+
+        .select-wrapper: select#method-select
+            option(value="0") Average Daily Return
+            option(value="1") Harmonic Average Daily Return
+            option(value="2") Harmonic Regression (Fourier)
+            option(value="3") STL Decomposition (Hodrick-Prescott)
+
+    #chart-container 
+        #seasonality-chart
