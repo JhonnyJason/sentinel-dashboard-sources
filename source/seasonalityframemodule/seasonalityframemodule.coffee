@@ -146,33 +146,37 @@ orderDataWithoutFeb29 = ->
 orderDataAsLastYearIsLeap = ->
     log "orderDataAsLastYearIsLeap"
     ## reorder seasonality composite
+    olog seasonalityData
     compositeWithoutFeb29 = []
     for dp,i in seasonalityData when (i != seasnlty.FEB29)
         compositeWithoutFeb29.push(dp)
-
+    # olog compositeWithoutFeb29
+    
     ## We don't have a factor from the last Element to the first of next year
     ##   So we take it as 1:1
     factors = seasnlty.toFactorsArray(seasonalityData)
+    # olog factors
     frontData = seasnlty.dataArrayFromFactors(factors, seasonalityData[0], false)
-    log "Array Lengths:"
+    # olog frontData
+    # log "Array Lengths:"
     # log seasonalityData.length
     # log frontData.length
     # log compositeWithoutFeb29.length
     
     seasonalityData = [...frontData, ...compositeWithoutFeb29]
-    log seasonalityData.length
+    # log seasonalityData.length
 
     ## reorder latestData
     thisYearsData = latestData[0]
     lastYearsData = latestData[1]
     factors = seasnlty.toFactorsArray(lastYearsData)
     lastYearsData = seasnlty.dataArrayFromFactors(factors, thisYearsData[0], false)
-    
+
     missingData = new Array(365 - thisYearsData.length)
     missingData.fill(null)
 
     latestData = [...lastYearsData, ...thisYearsData, ...missingData]
-    log latestData.length
+    # log latestData.length
     ## Create Time Axis
     jan1Latest = utl.getJan1Date()
     axisTime = jan1Latest.getTime() / 1000
@@ -189,7 +193,7 @@ orderDataAsLastYearIsLeap = ->
         axisTime -= 86_400
     
     xAxisData = [...lastYearTimeAxis, ...currentYearTimeAxis]
-    log xAxisData.length
+    # log xAxisData.length
     return
 
 
@@ -226,8 +230,8 @@ onSetSelect = (u) ->
         startIndex = u.posToIdx(u.select.left);
         endIndex = u.posToIdx(u.select.left + u.select.width);
 
-        log startDate
-        log endDate
+        log startIndex
+        log endIndex
         ## TODO implement
 
     return false
@@ -330,10 +334,33 @@ drawChart = ->
     height = Math.floor(rect.height)
     
     jan1Latest = utl.getJan1Date()
-    min = jan1Latest.getTime() / 1000
+    jan1Before = new Date(jan1Latest)
+    jan1Before.setYear(jan1Latest.getFullYear() - 1)
     dec31Next = utl.getDec31Date()
-    max = dec31Next.getTime() / 1000
     
+    min = jan1Latest.getTime() / 1000
+    max = dec31Next.getTime() / 1000
+    rangeDif = max - min 
+
+    absoluteMax = max
+    absoluteMin = jan1Before.getTime() / 1000
+
+    setXRange = (u, min, max) ->
+        min = max - rangeDif
+        dif = min - absoluteMin
+        
+        if dif < 0 # we are below absoluteMin
+            min -= dif
+            max -= dif
+
+        dif = absoluteMax - max
+        if dif < 0 # we are above absoluteMax
+            min += dif
+            max += dif
+
+        return [min, max]
+
+
     options = {
         width: width - 15,
         # height: 500,
@@ -342,7 +369,8 @@ drawChart = ->
         scales: {
             x: { 
                 time: true,
-                range: [ min, max ]
+                # range: [min, max ]
+                range: setXRange
             }
         },
         series: [
@@ -361,6 +389,7 @@ drawChart = ->
         axes: [
             { 
                 space: 50
+                scale: "x"
                 # space: 30
                 stroke: "#ffffff"
                 values: [ 
@@ -396,11 +425,6 @@ drawChart = ->
                 # }
             },
         ],
-        scales: {
-            x: {
-                # distr: 1
-            }
-        },
         hooks: { ## does not work as expected
             init: [onInit]
             setSelect: [onSetSelect]
@@ -433,6 +457,10 @@ drawChart = ->
     # log "currentData.length: "+currentData.length
 
     data = []
+    # olog xAxisData
+    # olog seasonalityData
+    # olog latestData
+
     data.push(xAxisData)
     data.push(seasonalityData)
     data.push(latestData)

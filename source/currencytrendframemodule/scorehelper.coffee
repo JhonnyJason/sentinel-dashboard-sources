@@ -11,32 +11,6 @@ scoreRange = Math.abs(maxScore - minScore)
 
 ############################################################
 colors = [
-    # bright green -> bright red
-    # "#00ff00"
-    # "#19e600"
-    # "#33cc00"
-    # "#4cb300"
-    # "#669900"
-    # "#807f00"
-    # "#996600"
-    # "#b34c00"
-    # "#cc3300"
-    # "#e61900"
-    # "#ff0000"
-
-    # green -> bluegrey -> orange -> red
-    # "#33cc00"
-    # "#55d04b"
-    # "#79d399"
-    # "#9cd7e4"
-    # "#b9d1e0"
-    # "#d4c5b2"
-    # "#eeba85"
-    # "#faa55b"
-    # "#eb803d"
-    # "#db591e"
-    # "#cc3300"
-
     # 6 gradient to red and green + grey neutral color
     "#33cc00"
     "#55d04b"
@@ -45,6 +19,17 @@ colors = [
     "#eb803d"
     "#db591e"
     "#cc3300"
+]
+
+trendTexts = [
+    # Trend Texts for all 6 gradients
+    "Super Bullish" # "#33cc00"
+    "Stark Bullish" # "#55d04b"
+    "Bullish" # "#79d399"
+    "Neutral" # "#ddd"
+    "Bearish" # "#eb803d"
+    "Stark Bearish" # "#db591e"
+    "Super Bearish" # "#cc3300"
 ]
 
 ############################################################
@@ -150,3 +135,19 @@ export getColorForScore = (score) ->
 
     log "Resulting Region: #{region}"
     return colors[region]
+
+export getTrendTextForScore = (score) ->
+    log "getTrendTextForScore #{score}"
+    if score > maxScore then return trendTexts[0]
+    if score < minScore then return trendTexts[trendTexts.length - 1]
+
+    regionSize = 1.0 * scoreRange / colors.length
+    score = 1.0* score - minScore # shift lower end to 0
+    region =  Math.floor(score / regionSize)
+    region  = Math.min(region, trendTexts.length - 1)
+    region = Math.max(region, 0)
+    
+    region = trendTexts.length - 1 - region # lower region is higher color
+
+    log "Resulting Region: #{region}"
+    return trendTexts[region]

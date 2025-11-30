@@ -8,7 +8,7 @@ import { createLogFunctions } from "thingy-debug"
 import M from "mustache"
 
 currencyPairTemplate = document.getElementById("currency-pair-template").innerHTML
-log currencyPairTemplate
+# alert currencyPairTemplate
 
 ############################################################
 import { allAreas as aA } from "./economicareasmodule.js"
@@ -69,6 +69,8 @@ class CurrencyPair
             short: @short,
             score: @score,
             colorCode: "#eee"
+            rightText: "Keine Daten"
+
         }
 
         virtualContainer = document.createElement("v")
@@ -79,6 +81,7 @@ class CurrencyPair
         @element = virtualContainer.firstChild
         # @colorFrame = @element.getElementsByClassName("color-frame")[0]
         @scoreDisplay = @element.getElementsByClassName("score")[0]
+        @trendTextDisplay = @element.getElementsByClassName("trend-text")[0]
 
         # @inflationEl = p.getElementsByClassName("value")[0]
         # infoButton = p.getElementsByClassName("info-button")[0]
@@ -119,11 +122,16 @@ class CurrencyPair
 
             @score = interestScore + inflationScore + gdpScore + cotScore
             
+            trendColor = scoreHelper.getColorForScore(@score)
+            trendText = scoreHelper.getTrendTextForScore(@score)
+
             # log "total score: #{@score}"
             @scoreDisplay.textContent = @score.toFixed(2)
         
-            # @colorFrame.style.backgroundColor = scoreHelper.getColorForScore(@score)
-            @element.style.backgroundColor = scoreHelper.getColorForScore(@score)
+            # @colorFrame.style.backgroundColor = trendColor
+            @element.style.backgroundColor = trendColor
+
+            @trendTextDisplay.textContent = trendText            
 
         catch err ## then log err
             log err

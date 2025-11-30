@@ -9,14 +9,17 @@ form-bg = alpha(cd-light-blue, 0.2)
 
 #noaccountframe
     display grid
-    // grid-template-columns: minmax(auto, 600px)
-    grid-template-columns: 1fr
+    grid-template-columns: minmax(auto, 780px)
+    // grid-template-columns: 1fr
     width 100%
+    max-width 1440px
+    margin auto
     padding 15px
-    padding-top mobile-header-height + 25px
+    // padding-top mobile-header-height + 25px
+    padding-top 150px
     box-sizing:  border-box
     text-align: left
-    gap 30px
+    // gap 30px
 
     video
         width 100%
@@ -24,9 +27,10 @@ form-bg = alpha(cd-light-blue, 0.2)
         max-height 320px
         margin 15px 0
     p
-        max-width 600px
+        max-width 700px
         
 #introduction-section
+    box-sizing: border-box
     order 2
     h1
         margin-bottom 30px
@@ -39,9 +43,10 @@ form-bg = alpha(cd-light-blue, 0.2)
 
 
 #login-register-section
-    height 470px
+    // height 470px
+    padding-bottom 30px
+    max-width 380px
     order 1
-
     form
         padding 15px
         padding-top 30px
@@ -214,14 +219,16 @@ form-bg = alpha(cd-light-blue, 0.2)
         display none
 
 
-@media desktopscreen
+@media screen and (min-width: 1300px)
     #noaccountframe
         padding 50px
         padding-top header-height + 50px
-        grid-template-columns: minmax(auto, 600px) minmax(auto, 500px)
-        grid-template-columns: 1fr 1fr
+        grid-template-columns: 780px 380px
+        gap 40px
+        // grid-template-columns: 70% 30%
         // justify-items center
     #introduction-section
         order 1
+        border-right solid 1px cd-dark-blue
     #login-register-section
         order 2

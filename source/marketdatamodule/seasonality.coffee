@@ -140,10 +140,9 @@ export dataArrayFromFactors = (factors, startValue = 100, forward = true) ->
         lastIndex = factors.length
         result[lastIndex] = startValue
         for i in [lastIndex..1]
-            result[i - 1] = result[i] / factors[i]
+            result[i - 1] = result[i] / factors[i - 1]
         return result
         
-
 export dataArrayFromLogFactors = (factors) ->
     result = new Array(factors.length + 1)
     result[0] = 100 # normalized 100%
