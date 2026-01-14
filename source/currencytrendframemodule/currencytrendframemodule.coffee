@@ -120,7 +120,7 @@ class CurrencyPair
             cotScore = @baseArea.cotScore - @quoteArea.cotScore
             log "@#{@short}: cotScore is #{cotScore}"
 
-            @score = interestScore + inflationScore + gdpScore + cotScore
+            @score = (0.7 * (interestScore + inflationScore + gdpScore) + cotScore) * 1.1765
             
             trendColor = scoreHelper.getColorForScore(@score)
             trendText = scoreHelper.getTrendTextForScore(@score)

@@ -7,8 +7,9 @@ export modulesToDebug = {
     # appcoremodule: true
     # datamodule: true
     # economicareasmodule: true
+    fouriermodule: true
     # summaryframemodule: true
-    currencytrendframemodule: true
+    # currencytrendframemodule: true
     # marketdatamodule: true
     # sampledata: true
     # navtriggers: true
