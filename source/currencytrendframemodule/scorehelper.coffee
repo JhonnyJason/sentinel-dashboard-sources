@@ -34,6 +34,11 @@ trendTexts = [
 
 ############################################################
 inflationToScore = (infl) ->
+    # interpreting this as a quadratic funtion:
+    # 1.) point (4, 3) is maximum
+    # 2.a) point (2.4, 0) as reference => y = (32x - 4x² - 55)/3
+    # 2.b) point (0, -3) as reference => y = (3x - 3x/8 - 3)
+    
     switch 
         when infl < 0 then return -3 # <0% -3 Pkt (Deflationsgefahr)
         when infl < 1 then return -2 # 0-1% -2 Pkt
