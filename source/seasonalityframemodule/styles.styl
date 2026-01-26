@@ -42,7 +42,85 @@
         outline: none
         box-shadow: 0 0 3px 0 cd-dark-blue
         border solid 1px cd-dark-blue
-    
+
+    // Combobox styles
+    .combobox-wrapper
+        position relative
+        display inline-block
+        min-width 280px
+
+    #symbol-input
+        width 100%
+        padding 10px
+        padding-right 25px
+        border-radius 3px
+        border solid 1px cd-dark-blue
+        font-size 12pt
+        background #fff
+        box-sizing border-box
+        transition box-shadow 0.2s
+
+    #symbol-input:focus
+        outline none
+        box-shadow 0 0 3px 0 cd-dark-blue
+
+    #symbol-input::placeholder
+        color #999
+
+    .combobox-dropdown
+        position absolute
+        top 100%
+        left 0
+        right 0
+        max-height 300px
+        overflow-y auto
+        background #fff
+        border solid 1px cd-dark-blue
+        border-top none
+        border-radius 0 0 3px 3px
+        z-index 1000
+        display none
+        box-shadow 0 4px 8px rgba(0,0,0,0.15)
+
+    .combobox-dropdown.visible
+        display block
+
+    .combobox-option
+        padding 8px 10px
+        cursor pointer
+        display flex
+        gap 10px
+        align-items center
+        border-bottom solid 1px #eee
+
+    .combobox-option:last-child
+        border-bottom none
+
+    .combobox-option:hover,
+    .combobox-option.highlighted
+        background-color alpha(cd-dark-blue, 0.1)
+
+    .combobox-option.highlighted
+        background-color alpha(cd-dark-blue, 0.15)
+
+    .option-symbol
+        font-weight bold
+        min-width 60px
+        color cd-dark-blue
+
+    .option-name
+        color #666
+        font-size 11pt
+        white-space nowrap
+        overflow hidden
+        text-overflow ellipsis
+
+    .combobox-empty
+        padding 12px 10px
+        color #999
+        font-style italic
+        text-align center
+
 
 #selection-row
     display: flex

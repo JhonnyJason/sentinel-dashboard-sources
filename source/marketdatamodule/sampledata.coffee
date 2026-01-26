@@ -5,6 +5,9 @@ import { createLogFunctions } from "thingy-debug"
 #endregion
 
 ############################################################
+import { getDaysOfYear, dateDifDays, getJan1Date } from "./utilsmodule.js"
+
+############################################################
 keyToHistory = Object.create(null)
 
 ############################################################
@@ -12,7 +15,7 @@ createSampleDataArray = (length) ->
     result = new Array(length)
     idx = 0
     deltaRange = 4
-    val = 100 
+    val = 100
     while idx < length
         result[idx] = val
         delta = (Math.random() - 0.5) * deltaRange
@@ -21,31 +24,10 @@ createSampleDataArray = (length) ->
     return result
 
 ############################################################
-getDaysOfYear = (year) ->
-    return 365 unless (year % 4) == 0
-    if (year % 100) == 0 and (year % 400) != 0 then return 365
-    return 366
-
-getDayDifference = (date1, date2) ->
-    msDif = (date2.getTime() - date1.getTime())
-    dayDif = msDif / 86_400_000 # 1000 * 60 * 60 * 24 = 86_400_000
-    return Math.floor(dayDif)
-
-############################################################
-createYearStartDate = (date) ->
-    date = new Date() unless date?
-    date.setHours(0)
-    date.setSeconds(0)
-    date.setMinutes(0)
-    date.setDate(1)
-    date.setMonth(0)
-    return date
-
-############################################################
 createSampleData = (key,  toAge = 30) ->
     today = new Date()
-    yearStart = createYearStartDate()
-    currentYearDays = getDayDifference(yearStart, today)
+    yearStart = getJan1Date()
+    currentYearDays = dateDifDays(yearStart, today)
     log "currentYearDays: "+currentYearDays
     currentYear = today.getFullYear()
 

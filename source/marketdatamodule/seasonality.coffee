@@ -5,14 +5,10 @@ import { createLogFunctions } from "thingy-debug"
 #endregion
 
 ############################################################
-export FEB29 = 59
-export FEB28 = 58
-
-############################################################
-export isLeapYear = (year) ->
-    return false unless (year % 4) == 0
-    if (year % 100) == 0 and (year % 400) != 0 then return false
-    return true
+import {
+    isLeapYear, FEB29, FEB28,
+    toLogFactorsArray, dataArrayFromLogFactors
+} from "./utilsmodule.js"
 
 ############################################################
 normalizeIncomplete = (incomplete, year) ->
@@ -114,39 +110,4 @@ export normalizeYearData = (data) ->
 
     return yearData
 
-############################################################
-export toLogFactorsArray = (data) ->
-    factorsLen = data.length - 1
-    factors = new Array(factorsLen)
-    for i in [0...factorsLen]
-        factors[i] = Math.log(data[i] / data[i+1])
-    return factors     
-
-export toFactorsArray = (data) ->
-    factorsLen = data.length - 1
-    factors = new Array(factorsLen)
-    for i in [0...factorsLen]
-        factors[i] = data[i] / data[i+1]
-    return factors     
-
-export dataArrayFromFactors = (factors, startValue = 100, forward = true) ->
-    result = new Array(factors.length + 1)
-    if forward
-        result[0] = startValue
-
-        (result[i+1] = result[i] * f) for f,i in factors
-        return result
-    else
-        lastIndex = factors.length
-        result[lastIndex] = startValue
-        for i in [lastIndex..1]
-            result[i - 1] = result[i] / factors[i - 1]
-        return result
-        
-export dataArrayFromLogFactors = (factors) ->
-    result = new Array(factors.length + 1)
-    result[0] = 100 # normalized 100%
-
-    (result[i+1] = result[i] * Math.exp(f)) for f,i in factors
-    return result
 

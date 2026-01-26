@@ -9,7 +9,7 @@ Handles market history data: fetching from datahub, caching, and seasonality cal
 | `marketdatamodule.coffee` | Main entry, exports public API |
 | `datacache.coffee` | Datahub communication and in-memory cache |
 | `seasonality.coffee` | Seasonality calculations (average dynamics, leap year handling) |
-| `sampledata.coffee` | Random sample data generator for testing |
+| `sampledata.coffee` | **Mock data source** - random walk generator for development/testing |
 
 ## Cache Design
 
@@ -103,8 +103,10 @@ Also here we want a standard deviation with the averaged line.
 
 ## TODO
 
-- [ ] Transform datahub response to cache structure (currently using sample data)
+- [x] Transform datahub response to cache structure (datacache.coffee)
+- [ ] Define interface for seasonalityframemodule
+- [ ] Wire datacache to marketdatamodule interface
 - [ ] Convenience extractors: `getCloses()`, `getHighs()`, `getLows()`
-- [ ] Wire up real data to seasonality calculations
+- [ ] Wire up seasonality calculations to interface
 - [ ] Implement Standard Deviation in Average Return method
 - [ ] Implement Fourier Transform method

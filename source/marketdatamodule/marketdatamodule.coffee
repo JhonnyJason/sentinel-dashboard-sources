@@ -5,10 +5,9 @@ import { createLogFunctions } from "thingy-debug"
 #endregion
 
 ############################################################
-import { getMarketHistory } from "./sampledata.js"
-
-############################################################
+import * as datacache from "./datacache.js"
 import * as seasonality from "./seasonality.js"
+# import { getMarketHistory } from "./sampledata.js" # mock data source
 
 ############################################################
 cleanAverage = null

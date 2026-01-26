@@ -1,31 +1,23 @@
-//- currencytrendframe structure
+//- seasonalityframe structure
 #seasonalityframe
     #selection-row
 
-        .select-wrapper: select#stock-select
-            option(value="" selected disabled) Wählen Sie ein Symbol...
-            option(value="AAPL") Apple (AAPL)
-            option(value="GOOGL") Alphabet (GOOGL)
+        .combobox-wrapper#symbol-combobox
+            input#symbol-input(type="text" placeholder="Symbol suchen..." autocomplete="off")
+            .combobox-dropdown#symbol-dropdown
 
         .select-wrapper: select#timeframe-select
             option(value="5") 5 Jahre
-            option(value="6") 6 Jahre
-            option(value="7") 7 Jahre
-            option(value="8") 8 Jahre
-            option(value="9") 9 Jahre
             option(value="10" selected) 10 Jahre
-            option(value="11") 11 Jahre
-            option(value="12") 12 Jahre
-            option(value="13") 13 Jahre
-            option(value="14") 14 Jahre
             option(value="15") 15 Jahre
-            option(value="16") 16 Jahre
+            option(value="20") 20 Jahre
+            option(value="25") 25 Jahre
+            option(value="30") 30 Jahre
 
         .select-wrapper: select#method-select
             option(value="0") Average Daily Return
-            option(value="1") Harmonic Average Daily Return
-            option(value="2") Harmonic Regression (Fourier)
-            option(value="3") STL Decomposition (Hodrick-Prescott)
+            option(value="1") Harmonic Regression (Fourier)
+            option(value="2") Averaged Harmonic Regression (Fourier)
 
     #chart-container 
         #seasonality-chart

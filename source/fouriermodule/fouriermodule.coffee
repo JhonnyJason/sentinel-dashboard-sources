@@ -27,16 +27,16 @@ fftOutput = null
 ############################################################
 export initialize = (c) ->
     log "initialize"
-    sampleRate = 192000 # 384_000 
-    audioCtx = new AudioContext({sampleRate})
+    # sampleRate = 192000 # 384_000 
+    # audioCtx = new AudioContext({sampleRate})
     
-    fftK = new fft(fftSize)
-    fftOutput = fftK.createComplexArray()
+    # fftK = new fft(fftSize)
+    # fftOutput = fftK.createComplexArray()
 
-    log "sampleRate: "+audioCtx.sampleRate
-    log "fftSize: "+fftSize
+    # log "sampleRate: "+audioCtx.sampleRate
+    # log "fftSize: "+fftSize
 
-    setTimeout(runComparision, 2000)
+    # setTimeout(runComparision, 2000)
     return
 
 

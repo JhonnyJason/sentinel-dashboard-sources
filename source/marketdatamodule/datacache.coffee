@@ -6,6 +6,7 @@ import { createLogFunctions } from "thingy-debug"
 
 ############################################################
 import { getEodData } from "./scimodule.js"
+import { getDaysOfYear, getDayOfYear } from "./utilsmodule.js"
 
 ############################################################
 keyToHistory = Object.create(null)
@@ -139,31 +140,3 @@ extractRelevantHistory = (history, toAge) ->
     return result
 
 
-############################################################
-#region date helpers
-## TODO separate out into a new dateutilsmodule
-getDaysOfYear = (year) ->
-    return 365 unless (year % 4) == 0
-    if (year % 100) == 0 and (year % 400) != 0 then return 365
-    return 366
-
-getDayDifference = (date1, date2) ->
-    msDif = (date2.getTime() - date1.getTime())
-    dayDif = msDif / 86_400_000 # 1000 * 60 * 60 * 24 = 86_400_000
-    return Math.floor(dayDif)
-
-getDayOfYear = (date) ->
-    startOfYear = new Date(date.getFullYear(), 0, 1, 12, 0, 0)
-    return getDayDifference(startOfYear, date)
-
-############################################################
-createYearStartDate = (date) ->
-    date = new Date() unless date?
-    date.setHours(0)
-    date.setSeconds(0)
-    date.setMinutes(0)
-    date.setDate(1)
-    date.setMonth(0)
-    return date
-
-#endregion

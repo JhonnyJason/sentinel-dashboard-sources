@@ -8,12 +8,13 @@ import { createLogFunctions } from "thingy-debug"
 import {
     createValidator, getErrorMessage, 
     STRINGHEX64, STRINGHEX32, STRINGEMAIL, NONEMPTYSTRING, 
-    NUMBERORNOTHING
+    NUMBERORNOTHING, NUMBER
 } from "thingy-schema-validate"
 
 ############################################################
 import { urlAccessManager, urlDatahub } from "./configmodule.js"
 import { getAuthCode } from "./accountmodule.js"
+import { defaultSymbols } from "./defaultsymbols.js"
 
 ############################################################
 #region Requet URLs
@@ -65,6 +66,11 @@ validateGetDataArgs = createValidator({
     yearsBack: NUMBERORNOTHING
 })
 
+validateGetSymbolOptionsArgs = createValidator({
+    authCode: STRINGHEX32,
+    query: NONEMPTYSTRING,
+    limit: NUMBER
+})
 #endregion
 
 ############################################################
@@ -176,68 +182,15 @@ export getEodData = (dataKey, yearsBack) ->
     # }
 
 ############################################################
-export getSymbolOptions = (search) ->
+export getSymbolOptions = (query, limit) ->
     log "getSymbolOptions"   
     authCode = getAuthCode()
-    args = { authCode, search }
+    args = { authCode, query, limit }
     err = validateGetSymbolOptionsArgs(args)
     # if err then log getErrorMessage(err)
     if err then throw new Error("Invalid getData args!")
     # return await request(urlGetSymbolOptions, args)
     
     ## Sample return
-    sample = [
-        {symbol:"AKAM",name:"Akamai Technologies"},
-        {symbol:"WYNN",name:"Wynn Resorts"},
-        {symbol:"BEN",name:"Franklin Resources"},
-        {symbol:"ZBRA",name:"Zebra Technologies"},
-        {symbol:"CLX",name:"Clorox"},
-        {symbol:"HST",name:"Host Hotels & Resorts"},
-        {symbol:"UDR",name:"UDR, Inc."},
-        {symbol:"BF.B",name:"Brown\u2013Forman"},
-        {symbol:"CF",name:"CF Industries"},
-        {symbol:"AIZ",name:"Assurant"},
-        {symbol:"CPT",name:"Camden Property Trust"},
-        {symbol:"IVZ",name:"Invesco"},
-        {symbol:"MRNA",name:"Moderna"},
-        {symbol:"HAS",name:"Hasbro"},
-        {symbol:"SWK",name:"Stanley Black & Decker"},
-        {symbol:"BLDR",name:"Builders FirstSource"},
-        {symbol:"EPAM",name:"EPAM Systems"},
-        {symbol:"ALGN",name:"Align Technology"},
-        {symbol:"DOC",name:"Healthpeak Properties"},
-        {symbol:"GL",name:"Globe Life"},
-        {symbol:"DAY",name:"Dayforce"},
-        {symbol:"RVTY",name:"Revvity"},
-        {symbol:"FDS",name:"FactSet"},
-        {symbol:"BXP",name:"BXP, Inc."},
-        {symbol:"PNW",name:"Pinnacle West"},
-        {symbol:"SJM",name:"J.M. Smucker Company (The)"},
-        {symbol:"AES",name:"AES Corporation"},
-        {symbol:"NCLH",name:"Norwegian Cruise Line Holdings"},
-        {symbol:"MGM",name:"MGM Resorts"},
-        {symbol:"BAX",name:"Baxter International"},
-        {symbol:"CRL",name:"Charles River Laboratories"},
-        {symbol:"NWSA",name:"News Corp (Class A)"},
-        {symbol:"SWKS",name:"Skyworks Solutions"},
-        {symbol:"AOS",name:"A. O. Smith"},
-        {symbol:"TAP",name:"Molson Coors Beverage Company"},
-        {symbol:"TECH",name:"Bio-Techne"},
-        {symbol:"MOH",name:"Molina Healthcare"},
-        {symbol:"HSIC",name:"Henry Schein"},
-        {symbol:"PAYC",name:"Paycom"},
-        {symbol:"FRT",name:"Federal Realty Investment Trust"},
-        {symbol:"APA",name:"APA Corporation"},
-        {symbol:"POOL",name:"Pool Corporation"},
-        {symbol:"ARE",name:"Alexandria Real Estate Equities"},
-        {symbol:"CPB",name:"Campbell Soup Company"},
-        {symbol:"CAG",name:"Conagra Brands"},
-        {symbol:"DVA",name:"DaVita"},
-        {symbol:"GNRC",name:"Generac"},
-        {symbol:"MOS",name:"Mosaic Company (The)"},
-        {symbol:"MTCH",name:"Match Group"},
-        {symbol:"LW",name:"Lamb Weston"},
-        {symbol:"NWS",name:"News Corp (Class B)"}
-    ]
     return await new Promise (rslv) ->
-        setTimeout(rslv, 500, sample)
+        setTimeout((() -> rslv(defaultSymbols)), 500)
