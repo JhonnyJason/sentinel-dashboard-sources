@@ -42,7 +42,7 @@ createYearStartDate = (date) ->
     return date
 
 ############################################################
-createSampleData = (key,  toAge = 30) ->    
+createSampleData = (key,  toAge = 30) ->
     today = new Date()
     yearStart = createYearStartDate()
     currentYearDays = getDayDifference(yearStart, today)

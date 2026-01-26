@@ -11,6 +11,7 @@ import uPlot from "uplot"
 import * as mData from "./marketdatamodule.js"
 import * as seasnlty from "./seasonality.js"
 import * as utl from "./utilsmodule.js"
+import { testFetch } from "./datacache.js"
 
 
 ############################################################
@@ -55,6 +56,15 @@ export initialize = (c) ->
     currentSelectedMethod = methodSelect.value
     return
 
+
+############################################################
+export provideSearchOptions = (options) ->
+    log "provideSearchOptions"
+    ## When kicking off a dynamic search (user types in combo-box)
+    #   then this method will be called from the outside to provide the options
+    
+    ## TODO implement
+    return
 
 ############################################################
 stockSelected = ->
@@ -105,19 +115,22 @@ retrieveRelevantData = ->
     symbol = currentSelectedStock
     years = parseInt(currentSelectedTimeframe)
     method = parseInt(currentSelectedMethod)
-    
-    seasonalityData = mData.getSeasonalityComposite(symbol, years, method)
-    latestData = mData.getThisAndLastYearData(symbol)
-    
-    today = new Date()
-    currentYear = today.getFullYear()
-    lastYear = currentYear - 1
-    currentYearIsLeap = seasnlty.isLeapYear(currentYear)
-    lastYearIsLeap = seasnlty.isLeapYear(lastYear)
 
-    if currentYearIsLeap then return orderDataAsCurrentYearIsLeap()
-    if lastYearIsLeap then return orderDataAsLastYearIsLeap()
-    orderDataWithoutFeb29()
+    # Test data retrieval from datahub
+    testFetch(symbol, years)
+
+    # seasonalityData = mData.getSeasonalityComposite(symbol, years, method)
+    # latestData = mData.getThisAndLastYearData(symbol)
+    
+    # today = new Date()
+    # currentYear = today.getFullYear()
+    # lastYear = currentYear - 1
+    # currentYearIsLeap = seasnlty.isLeapYear(currentYear)
+    # lastYearIsLeap = seasnlty.isLeapYear(lastYear)
+
+    # if currentYearIsLeap then return orderDataAsCurrentYearIsLeap()
+    # if lastYearIsLeap then return orderDataAsLastYearIsLeap()
+    # orderDataWithoutFeb29()
     return
 
 ############################################################
@@ -460,10 +473,10 @@ drawChart = ->
     # olog xAxisData
     # olog seasonalityData
     # olog latestData
-
-    data.push(xAxisData)
-    data.push(seasonalityData)
-    data.push(latestData)
+    if seasonalityData?
+        data.push(xAxisData)
+        data.push(seasonalityData)
+        data.push(latestData) if latestData?
     
     # data = [
     #     [ 1, 2, 3, 4, 5, 6, 7],

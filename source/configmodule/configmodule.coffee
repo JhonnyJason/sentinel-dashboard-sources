@@ -5,6 +5,8 @@ export heartbeatMS = 120_000 # ~2min
 ############################################################
 export urlAccessManager = "https://sentinel-access-manager-dev.dotv.ee"
 export urlWebsocketBackend = "https://sentinel-backend.dotv.ee"
+export urlDatahub = "https://sentinel-datahub.dotv.ee"
+
 # export urlWebsocketBackend = "wss://sentinel-backend.dotv.ee/"
 
 # local testing
