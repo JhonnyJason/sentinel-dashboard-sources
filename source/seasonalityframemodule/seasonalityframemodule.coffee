@@ -183,12 +183,11 @@ prepareChartData = ->
     factors = utl.toFactorsArray(seasonalityData)
     frontData = utl.fromFactorsBackward(factors) 
     backData = utl.fromFactorsForward(factors)
-
-    if lastYearIsLeap then frontData = removeFeb29(frontData)
-    if currentYearIsLeap then backData = removeFeb29(backData)
+    
+    if !lastYearIsLeap then frontData = removeFeb29(frontData)
+    if !currentYearIsLeap then backData = removeFeb29(backData)
          
     seasonalityData = [...frontData, ...backData]
-
 
     ## Prepare latestData for 2-year display
     thisYearsData = latestData[0]
@@ -225,4 +224,8 @@ prepareChartData = ->
     return
 
 ############################################################
-removeFeb29 = (arr) -> arr.filter((_, i) -> i != utl.FEB29)
+removeFeb29 = (arr) -> 
+    result = []
+    for val,i in arr when i != utl.FEB29
+        result.push(val)
+    return result

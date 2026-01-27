@@ -35,17 +35,18 @@ export  getLatestCloseData = (dataKey) ->
 ##
 # @params dataKey (e.g. symbol of stock)
 # @params toAge the oldest year to retrieve
-# @returns all daily close data of the last `toAge` years 
+# @returns all daily close data of the last `toAge` years
 export getHistoricCloseData = (dataKey, toAge) ->
     dataPerYear = await getHistoryHLC(dataKey, toAge)
 
     result = []
-    
+
     for yearData in dataPerYear
-        yearResult = [] 
+        yearResult = []
         yearResult[i] = d[2] for d,i in yearData when d?
         result.push(yearResult)
 
+    scanCacheData(result, dataKey)
     return result
 
 ############################################################
@@ -155,8 +156,36 @@ extractRelevantHistory = (history, toAge) ->
     runLimit = toAge + 1
     while age < runLimit
         if !history[age]? then break
-        result.push(history[age]) 
+        result.push(history[age])
         age++
     return result
+
+############################################################
+scanCacheData = (dataPerYear, dataKey) ->
+    log "scanCacheData for #{dataKey}: #{dataPerYear.length} years"
+
+    for yearData, yearIdx in dataPerYear
+        undefinedIndices = []
+        nanIndices = []
+        nullCount = 0
+
+        for val, i in yearData
+            if val == null
+                nullCount++
+            else if val == undefined
+                undefinedIndices.push(i)
+            else if typeof val == 'number' and isNaN(val)
+                nanIndices.push(i)
+
+        if nullCount > 0
+            log "[datacache] year[#{yearIdx}]: #{nullCount} nulls, #{yearData.length - nullCount} values"
+
+        if undefinedIndices.length > 0
+            console.warn "[datacache] year[#{yearIdx}]: UNDEFINED at indices:", undefinedIndices
+
+        if nanIndices.length > 0
+            console.warn "[datacache] year[#{yearIdx}]: NaN at indices:", nanIndices
+
+    return
 
 

@@ -124,9 +124,74 @@ onInit = (u) ->
     return
 
 ############################################################
+scanForFreakValues = (dataArray, label) ->
+    if !dataArray?
+        console.warn "[chartfun] #{label}: array is null/undefined"
+        return false
+
+    if !Array.isArray(dataArray)
+        console.warn "[chartfun] #{label}: not an array, got #{typeof dataArray}"
+        return false
+
+    nullCount = 0
+    undefinedIndices = []
+    nanIndices = []
+
+    for val, i in dataArray
+        if val == null
+            nullCount++
+        else if val == undefined
+            undefinedIndices.push(i)
+        else if typeof val == 'number' and isNaN(val)
+            nanIndices.push(i)
+
+    if nullCount > 0
+        console.log "[chartfun] #{label}: #{nullCount} null values (legal empty)"
+
+    if undefinedIndices.length > 0
+        console.warn "[chartfun] #{label}: UNDEFINED at indices:", undefinedIndices
+        return false
+
+    if nanIndices.length > 0
+        console.warn "[chartfun] #{label}: NaN at indices:", nanIndices
+        return false
+
+    return true
+
+validateChartData = (xAxisData, seasonalityData, latestData) ->
+    log "validateChartData"
+    allValid = true
+
+    # Check each array for freak values
+    allValid = scanForFreakValues(xAxisData, "xAxisData") and allValid
+    allValid = scanForFreakValues(seasonalityData, "seasonalityData") and allValid
+    if latestData?
+        allValid = scanForFreakValues(latestData, "latestData") and allValid
+
+    # Check length consistency
+    xLen = xAxisData?.length ? 0
+    sLen = seasonalityData?.length ? 0
+    lLen = latestData?.length ? 0
+
+    console.log "[chartfun] Data lengths - xAxis: #{xLen}, seasonality: #{sLen}, latest: #{lLen}"
+
+    if xLen != sLen
+        console.warn "[chartfun] LENGTH MISMATCH: xAxisData (#{xLen}) != seasonalityData (#{sLen})"
+        allValid = false
+
+    if latestData? and xLen != lLen
+        console.warn "[chartfun] LENGTH MISMATCH: xAxisData (#{xLen}) != latestData (#{lLen})"
+        allValid = false
+
+    return allValid
+
+############################################################
 export drawChart = (container, xAxisData, seasonalityData, latestData) ->
     log "drawChart"
     chartContainer = container
+
+    # Validate data before drawing
+    validateChartData(xAxisData, seasonalityData, latestData)
 
     rect = container.getBoundingClientRect();
     width = Math.floor(rect.width)
