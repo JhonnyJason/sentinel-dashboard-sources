@@ -22,6 +22,7 @@ currentSelectedMethod = null
 xAxisData = null
 seasonalityData = null
 latestData = null
+maxHistory = null
 
 pickedStartIdx = null
 pickedEndIdx = null
@@ -36,7 +37,7 @@ export initialize = (c) ->
 
     symbolCombobox = new Combobox({ inputEl, dropdownEl, optionsLimit })
     symbolCombobox.onSelect(onStockSelected)
-    
+
     timeframeSelect.addEventListener("change", timeframeSelected)
     methodSelect.addEventListener("change", methodSelected)
 
@@ -45,6 +46,7 @@ export initialize = (c) ->
     return
 
 ############################################################
+#region event Listeners
 onStockSelected = (symbol) ->
     log "onStockSelected"
     currentSelectedStock = symbol
@@ -78,102 +80,57 @@ methodSelected = ->
     resetAndRender()
     return
 
+#endregion
+
+############################################################
+updateYearsOptions = ->
+    log "updateYearsOptions"
+    allOptions = [ 5, 10, 15, 20, 25, 30 ]
+
+    ## Determine available options based on maxHistory
+    if !maxHistory?
+        actualOptions = allOptions
+    else
+        ## Find first option exceeding available history (+2 buffer)
+        cutoffIdx = allOptions.length
+        for opt, i in allOptions when maxHistory + 2 < opt
+            cutoffIdx = i
+            break
+        actualOptions = allOptions.slice(0, cutoffIdx)
+        ## Ensure at least the first option is available
+        if actualOptions.length == 0 then actualOptions = [allOptions[0]]
+
+    ## Adjust currentYears if it exceeds available options
+    currentYears = parseInt(currentSelectedTimeframe)
+    maxAvailable = actualOptions[actualOptions.length - 1]
+    if currentYears > maxAvailable
+        currentYears = maxAvailable
+        currentSelectedTimeframe = String(currentYears)
+
+    ## Render options to dropdown
+    timeframeSelect.innerHTML = ""
+    for opt in actualOptions
+        optionEl = document.createElement("option")
+        optionEl.value = opt
+        optionEl.textContent = "#{opt} Jahre"
+        if opt == currentYears then optionEl.selected = true
+        timeframeSelect.appendChild(optionEl)
+    return
+
+
 ############################################################
 resetAndRender = ->
     log "resetAndRender"
     resetSeasonalityState()
-    if currentSelectedStock then retrieveRelevantData()
-    drawChart(seasonalityChart, xAxisData, seasonalityData, latestData)
-    return
-
-############################################################
-retrieveRelevantData = ->
-    log "retrieveRelevantData"
-    symbol = currentSelectedStock
-    years = parseInt(currentSelectedTimeframe)
-    method = parseInt(currentSelectedMethod)
-
-    ## TODO implement actual dataflow :-)
-
-    # seasonalityData = mData.getSeasonalityComposite(symbol, years, method)
-    # latestData = mData.getThisAndLastYearData(symbol)
-
-    # today = new Date()
-    # currentYear = today.getFullYear()
-    # lastYear = currentYear - 1
-    # currentYearIsLeap = utl.isLeapYear(currentYear)
-    # lastYearIsLeap = utl.isLeapYear(lastYear)
-
-    # if currentYearIsLeap then return orderDataAsCurrentYearIsLeap()
-    # if lastYearIsLeap then return orderDataAsLastYearIsLeap()
-    # orderDataWithoutFeb29()
-    return
-
-############################################################
-orderDataWithoutFeb29 = ->
-    log "orderDataWithoutFeb29"
-    ## reorder seasonality composite
-    compositeWithoutFeb29 = []
-    for dp,i in seasonalityData when i != utl.FEB29
-        compositeWithoutFeb29.push(dp)
-
-    ## We don't have a factor from the last Element to the first of next year
-    ##   So we take it as 1:1
-    factors = utl.toFactorsArray(compositeWithoutFeb29)
-    frontData = utl.dataArrayFromFactors(factors, compositeWithoutFeb29[0], false)
-    log "Array Lengths:"
-    log frontData.length
-    log compositeWithoutFeb29.length
-
-    seasonalityData = [...frontData, ...compositeWithoutFeb29]
-    log seasonalityData.length
-
-    ##Time Axis... TODO
-
-    return
-
-orderDataAsLastYearIsLeap = ->
-    log "orderDataAsLastYearIsLeap"
-    ## reorder seasonality composite
-    olog seasonalityData
-    compositeWithoutFeb29 = []
-    for dp,i in seasonalityData when (i != utl.FEB29)
-        compositeWithoutFeb29.push(dp)
-
-    ## We don't have a factor from the last Element to the first of next year
-    ##   So we take it as 1:1
-    factors = utl.toFactorsArray(seasonalityData)
-    frontData = utl.dataArrayFromFactors(factors, seasonalityData[0], false)
-
-    seasonalityData = [...frontData, ...compositeWithoutFeb29]
-
-    ## reorder latestData
-    thisYearsData = latestData[0]
-    lastYearsData = latestData[1]
-    factors = utl.toFactorsArray(lastYearsData)
-    lastYearsData = utl.dataArrayFromFactors(factors, thisYearsData[0], false)
-
-    missingData = new Array(365 - thisYearsData.length)
-    missingData.fill(null)
-
-    latestData = [...lastYearsData, ...thisYearsData, ...missingData]
-
-    ## Create Time Axis
-    jan1Latest = utl.getJan1Date()
-    axisTime = jan1Latest.getTime() / 1000
-    currentYearTimeAxis = []
-    for i in [0...365]
-        currentYearTimeAxis[i] = axisTime
-        axisTime += 86_400 # = 60 * 60 * 24
-
-    axisTime = jan1Latest.getTime() / 1000 - 86_400
-    lastYearTimeAxis = new Array(366) ## is leap year
-    i = 366
-    while i--
-        lastYearTimeAxis[i] = axisTime
-        axisTime -= 86_400
-
-    xAxisData = [...lastYearTimeAxis, ...currentYearTimeAxis]
+    try
+        ## TODO start a preloader to signal data wating :-)
+        if currentSelectedStock then await retrieveRelevantData()
+        updateYearsOptions()
+        ## TODO reset preloader -> start rendering ;-)
+        # seasonalityChart.
+        drawChart(seasonalityChart, xAxisData, seasonalityData, latestData)
+    catch err then console.error(err) ## TODO: Maybe signal Error in chart and reset all state?
+    # finally: ## TODO reset preloader on if it was not before
     return
 
 ############################################################
@@ -184,7 +141,88 @@ resetSeasonalityState = ->
     xAxisData = null
     seasonalityData = null
     latestData = null
+    maxHistory = null
 
     pickedStartIdx = null
     pickedEndIdx = null
     return
+
+
+############################################################
+retrieveRelevantData = ->
+    log "retrieveRelevantData"
+    symbol = currentSelectedStock
+    years = parseInt(currentSelectedTimeframe)
+    method = parseInt(currentSelectedMethod)
+
+    latestData = await mData.getLatestData(symbol)
+    seasonalityData = await mData.getSeasonalityComposite(symbol, years, method)
+    maxHistory = mData.getHistoricDepth(symbol)
+
+    if !seasonalityData? then throw new Error("No seasonalityData returned!")
+    log "We have seasonalityData! the length is: "+seasonalityData.length
+
+    prepareChartData()
+    return
+
+############################################################
+prepareChartData = ->
+    log "prepareChartData"
+
+    ## Determine leap year configuration
+    today = new Date()
+    currentYear = today.getFullYear()
+    lastYear = currentYear - 1
+    currentYearIsLeap = utl.isLeapYear(currentYear)
+    lastYearIsLeap = utl.isLeapYear(lastYear)
+
+    lastYearDays = if lastYearIsLeap then 366 else 365
+    currentYearDays = if currentYearIsLeap then 366 else 365
+
+    ## Prepare seasonality composite for 2-year display
+    factors = utl.toFactorsArray(seasonalityData)
+    frontData = utl.fromFactorsBackward(factors) 
+    backData = utl.fromFactorsForward(factors)
+
+    if lastYearIsLeap then frontData = removeFeb29(frontData)
+    if currentYearIsLeap then backData = removeFeb29(backData)
+         
+    seasonalityData = [...frontData, ...backData]
+
+
+    ## Prepare latestData for 2-year display
+    thisYearsData = latestData[0]
+    lastYearsData = latestData[1]
+
+    factors = utl.toFactorsArray(lastYearsData)
+    lastYearsData = utl.fromFactorsBackward(factors)
+
+    factors = utl.toFactorsArray(thisYearsData)
+    thisYearsData = utl.fromFactorsForward(factors)
+    
+    missingDays = currentYearDays - thisYearsData.length
+    missingData = new Array(missingDays).fill(null)
+
+    latestData = [...lastYearsData, ...thisYearsData, ...missingData]
+
+    ## Create time axis
+    jan1 = utl.getJan1Date()
+    axisTime = jan1.getTime() / 1000
+
+    currentYearTimeAxis = []
+    for i in [0...currentYearDays]
+        currentYearTimeAxis[i] = axisTime
+        axisTime += 86_400
+
+    axisTime = jan1.getTime() / 1000 - 86_400
+    lastYearTimeAxis = new Array(lastYearDays)
+    i = lastYearDays
+    while i--
+        lastYearTimeAxis[i] = axisTime
+        axisTime -= 86_400
+
+    xAxisData = [...lastYearTimeAxis, ...currentYearTimeAxis]
+    return
+
+############################################################
+removeFeb29 = (arr) -> arr.filter((_, i) -> i != utl.FEB29)

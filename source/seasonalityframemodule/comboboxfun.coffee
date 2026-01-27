@@ -203,7 +203,7 @@ export class Combobox
     selectOption: (opt) ->
         log "selectOption"
         olog opt
-        @inputEl.value = "#{opt.symbol} - #{opt.name}"
+        @inputEl.value = "#{opt.symbol} (#{opt.name})"
         @hideDropdown()
         @selectionCallback?(opt.symbol)
         return

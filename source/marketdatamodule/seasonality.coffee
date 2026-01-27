@@ -11,6 +11,34 @@ import {
 } from "./utilsmodule.js"
 
 ############################################################
+#region Interface
+export calculateSeasonalityComposite = (data, method) ->
+    if method == 0 # Average Daily Return
+        return averageDailyReturn(data)
+
+    if method == 1 # Fourier Regression
+        return fourierRegression(data)
+    
+    console.error("Unknown Method: #{method}")
+    return
+
+#endregion
+
+############################################################
+averageDailyReturn = (data) ->
+    log "averageDailyReturn"
+    ## TODO implement
+    # log data
+    log data.length
+    return data[3]
+
+fourierRegression = (data) ->
+    log "fourierRegression"
+    ## TODO implememnt
+    return data[3]
+
+
+############################################################
 normalizeIncomplete = (incomplete, year) ->
     if !isLeapYear(year) then return incomplete
     if incomplete.length < FEB29 then return incomplete
@@ -50,7 +78,6 @@ export addYearToAverage = (newYear, oldResult, oldWeight) ->
         factors[i] /= divisor
 
     return dataArrayFromLogFactors(factors)
-
 
 export addCurrrentToAverage = (incomplete, oldResult, oldWeight) ->
     today = new Date()

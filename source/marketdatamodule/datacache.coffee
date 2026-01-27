@@ -19,10 +19,14 @@ keyToHistory = Object.create(null)
 # @params dataKey (e.g. symbol of stock)
 # @returns daily close data of the current and the last year for the dataKey
 export  getLatestCloseData = (dataKey) ->
-    data = await getHistoryHLC(dataKey, 1)
-
-    result = Array(data.length).fill(null)
-    result[i] = d[2] for d,i in data when d?
+    dataPerYear = await getHistoryHLC(dataKey, 1)
+    
+    result = []
+    
+    for yearData in dataPerYear
+        yearResult = [] 
+        yearResult[i] = d[2] for d,i in yearData when d?
+        result.push(yearResult)
         
     return result
 
@@ -33,11 +37,15 @@ export  getLatestCloseData = (dataKey) ->
 # @params toAge the oldest year to retrieve
 # @returns all daily close data of the last `toAge` years 
 export getHistoricCloseData = (dataKey, toAge) ->
-    data = await getHistoryHLC(dataKey, toAge)
+    dataPerYear = await getHistoryHLC(dataKey, toAge)
 
-    result = Array(data.length).fill(null)
-    result[i] = d[2] for d,i in data when d?
-        
+    result = []
+    
+    for yearData in dataPerYear
+        yearResult = [] 
+        yearResult[i] = d[2] for d,i in yearData when d?
+        result.push(yearResult)
+
     return result
 
 ############################################################
@@ -46,10 +54,14 @@ export getHistoricCloseData = (dataKey, toAge) ->
 # @params toAge the oldest year to retrieve
 # @returns all daily high/low data of the last `toAge` years 
 export getHistoricHighLowData = (dataKey, toAge) ->
-    data = await getHistoryHLC(dataKey, toAge)
+    dataPerYear = await getHistoryHLC(dataKey, toAge)
+
+    result = []
     
-    result = Array(data.length).fill(null)
-    result[i] = [d[0], d[1]] for d,i in data when d?
+    for yearData in dataPerYear
+        yearResult = [] 
+        yearResult[i] = [d[0], d[1]] for d,i in yearData when d?
+        result.push(yearResult)
         
     return result
 
@@ -67,6 +79,14 @@ export getHistoryHLC = (dataKey, toAge) ->
     if !keyToHistory[dataKey] then await retrieveFullHistory(dataKey)
     return extractRelevantHistory(keyToHistory[dataKey], toAge)
 
+
+############################################################
+##
+# @params dataKey (e.g. symbol of stock)
+# @returns number of years of available history
+export getHistoricDepth = (dataKey) ->
+    return 0 unless keyToHistory[dataKey]?
+    return keyToHistory[dataKey].length
 
 #endregion
 

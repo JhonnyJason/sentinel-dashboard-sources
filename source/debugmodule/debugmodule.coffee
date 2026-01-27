@@ -5,7 +5,8 @@ export modulesToDebug = {
 
     # accountmodule: true
     # appcoremodule: true
-    comboboxfun: true
+    # chartfun: true
+    # comboboxfun: true
     # datamodule: true
     # datacache: true
     # economicareasmodule: true
@@ -16,10 +17,11 @@ export modulesToDebug = {
     # sampledata: true
     # scimodule: true
     # navtriggers: true
-    scimodule: true
+    # scimodule: true
     # scorehelper: true
-    # seasonalityframemodule: true
-    symboloptions: true
+    # seasonality: true
+    seasonalityframemodule: true
+    # symboloptions: true
     # uistatemodule: true
 }
 

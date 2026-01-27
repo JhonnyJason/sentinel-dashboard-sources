@@ -25,15 +25,30 @@ export toLogFactorsArray = (data) ->
     factorsLen = data.length - 1
     factors = new Array(factorsLen)
     for i in [0...factorsLen]
-        factors[i] = Math.log(data[i] / data[i+1])
+        factors[i] = Math.log(data[i+1] / data[i])
     return factors
 
 export toFactorsArray = (data) ->
     factorsLen = data.length - 1
     factors = new Array(factorsLen)
     for i in [0...factorsLen]
-        factors[i] = data[i] / data[i+1]
+        factors[i] = data[i+1] / data[i]
     return factors
+
+export fromFactorsForward = (factors, startVal = 100) ->
+    result = new Array(factors.length + 1)
+    result[0] = startVal
+    (result[i+1] = result[i] * f) for f,i in factors
+    return result
+
+export fromFactorsBackward = (factors, endVal = 100) ->
+    result = new Array(factors.length + 1)
+    lastIndex = factors.length
+    result[lastIndex] = endVal
+    for i in [lastIndex..1]
+        result[i - 1] = result[i] / factors[i - 1]
+    return result
+
 
 export dataArrayFromFactors = (factors, startValue = 100, forward = true) ->
     result = new Array(factors.length + 1)

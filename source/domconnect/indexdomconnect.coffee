@@ -10,6 +10,7 @@ indexdomconnect.initialize = () ->
     global.symbolDropdown = document.getElementById("symbol-dropdown")
     global.timeframeSelect = document.getElementById("timeframe-select")
     global.methodSelect = document.getElementById("method-select")
+    global.seasonalityChart = document.getElementById("seasonality-chart")
     global.currencytrendframe = document.getElementById("currencytrendframe")
     global.economicAreas = document.getElementById("economic-areas")
     global.sidenav = document.getElementById("sidenav")

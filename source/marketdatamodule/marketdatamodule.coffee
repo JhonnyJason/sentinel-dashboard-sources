@@ -5,33 +5,22 @@ import { createLogFunctions } from "thingy-debug"
 #endregion
 
 ############################################################
-import * as datacache from "./datacache.js"
-import * as seasonality from "./seasonality.js"
-# import { getMarketHistory } from "./sampledata.js" # mock data source
+import { 
+    getHistoricCloseData, getLatestCloseData, getHistoricDepth 
+} from "./datacache.js"
+import { calculateSeasonalityComposite } from "./seasonality.js"
 
 ############################################################
-cleanAverage = null
-dirtyAllAverage = null
-currentData = null
-
-############################################################
-export initialize = ->
-    log "initialize"
-    return
-
-############################################################
-export getCleanAverage = (symbol, years) -> cleanAverage
-
-export getAllAverage = (symbol, years) -> dirtyAllAverage
-
-export getThisYearData = (symbol) -> currentData
+export { getHistoricDepth }
 
 ############################################################
 export getSeasonalityComposite = (symbol, years, method) ->
-    return dirtyAllAverage
+    allCloses = await getHistoricCloseData(symbol, years)
+    return calculateSeasonalityComposite(allCloses, method)
 
-export getThisAndLastYearData = (symbol) ->
-    return getMarketHistory(symbol, 1)
+############################################################
+export getLatestData = (symbol) ->
+    return await getLatestCloseData(symbol)
 
 
 
