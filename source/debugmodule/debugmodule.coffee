@@ -5,10 +5,10 @@ export modulesToDebug = {
 
     # accountmodule: true
     # appcoremodule: true
-    chartfun: true
+    # chartfun: true
     # comboboxfun: true
     # datamodule: true
-    # datacache: true
+    datacache: true
     # economicareasmodule: true
     # fouriermodule: true
     # summaryframemodule: true
@@ -20,7 +20,7 @@ export modulesToDebug = {
     # scimodule: true
     # scorehelper: true
     # seasonality: true
-    seasonalityframemodule: true
+    # seasonalityframemodule: true
     # symboloptions: true
     # uistatemodule: true
 }

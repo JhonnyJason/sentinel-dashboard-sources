@@ -11,6 +11,12 @@ import * as FFT from "fft.js"
 ############################################################
 #region Interface
 export calculateSeasonalityComposite = (data, method) ->
+    oldestYear = data[data.length - 1]
+    if oldestYear.includes(undefined)
+        data = data.slice(1, -1) # Exclude current and last year (both incomplete)
+    else 
+        data = data.slice(1) # Exclude current year (only current year is incomplete)
+    
     if method == 0 # Average Daily Return
         return averageDailyReturn(data)
 
@@ -25,19 +31,16 @@ export calculateSeasonalityComposite = (data, method) ->
 ############################################################
 averageDailyReturn = (data) ->
     log "averageDailyReturn"
-    historicData = data.slice(1) # Exclude current incomplete year
-    return getAverageDynamicOfYearlyData(historicData)
+    return getAverageDynamicOfYearlyData(data)
 
 fourierRegression = (data) ->
     log "fourierRegression"
-    historicData = data.slice(1) # Exclude current incomplete year
-
     # Normalize all years to 366 days (direct price data)
-    normalizedYears = (normalizeYearData(d) for d in historicData)
+    normalizedYears = (normalizeYearData(d) for d in data)
     
     # Concatenate into one long sequence
     sequence = []
-    for i in [(historicData.length - 1)..0] # iterate from the oldest to the newset
+    for i in [(data.length - 1)..0] # iterate from the oldest to the newset
         for d in normalizedYears[i]
             sequence.push(d)
     seqLen = sequence.length
@@ -76,7 +79,7 @@ fourierRegression = (data) ->
     fftK.realTransform(fftOutput, paddedInput)
 
     ##Filter
-    filterHarmonics(historicData.length, fftOutput)
+    filterHarmonics(data.length, fftOutput)
     lowPass(Math.floor(seqLen / 7), fftOutput)
 
     # Inverse FFT
@@ -85,7 +88,6 @@ fourierRegression = (data) ->
     # Extract real parts from complex array, then slice 1 year
     realValues = new Array(seqLen)
     realValues[i] = fftSmoothed[2 * i] for i in [0...seqLen]
-
 
     # smoothedYear = realValues.slice(0, 366)
     # smoothedYear = realValues.slice(366, 732)

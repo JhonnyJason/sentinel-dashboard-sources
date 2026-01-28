@@ -5,6 +5,7 @@ import { createLogFunctions } from "thingy-debug"
 #endregion
 
 ############################################################
+import * as utl from "./utilsmodule.js"
 import { 
     getHistoricCloseData, getLatestCloseData, getHistoricDepth 
 } from "./datacache.js"
@@ -16,6 +17,10 @@ export { getHistoricDepth }
 ############################################################
 export getSeasonalityComposite = (symbol, years, method) ->
     allCloses = await getHistoricCloseData(symbol, years)
+    for yearCloses,i in allCloses
+        log "@#{i}: "+yearCloses.length
+        utl.scanForFreakValues(yearCloses)
+
     return calculateSeasonalityComposite(allCloses, method)
 
 ############################################################

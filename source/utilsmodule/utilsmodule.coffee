@@ -76,7 +76,7 @@ export dataArrayFromLogFactors = (factors) ->
 export dateDifDays = (date1, date2) ->
     msDif = (date2.getTime() - date1.getTime())
     daysDif = msDif / 86_400_000 # = 1000 * 60 * 60 * 24
-    return Math.floor(daysDif)
+    return Math.round(daysDif)
 
 export getDayOfYear = (date) ->
     startOfYear = new Date(date.getFullYear(), 0, 1, 12, 0, 0)
@@ -107,3 +107,39 @@ export getDec31Date = (date) ->
     return date
 
 #endregion
+
+
+############################################################
+export scanForFreakValues = (dataArray, label) ->
+    if !dataArray?
+        console.warn "[chartfun] #{label}: array is null/undefined"
+        return false
+
+    if !Array.isArray(dataArray)
+        console.warn "[chartfun] #{label}: not an array, got #{typeof dataArray}"
+        return false
+
+    nullCount = 0
+    undefinedIndices = []
+    nanIndices = []
+
+    for val, i in dataArray
+        if val == null
+            nullCount++
+        else if val == undefined
+            undefinedIndices.push(i)
+        else if typeof val == 'number' and isNaN(val)
+            nanIndices.push(i)
+
+    if nullCount > 0
+        console.log "[chartfun] #{label}: #{nullCount} null values (legal empty)"
+
+    if undefinedIndices.length > 0
+        console.warn "[chartfun] #{label}: UNDEFINED at indices:", undefinedIndices
+        return false
+
+    if nanIndices.length > 0
+        console.warn "[chartfun] #{label}: NaN at indices:", nanIndices
+        return false
+
+    return true

@@ -6,7 +6,7 @@ import { createLogFunctions } from "thingy-debug"
 
 ############################################################
 import { getEodData } from "./scimodule.js"
-import { getDaysOfYear, getDayOfYear } from "./utilsmodule.js"
+import * as utl from "./utilsmodule.js"
 
 ############################################################
 keyToHistory = Object.create(null)
@@ -46,7 +46,6 @@ export getHistoricCloseData = (dataKey, toAge) ->
         yearResult[i] = d[2] for d,i in yearData when d?
         result.push(yearResult)
 
-    scanCacheData(result, dataKey)
     return result
 
 ############################################################
@@ -128,6 +127,10 @@ digestRemoteData = (dataKey, result) ->
     {meta, data} = result
     return unless data?.length
 
+    startDate = new Date(meta.startDate + "T12:00:00")
+    endDate = new Date(meta.endDate)
+
+    ## TODO update parsing logic
     # Parse start date (noon to avoid timezone edge cases)
     currentDate = new Date(meta.startDate + "T12:00:00")
 
@@ -135,17 +138,23 @@ digestRemoteData = (dataKey, result) ->
     yearBuckets = Object.create(null)
     for hlc in data
         year = currentDate.getFullYear()
-        dayIndex = getDayOfYear(currentDate)
+        dayIndex = utl.getDayOfYear(currentDate)
 
         # Initialize year bucket if needed
         unless yearBuckets[year]
-            yearBuckets[year] = Array(getDaysOfYear(year)).fill(null)
+            yearBuckets[year] = Array(utl.getDaysOfYear(year)).fill(null)
 
         yearBuckets[year][dayIndex] = hlc
         currentDate.setDate(currentDate.getDate() + 1)
 
     # Convert to array with current year first (descending order)
     years = Object.keys(yearBuckets).map(Number).sort((a, b) -> b - a)
+
+    # Log what we stored per year
+    for year in years
+        bucket = yearBuckets[year]
+        filledCount = bucket.filter((v) -> v?).length
+
     keyToHistory[dataKey] = years.map((y) -> yearBuckets[y])
     return
 
@@ -159,33 +168,3 @@ extractRelevantHistory = (history, toAge) ->
         result.push(history[age])
         age++
     return result
-
-############################################################
-scanCacheData = (dataPerYear, dataKey) ->
-    log "scanCacheData for #{dataKey}: #{dataPerYear.length} years"
-
-    for yearData, yearIdx in dataPerYear
-        undefinedIndices = []
-        nanIndices = []
-        nullCount = 0
-
-        for val, i in yearData
-            if val == null
-                nullCount++
-            else if val == undefined
-                undefinedIndices.push(i)
-            else if typeof val == 'number' and isNaN(val)
-                nanIndices.push(i)
-
-        if nullCount > 0
-            log "[datacache] year[#{yearIdx}]: #{nullCount} nulls, #{yearData.length - nullCount} values"
-
-        if undefinedIndices.length > 0
-            console.warn "[datacache] year[#{yearIdx}]: UNDEFINED at indices:", undefinedIndices
-
-        if nanIndices.length > 0
-            console.warn "[datacache] year[#{yearIdx}]: NaN at indices:", nanIndices
-
-    return
-
-
