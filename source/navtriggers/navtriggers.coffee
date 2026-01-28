@@ -16,9 +16,21 @@ export toCurrencytrend = ->
     log "toCurrencytrend"
     return nav.toBase("currencytrend")
 
-export toSeasonality =->
-    log "toCurrencytrend"
+export toSeasonality = ->
+    log "toSeasonality"
     return nav.toBase("seasonality")
+
+export toEventscreener = ->
+    log "toEventscreener"
+    return nav.toBase("eventscreener")
+
+export toForexscreener = ->
+    log "toForexscreener"
+    return nav.toBase("forexscreener")
+
+export toTrafficlight = ->
+    log "toTrafficlight"
+    return nav.toBase("trafficlight")
 
 export toAccount = ->
     log "toAccount"

@@ -13,6 +13,9 @@ export initialize = ->
     summaryBtn.addEventListener("click", triggers.toSummary)
     currencytrendBtn.addEventListener("click", triggers.toCurrencytrend)
     seasonalityBtn.addEventListener("click", triggers.toSeasonality)
+    eventscreenerBtn.addEventListener("click", triggers.toEventscreener)
+    forexscreenerBtn.addEventListener("click", triggers.toForexscreener)
+    trafficlightBtn.addEventListener("click", triggers.toTrafficlight)
     accountBtn.addEventListener("click", triggers.toAccount)
     return
 
@@ -31,6 +34,21 @@ export setCurrencytrendState = ->
 export setSeasonalityState = ->
     log "setSeasonalityState"
     sidenav.className = "seasonality"
+    return
+
+export setEventscreenerState = ->
+    log "setEventscreenerState"
+    sidenav.className = "eventscreener"
+    return
+
+export setForexscreenerState = ->
+    log "setForexscreenerState"
+    sidenav.className = "forexscreener"
+    return
+
+export setTrafficlightState = ->
+    log "setTrafficlightState"
+    sidenav.className = "trafficlight"
     return
 
 export setAccountState = ->

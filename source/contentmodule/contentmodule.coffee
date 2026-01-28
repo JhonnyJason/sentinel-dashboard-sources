@@ -20,6 +20,21 @@ export setSeasonalityState = ->
     content.className = "seasonality"
     return
 
+export setEventscreenerState = ->
+    log "setEventscreenerState"
+    content.className = "eventscreener"
+    return
+
+export setForexscreenerState = ->
+    log "setForexscreenerState"
+    content.className = "forexscreener"
+    return
+
+export setTrafficlightState = ->
+    log "setTrafficlightState"
+    content.className = "trafficlight"
+    return
+
 export setAccountState = ->
     log "setAccountState"
     content.className = "account"

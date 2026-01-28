@@ -49,6 +49,27 @@ applyBaseState["seasonality"] = ->
     header.className = "logged-in"
     return
 
+applyBaseState["eventscreener"] = ->
+    content.setEventscreenerState()
+    sideNav.setEventscreenerState()
+    noAccount.hide()
+    header.className = "logged-in"
+    return
+
+applyBaseState["forexscreener"] = ->
+    content.setForexscreenerState()
+    sideNav.setForexscreenerState()
+    noAccount.hide()
+    header.className = "logged-in"
+    return
+
+applyBaseState["trafficlight"] = ->
+    content.setTrafficlightState()
+    sideNav.setTrafficlightState()
+    noAccount.hide()
+    header.className = "logged-in"
+    return
+
 applyBaseState["account"] = ->
     content.setAccountState()
     sideNav.setAccountState()
