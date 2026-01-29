@@ -13,7 +13,12 @@ chartHandle = null
 chartContainer = null
 
 ############################################################
-## Maybe not used...
+# Legend state
+legendContainer = null
+legendTimestampEl = null
+legendSeriesEls = null
+
+############################################################
 monthNames = {
     MMMM:["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"]
     MMM:["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"]
@@ -22,12 +27,67 @@ monthNames = {
 }
 
 ############################################################
+# Legend date formatting - easily swappable
+formatLegendDate = (ts) ->
+    d = new Date(ts * 1000)
+    day = d.getDate()
+    month = monthNames.MMMM[d.getMonth()]
+    year = d.getFullYear()
+    "#{day}. #{month} #{year}"
+
+############################################################
+export initLegend = (container) ->
+    log "initLegend"
+    legendContainer = container
+    legendTimestampEl = container.querySelector('.legend-date')
+    legendSeriesEls = container.querySelectorAll('.legend-series')
+
+    # Wire up checkboxes for show/hide
+    legendSeriesEls.forEach (el) ->
+        seriesIdx = parseInt(el.dataset.series)
+        checkbox = el.querySelector('input[type="checkbox"]')
+        checkbox.addEventListener 'change', (e) ->
+            return unless chartHandle?
+            chartHandle.setSeries(seriesIdx, { show: e.target.checked })
+            el.classList.toggle('series-hidden', !e.target.checked)
+    return
+
+############################################################
+onCursorMove = (u) ->
+    return unless legendContainer?
+
+    idx = u.cursor.idx
+
+    if !idx?
+        # Cursor left chart - show placeholder
+        legendTimestampEl.textContent = "--. --- ----"
+        legendSeriesEls.forEach (el) ->
+            el.querySelector('.series-value').textContent = "--%"
+        return
+
+    # Update timestamp
+    timestamp = u.data[0][idx]
+    legendTimestampEl.textContent = formatLegendDate(timestamp)
+
+    # Update series values
+    legendSeriesEls.forEach (el) ->
+        seriesIdx = parseInt(el.dataset.series)
+        val = u.data[seriesIdx]?[idx]
+        valueEl = el.querySelector('.series-value')
+        valueEl.textContent = if val? then "#{val.toFixed(1)}%" else "--%"
+    return
+
+############################################################
 export resetChart = (container) ->
     log "resetChart"
     if chartHandle? then chartHandle.destroy()
     container.innerHTML = ""
     chartHandle = null
     chartContainer = container
+    # Reset legend state
+    legendContainer = null
+    legendTimestampEl = null
+    legendSeriesEls = null
     return
 
 ############################################################
@@ -213,12 +273,14 @@ export drawChart = (container, xAxisData, seasonalityData, latestData) ->
         ],
         axes: [
             {
-                space: 50
+                space: 80
                 scale: "x"
                 stroke: "#ffffff"
-                values: [
-                    [3600 * 24 * 365, "{MMM}", null, null, null, null, null, null, 0 ],
-                ]
+                values: (u, splits) ->
+                    names = if splits.length > 12 then monthNames.MMMM else monthNames.MMM
+                    splits.map (ts) ->
+                        d = new Date(ts * 1000)
+                        names[d.getMonth()]
             },
             {
                 show: true
@@ -239,6 +301,7 @@ export drawChart = (container, xAxisData, seasonalityData, latestData) ->
         hooks: {
             init: [onInit]
             setSelect: [onSetSelect]
+            setCursor: [onCursorMove]
         },
         cursor: {
             drag: {

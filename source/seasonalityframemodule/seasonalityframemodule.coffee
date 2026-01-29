@@ -8,7 +8,7 @@ import { createLogFunctions } from "thingy-debug"
 import * as mData from "./marketdatamodule.js"
 import * as utl from "./utilsmodule.js"
 import { Combobox } from "./comboboxfun.js"
-import { drawChart, resetChart } from "./chartfun.js"
+import { drawChart, resetChart, initLegend } from "./chartfun.js"
 
 ############################################################
 ## Re-export for symboloptions callback
@@ -17,7 +17,6 @@ import { drawChart, resetChart } from "./chartfun.js"
 #region State
 currentSelectedStock = null
 currentSelectedTimeframe = null
-currentSelectedMethod = null
 
 xAxisData = null
 seasonalityData = null
@@ -39,10 +38,11 @@ export initialize = (c) ->
     symbolCombobox.onSelect(onStockSelected)
 
     timeframeSelect.addEventListener("change", timeframeSelected)
-    methodSelect.addEventListener("change", methodSelected)
-
     currentSelectedTimeframe = timeframeSelect.value
-    currentSelectedMethod = methodSelect.value
+
+    # Initialize legend
+    legendEl = document.querySelector('#chart-container .chart-legend')
+    initLegend(legendEl) if legendEl?
     return
 
 ############################################################
@@ -50,33 +50,14 @@ export initialize = (c) ->
 onStockSelected = (symbol) ->
     log "onStockSelected"
     currentSelectedStock = symbol
-    olog {
-        currentSelectedStock,
-        currentSelectedTimeframe,
-        currentSelectedMethod
-    }
+    olog { currentSelectedStock, currentSelectedTimeframe }
     resetAndRender()
     return
 
 timeframeSelected = ->
     log "timeframeSelected"
     currentSelectedTimeframe = timeframeSelect.value
-    olog {
-        currentSelectedStock,
-        currentSelectedTimeframe,
-        currentSelectedMethod
-    }
-    resetAndRender()
-    return
-
-methodSelected = ->
-    log "methodSelected"
-    currentSelectedMethod = methodSelect.value
-    olog {
-        currentSelectedStock,
-        currentSelectedTimeframe,
-        currentSelectedMethod
-    }
+    olog { currentSelectedStock, currentSelectedTimeframe }
     resetAndRender()
     return
 
@@ -124,7 +105,12 @@ resetAndRender = ->
     resetSeasonalityState()
     try
         ## TODO start a preloader to signal data wating :-)
-        if currentSelectedStock then await retrieveRelevantData()
+        if currentSelectedStock
+            selectedSymbol.textContent = ""+currentSelectedStock
+            await retrieveRelevantData()
+        else
+            selectedSymbol.textContent = ""
+    
         updateYearsOptions()
         ## TODO reset preloader -> start rendering ;-)
         # seasonalityChart.
@@ -153,7 +139,7 @@ retrieveRelevantData = ->
     log "retrieveRelevantData"
     symbol = currentSelectedStock
     years = parseInt(currentSelectedTimeframe)
-    method = parseInt(currentSelectedMethod)
+    method = 0
 
     latestData = await mData.getLatestData(symbol)
     seasonalityData = await mData.getSeasonalityComposite(symbol, years, method)

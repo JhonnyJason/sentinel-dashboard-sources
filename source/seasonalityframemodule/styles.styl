@@ -1,7 +1,10 @@
-// currencytrendframe styles
-
-// @import "../../../node_modules/uplot/dist/uPlot.min.css "
-@import "uplot.min.css"
+// seasonalityframe styles
+@import "uplot-chart.styl"
+@import "chart-components.styl"
+@import "chart-instructions.styl"
+@import "backtesting-details.styl"
+@import "backtesting-summary.styl"
+@import "visibility.styl"
 
 #seasonalityframe
     width 100%
@@ -125,10 +128,36 @@
 #selection-row
     display: flex
     justify-content: flex-end
+    align-items: center
     gap 10px
 
-#chart-container
+#selected-symbol
+    margin-left auto    
+    margin-right 20px
+    font-size: 16pt
+    font-weight: bold
+    line-height 40px
+
+#close-chart-button
+    display none
+    height 30px
+    width 30px
+    border-radius 10px
+    svg
+        color cd-dark-blue
+        height inherit
+        width inherit
+
+#close-chart-button.click-button::after
+    background-color #000
+
+#chart-row
     margin-top 20px
+    display flex
+    gap 5px
+
+#chart-container
+    position relative
     background-color cd-dark-blue
     // background-color #999
     width 100%
@@ -138,24 +167,85 @@
     // color white
     border-radius: 3px
 
+#cursor-indicator
+    position absolute
+    top 10px
+    left 10px
+    background-color #fff
+    border-radius 2px
+    display: none // should turn to flex in visibility.styl
+    align-items: center
+    padding 5px 10px 5px 3px
+    gap 3px
+    svg
+        position relative
+        width 20px
+        height 20px
+
 #seasonality-chart
+    display none
     height 100%
     width 100%
     overflow: visible
 
-.u-legend
-    display none
+#chart-side-container
+    position relative
+    // background-color cd-dark-blue
+    // background-color #999
+    width 30%
+    box-sizing: border-box
+    // padding 15px
+    height 500px
+    // color white
+    border-radius: 3px
+    opacity 0.5
 
-.u-select 
-    background: alpha(#fff, 0.1)
-    border-left: 1px solid #fe7
-    border-right: 1px solid #fe7
+#components-backtesting-tabs
+    background-color cd-dark-blue
+    border-radius: 3px 3px 0 0
+    height 50px
+    display flex
+    button
+        width 50%
+        display none
+        background-color #ddd
+        transition: background-color 0.3s
+        color #fff
+        font-size 12pt
+        padding 15px
+        border-radius: 3px 3px 0 0
+        box-sizing: border-box
+        white-space: nowrap
+        overflow: hidden
+        text-overflow: ellipsis
+        cursor pointer
+        
+#tab-content-container
+    height 450px
+    background-color cd-dark-blue
+    border-radius: 0 0 3px 3px
+    padding 10px 0
+    box-sizing: border-box
+    
+.backtesting
+    #backtesting-button
+        background-color cd-dark-blue
+        width 100%
+    #chart-side-container
+        opacity: 1.0
+    #tab-content-container
+        border-radius: 0 3px 3px 3px
+    #components-backtesting-tabs
+        background-color transparent
 
-.u-cursor-y
-    display none
 
-.u-axis.movable
-    cursor: move
-    cursor: -webkit-grab
-    cursor: -moz-grab
-    cursor: grab 
+.check-components
+    #components-button
+        background-color cd-dark-blue
+        width 100%
+    #chart-side-container
+        opacity 1.0
+    #tab-content-container
+        border-radius: 3px 0 3px 3px
+    #components-backtesting-tabs
+        background-color transparent

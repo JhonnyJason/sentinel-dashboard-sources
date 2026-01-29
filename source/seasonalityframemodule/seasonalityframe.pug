@@ -1,24 +1,47 @@
 //- seasonalityframe structure
-#seasonalityframe
+#seasonalityframe.chart-inactive
     #selection-row
-
-
         .combobox-wrapper#symbol-combobox
             input#symbol-input(type="text" placeholder="Symbol suchen..." autocomplete="off")
             .combobox-dropdown#symbol-dropdown
 
         .select-wrapper: select#timeframe-select
-            option(value="5") 5 Jahre
-            option(value="10" selected) 10 Jahre
-            option(value="15") 15 Jahre
-            option(value="20") 20 Jahre
-            option(value="25") 25 Jahre
-            option(value="30") 30 Jahre
+            option(value="5" selected) 5 Jahre
+            
+            //- option(value="5") 5 Jahre
+            //- option(value="10" selected) 10 Jahre
+            //- option(value="15") 15 Jahre
+            //- option(value="20") 20 Jahre
+            //- option(value="25") 25 Jahre
+            //- option(value="30") 30 Jahre
 
-        .select-wrapper: select#method-select
-            option(value="0") Average Daily Return
-            option(value="1") Harmonic Regression (Fourier)
-            //- option(value="2") Averaged Harmonic Regression (Fourier)
+        //- .select-wrapper: select#method-select
+        //-     option(value="0") Average Daily Return
+        //-     option(value="1") Harmonic Regression (Fourier)
+        //-     //- option(value="2") Averaged Harmonic Regression (Fourier)
 
-    #chart-container 
-        #seasonality-chart
+
+        #selected-symbol
+
+        button#close-chart-button.click-button: svg: use(href="#svg-cross-icon")
+
+    #chart-row
+        #chart-container
+            include chart-instructions.pug
+            #seasonality-chart
+            #cursor-indicator
+                svg: use(href="#svg-cursor-icon")
+                span.location 12.01.2026
+
+        #chart-side-container
+            #components-backtesting-tabs
+                button#backtesting-button.click-button Backtesting         
+                button#components-button.click-button Chart Komponenten
+            #tab-content-container 
+                include chart-components.pug
+                include backtesting-summary.pug
+
+    #backtesting-details-row
+        include backtesting-details.pug
+
+    
