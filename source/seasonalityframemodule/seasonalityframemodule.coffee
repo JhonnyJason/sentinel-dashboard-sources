@@ -8,13 +8,16 @@ import { createLogFunctions } from "thingy-debug"
 import * as mData from "./marketdatamodule.js"
 import * as utl from "./utilsmodule.js"
 import { Combobox } from "./comboboxfun.js"
-import { drawChart, resetChart, toggleSeriesVisibility } from "./chartfun.js"
+import { drawChart, resetChart, toggleSeriesVisibility, onRangeSelected } from "./chartfun.js"
+import { runBacktesting } from "./backtesting.js"
 
 ############################################################
 ## Re-export for symboloptions callback
 
 ############################################################
 aggregationYearsIndicator = document.getElementById("aggregation-years-indicator")
+backtestingTradeDescription = document.getElementById("backtesting-trade-description")
+winRateNumber = document.getElementById("win-rate-number")
 
 ############################################################
 #region State
@@ -48,6 +51,13 @@ export initialize = (c) ->
 
     # Wire up legend series click handlers
     wireLegendSeriesHandlers()
+
+    # Wire up chart selection callback
+    onRangeSelected(onChartRangeSelected)
+
+    # Wire up tab buttons
+    componentsButton.addEventListener("click", onComponentsButtonClick)
+    backtestingButton.addEventListener("click", onBacktestingButtonClick)
     return
 
 ############################################################
@@ -74,6 +84,34 @@ onCloseChart = ->
     symbolInput.value = ""
     resetTimeframeSelect()
     setChartInactive()
+    return
+
+onChartRangeSelected = (startIdx, endIdx) ->
+    log "onChartRangeSelected"
+    pickedStartIdx = startIdx
+    pickedEndIdx = endIdx
+    olog { pickedStartIdx, pickedEndIdx }
+
+    # Run backtesting (stub for now)
+    results = runBacktesting(startIdx, endIdx)
+
+    # Update backtesting UI
+    updateBacktestingUI(results)
+
+    # Transition to backtesting state
+    setBacktestingActive()
+    return
+
+onComponentsButtonClick = ->
+    log "onComponentsButtonClick"
+    setChartActive()  # Returns to analysing state
+    return
+
+onBacktestingButtonClick = ->
+    log "onBacktestingButtonClick"
+    # Only switch if we have a selection
+    if pickedStartIdx? and pickedEndIdx?
+        setBacktestingActive()
     return
 
 #endregion
@@ -149,6 +187,7 @@ updateYearsIndicator = ->
 #region Chart State Classes
 setChartActive = ->
     seasonalityframe.classList.remove("chart-inactive")
+    seasonalityframe.classList.remove("backtesting")
     seasonalityframe.classList.add("chart-active")
     seasonalityframe.classList.add("analysing")
     return
@@ -156,7 +195,37 @@ setChartActive = ->
 setChartInactive = ->
     seasonalityframe.classList.remove("chart-active")
     seasonalityframe.classList.remove("analysing")
+    seasonalityframe.classList.remove("backtesting")
     seasonalityframe.classList.add("chart-inactive")
+    return
+
+setBacktestingActive = ->
+    seasonalityframe.classList.remove("analysing")
+    seasonalityframe.classList.add("backtesting")
+    return
+#endregion
+
+############################################################
+#region Backtesting UI Updates
+updateBacktestingUI = (results) ->
+    log "updateBacktestingUI"
+    olog results
+
+    # Trade description
+    backtestingTradeDescription.textContent = results.tradeDescription
+
+    # Win rate
+    winRateNumber.textContent = "#{results.winRate}%"
+    # TODO: Update pie chart visualization
+
+    # Summary stats
+    document.querySelector('#max-rise .value').textContent = "#{results.maxRise}%"
+    document.querySelector('#max-drop .value').textContent = "#{results.maxDrop}%"
+    document.querySelector('#average-change .value').textContent = "#{results.averageProfit}%"
+    document.querySelector('#median-change .value').textContent = "#{results.medianProfit}%"
+    document.querySelector('#days-in-trade .value').textContent = "#{results.daysInTrade} Tage"
+
+    # TODO: Populate details table with yearlyResults
     return
 #endregion
 

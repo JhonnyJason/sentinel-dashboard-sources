@@ -16,6 +16,9 @@ chartContainer = null
 cursorIndicatorEl = null
 cursorLocationEl = null
 
+# Selection callback
+selectionCallback = null
+
 ############################################################
 monthNames = {
     MMMM:["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"]
@@ -74,17 +77,18 @@ timestampToAxisName = (val) ->
     return month+" "+date
 
 ############################################################
+export onRangeSelected = (callback) ->
+    selectionCallback = callback
+    return
+
+############################################################
 onSetSelect = (u) ->
     log "onSetSelect"
     if u.select.width > 0
-        log "Use Selection now!"
-        startIndex = u.posToIdx(u.select.left);
-        endIndex = u.posToIdx(u.select.left + u.select.width);
-
-        log startIndex
-        log endIndex
-        ## TODO implement
-
+        startIndex = u.posToIdx(u.select.left)
+        endIndex = u.posToIdx(u.select.left + u.select.width)
+        log "Selection range: #{startIndex} - #{endIndex}"
+        selectionCallback?(startIndex, endIndex)
     return false
 
 ############################################################
