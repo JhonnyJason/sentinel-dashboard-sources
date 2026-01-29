@@ -12,12 +12,6 @@ import * as utl from "./utilsmodule.js"
 chartHandle = null
 chartContainer = null
 
-############################################################
-# Legend state
-legendContainer = null
-legendTimestampEl = null
-legendSeriesEls = null
-
 # Cursor indicator state
 cursorIndicatorEl = null
 cursorLocationEl = null
@@ -31,14 +25,6 @@ monthNames = {
 }
 
 ############################################################
-# Legend date formatting - easily swappable
-formatLegendDate = (ts) ->
-    d = new Date(ts * 1000)
-    day = d.getDate()
-    month = monthNames.MMMM[d.getMonth()]
-    year = d.getFullYear()
-    "#{day}. #{month} #{year}"
-
 # Cursor indicator date formatting - dd.mm.yyyy
 formatCursorDate = (ts) ->
     d = new Date(ts * 1000)
@@ -48,49 +34,23 @@ formatCursorDate = (ts) ->
     "#{day}.#{month}.#{year}"
 
 ############################################################
-export initLegend = (container) ->
-    log "initLegend"
-    legendContainer = container
-    legendTimestampEl = container.querySelector('.legend-date')
-    legendSeriesEls = container.querySelectorAll('.legend-series')
-
-    # Wire up checkboxes for show/hide
-    legendSeriesEls.forEach (el) ->
-        seriesIdx = parseInt(el.dataset.series)
-        checkbox = el.querySelector('input[type="checkbox"]')
-        checkbox.addEventListener 'change', (e) ->
-            return unless chartHandle?
-            chartHandle.setSeries(seriesIdx, { show: e.target.checked })
-            el.classList.toggle('series-hidden', !e.target.checked)
+export toggleSeriesVisibility = (seriesIdx, isVisible) ->
+    log "toggleSeriesVisibility", seriesIdx, isVisible
+    return unless chartHandle?
+    chartHandle.setSeries(seriesIdx, { show: isVisible })
     return
 
 ############################################################
 onCursorMove = (u) ->
     idx = u.cursor.idx
+    return unless cursorIndicatorEl?
 
-    # Update cursor indicator
-    if cursorIndicatorEl?
-        if !idx?
-            cursorIndicatorEl.classList.remove("shown")
-        else
-            timestamp = u.data[0][idx]
-            cursorLocationEl.textContent = formatCursorDate(timestamp)
-            cursorIndicatorEl.classList.add("shown")
-
-    # Update legend (if present)
-    if legendContainer?
-        if !idx?
-            legendTimestampEl.textContent = "--. --- ----"
-            legendSeriesEls.forEach (el) ->
-                el.querySelector('.series-value').textContent = "--%"
-        else
-            timestamp = u.data[0][idx]
-            legendTimestampEl.textContent = formatLegendDate(timestamp)
-            legendSeriesEls.forEach (el) ->
-                seriesIdx = parseInt(el.dataset.series)
-                val = u.data[seriesIdx]?[idx]
-                valueEl = el.querySelector('.series-value')
-                valueEl.textContent = if val? then "#{val.toFixed(1)}%" else "--%"
+    if !idx?
+        cursorIndicatorEl.classList.remove("shown")
+    else
+        timestamp = u.data[0][idx]
+        cursorLocationEl.textContent = formatCursorDate(timestamp)
+        cursorIndicatorEl.classList.add("shown")
     return
 
 ############################################################
@@ -100,10 +60,6 @@ export resetChart = (container) ->
     container.innerHTML = ""
     chartHandle = null
     chartContainer = container
-    # Reset legend state
-    legendContainer = null
-    legendTimestampEl = null
-    legendSeriesEls = null
     # Reset cursor indicator state
     cursorIndicatorEl?.classList.remove("shown")
     cursorIndicatorEl = null
@@ -231,7 +187,7 @@ validateChartData = (xAxisData, seasonalityData, latestData) ->
     return allValid
 
 ############################################################
-export drawChart = (container, xAxisData, seasonalityData, latestData) ->
+export drawChart = (container, xAxisData, adrData, fourierData, latestData) ->
     log "drawChart"
     chartContainer = container
 
@@ -240,7 +196,7 @@ export drawChart = (container, xAxisData, seasonalityData, latestData) ->
     cursorLocationEl = cursorIndicatorEl?.querySelector('.location')
 
     # Validate data before drawing
-    validateChartData(xAxisData, seasonalityData, latestData)
+    validateChartData(xAxisData, adrData, latestData)
 
     rect = container.getBoundingClientRect();
     width = Math.floor(rect.width)
@@ -273,6 +229,12 @@ export drawChart = (container, xAxisData, seasonalityData, latestData) ->
 
         return [min, max]
 
+    # Build series dynamically - latestData always last to be on top
+    seriesConfig = [{}]  # x-axis placeholder
+    seriesConfig.push({ label: "Average Daily Return", stroke: "#ffffff" })
+    if fourierData?
+        seriesConfig.push({ label: "Fourier Regression", stroke: "#aabbaa" })
+    seriesConfig.push({ label: "Neuester Verlauf", stroke: "#faba01" })
 
     options = {
         width: width - 15,
@@ -284,17 +246,7 @@ export drawChart = (container, xAxisData, seasonalityData, latestData) ->
                 range: setXRange
             }
         },
-        series: [
-            {},
-            {
-                label: "Seasonality Composite 10J",
-                stroke: "#ffffff",
-            },
-            {
-                label: "Neuester Verlauf",
-                stroke: "#faba01",
-            },
-        ],
+        series: seriesConfig,
         axes: [
             {
                 space: 80
@@ -336,10 +288,12 @@ export drawChart = (container, xAxisData, seasonalityData, latestData) ->
         }
     }
 
+    # Build data array - latestData always last
     data = []
-    if seasonalityData?
+    if adrData?
         data.push(xAxisData)
-        data.push(seasonalityData)
+        data.push(adrData)
+        data.push(fourierData) if fourierData?
         data.push(latestData) if latestData?
 
     chartHandle = new uPlot(options, data, container);

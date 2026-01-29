@@ -8,10 +8,13 @@ import { createLogFunctions } from "thingy-debug"
 import * as mData from "./marketdatamodule.js"
 import * as utl from "./utilsmodule.js"
 import { Combobox } from "./comboboxfun.js"
-import { drawChart, resetChart, initLegend } from "./chartfun.js"
+import { drawChart, resetChart, toggleSeriesVisibility } from "./chartfun.js"
 
 ############################################################
 ## Re-export for symboloptions callback
+
+############################################################
+aggregationYearsIndicator = document.getElementById("aggregation-years-indicator")
 
 ############################################################
 #region State
@@ -19,8 +22,9 @@ currentSelectedStock = null
 currentSelectedTimeframe = null
 
 xAxisData = null
-seasonalityData = null
-latestData = null
+adrAggregation = null  # Average Daily Return - prepared for 2-year display
+frAggregation = null   # Fourier Regression - prepared for 2-year display (on-demand)
+latestData = null      # prepared for 2-year display
 maxHistory = null
 
 pickedStartIdx = null
@@ -42,9 +46,8 @@ export initialize = (c) ->
 
     closeChartButton.addEventListener("click", onCloseChart)
 
-    # Initialize legend
-    legendEl = document.querySelector('#chart-container .chart-legend')
-    initLegend(legendEl) if legendEl?
+    # Wire up legend series click handlers
+    wireLegendSeriesHandlers()
     return
 
 ############################################################
@@ -73,6 +76,73 @@ onCloseChart = ->
     setChartInactive()
     return
 
+#endregion
+
+############################################################
+#region Legend Series Wiring
+wireLegendSeriesHandlers = ->
+    log "wireLegendSeriesHandlers"
+    legendSeriesEls = document.querySelectorAll('#chart-components-tab .legend-series')
+    legendSeriesEls.forEach (el) ->
+        el.addEventListener 'click', -> onLegendSeriesClick(el)
+    return
+
+onLegendSeriesClick = (el) ->
+    log "onLegendSeriesClick"
+    isExperimental = el.classList.contains('experimental')
+    isVisible = el.classList.toggle('visible')
+
+    if isExperimental and isVisible
+        # Fourier toggled visible - calculate on-demand and redraw
+        await ensureFourierData()
+        redrawChart()
+        updateSeriesIndices()
+    else if isExperimental and !isVisible
+        # Fourier toggled hidden - redraw without it
+        redrawChart()
+        updateSeriesIndices()
+    else
+        # Regular series toggle - just show/hide via uPlot
+        seriesIdx = parseInt(el.getAttribute('series-index'))
+        toggleSeriesVisibility(seriesIdx, isVisible)
+    return
+
+ensureFourierData = ->
+    return if frAggregation?  # Already calculated
+    log "ensureFourierData - calculating..."
+    symbol = currentSelectedStock
+    years = parseInt(currentSelectedTimeframe)
+    rawFr = await mData.getSeasonalityComposite(symbol, years, 1)
+    frAggregation = prepareSeasonalityFor2Year(rawFr)
+    log "Fourier data ready, length: " + frAggregation.length
+    return
+
+isFourierVisible = ->
+    frEl = document.querySelector('#chart-components-tab .legend-series.experimental')
+    return frEl?.classList.contains('visible') ? false
+
+updateSeriesIndices = ->
+    # latestData is always drawn last; its index depends on whether Fourier is visible
+    latestEl = document.querySelector('#chart-components-tab .legend-series[series-index]')
+    frVisible = isFourierVisible()
+    latestIdx = if frVisible then 3 else 2
+    # Update the first legend-series element (latestData) with correct index
+    document.querySelector('#chart-components-tab .legend-series:first-child')?.setAttribute('series-index', latestIdx)
+    return
+
+redrawChart = ->
+    log "redrawChart"
+    return unless adrAggregation?
+    resetChart(seasonalityChart)
+    if isFourierVisible() and frAggregation?
+        drawChart(seasonalityChart, xAxisData, adrAggregation, frAggregation, latestData)
+    else
+        drawChart(seasonalityChart, xAxisData, adrAggregation, null, latestData)
+    return
+
+updateYearsIndicator = ->
+    aggregationYearsIndicator.textContent = currentSelectedTimeframe
+    return
 #endregion
 
 ############################################################
@@ -151,9 +221,10 @@ resetAndRender = ->
             selectedSymbol.textContent = ""
 
         updateYearsOptions()
+        updateYearsIndicator()
         ## TODO reset preloader -> start rendering ;-)
         # seasonalityChart. <- we need this to trigger implicit-dom-connect sometimes
-        drawChart(seasonalityChart, xAxisData, seasonalityData, latestData)
+        redrawChart()
         setChartActive() if currentSelectedStock
     catch err then console.error(err) ## TODO: Maybe signal Error in chart and reset all state?
     # finally: ## TODO reset preloader on if it was not before
@@ -165,12 +236,18 @@ resetSeasonalityState = ->
     resetChart(seasonalityChart)
 
     xAxisData = null
-    seasonalityData = null
+    adrAggregation = null
+    frAggregation = null
     latestData = null
     maxHistory = null
 
     pickedStartIdx = null
     pickedEndIdx = null
+
+    # Reset Fourier visibility in UI (it will need recalculation for new data)
+    frEl = document.querySelector('#chart-components-tab .legend-series.experimental')
+    frEl?.classList.remove('visible')
+    updateSeriesIndices()
     return
 
 
@@ -179,53 +256,69 @@ retrieveRelevantData = ->
     log "retrieveRelevantData"
     symbol = currentSelectedStock
     years = parseInt(currentSelectedTimeframe)
-    method = 0
 
-    latestData = await mData.getLatestData(symbol)
-    seasonalityData = await mData.getSeasonalityComposite(symbol, years, method)
+    rawLatest = await mData.getLatestData(symbol)
+    rawAdr = await mData.getSeasonalityComposite(symbol, years, 0)
     maxHistory = mData.getHistoricDepth(symbol)
 
-    if !seasonalityData? then throw new Error("No seasonalityData returned!")
-    log "We have seasonalityData! the length is: "+seasonalityData.length
+    if !rawAdr? then throw new Error("No ADR data returned!")
+    log "ADR data length: " + rawAdr.length
 
-    prepareChartData()
+    prepareChartData(rawAdr, rawLatest)
     return
 
 ############################################################
-prepareChartData = ->
-    log "prepareChartData"
+#region Leap Year Config (computed once per year)
+leapYearConfig = null
 
-    ## Determine leap year configuration
+getLeapYearConfig = ->
+    return leapYearConfig if leapYearConfig?
     today = new Date()
     currentYear = today.getFullYear()
     lastYear = currentYear - 1
     currentYearIsLeap = utl.isLeapYear(currentYear)
     lastYearIsLeap = utl.isLeapYear(lastYear)
+    leapYearConfig = {
+        currentYearIsLeap
+        lastYearIsLeap
+        lastYearDays: if lastYearIsLeap then 366 else 365
+        currentYearDays: if currentYearIsLeap then 366 else 365
+    }
+    return leapYearConfig
+#endregion
 
-    lastYearDays = if lastYearIsLeap then 366 else 365
-    currentYearDays = if currentYearIsLeap then 366 else 365
-
-    ## Prepare seasonality composite for 2-year display
-    factors = utl.toFactorsArray(seasonalityData)
-    frontData = utl.fromFactorsBackward(factors) 
+############################################################
+# Prepare raw 366-day seasonality data for 2-year chart display
+prepareSeasonalityFor2Year = (rawData) ->
+    cfg = getLeapYearConfig()
+    factors = utl.toFactorsArray(rawData)
+    frontData = utl.fromFactorsBackward(factors)
     backData = utl.fromFactorsForward(factors)
-    
-    if !lastYearIsLeap then frontData = removeFeb29(frontData)
-    if !currentYearIsLeap then backData = removeFeb29(backData)
-         
-    seasonalityData = [...frontData, ...backData]
+
+    if !cfg.lastYearIsLeap then frontData = removeFeb29(frontData)
+    if !cfg.currentYearIsLeap then backData = removeFeb29(backData)
+
+    return [...frontData, ...backData]
+
+############################################################
+prepareChartData = (rawAdr, rawLatest) ->
+    log "prepareChartData"
+    cfg = getLeapYearConfig()
+
+    ## Prepare ADR aggregation for 2-year display
+    adrAggregation = prepareSeasonalityFor2Year(rawAdr)
 
     ## Prepare latestData for 2-year display
-    thisYearsData = latestData[0]
-    lastYearsData = latestData[1]
+    thisYearsData = rawLatest[0]
+    lastYearsData = rawLatest[1]
 
     factors = utl.toFactorsArray(lastYearsData)
     lastYearsData = utl.fromFactorsBackward(factors)
 
     factors = utl.toFactorsArray(thisYearsData)
     thisYearsData = utl.fromFactorsForward(factors)
-    
-    missingDays = currentYearDays - thisYearsData.length
+
+    missingDays = cfg.currentYearDays - thisYearsData.length
     missingData = new Array(missingDays).fill(null)
 
     latestData = [...lastYearsData, ...thisYearsData, ...missingData]
@@ -235,13 +328,13 @@ prepareChartData = ->
     axisTime = jan1.getTime() / 1000
 
     currentYearTimeAxis = []
-    for i in [0...currentYearDays]
+    for i in [0...cfg.currentYearDays]
         currentYearTimeAxis[i] = axisTime
         axisTime += 86_400
 
     axisTime = jan1.getTime() / 1000 - 86_400
-    lastYearTimeAxis = new Array(lastYearDays)
-    i = lastYearDays
+    lastYearTimeAxis = new Array(cfg.lastYearDays)
+    i = cfg.lastYearDays
     while i--
         lastYearTimeAxis[i] = axisTime
         axisTime -= 86_400
