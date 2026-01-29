@@ -195,8 +195,8 @@ export drawChart = (container, xAxisData, adrData, fourierData, latestData) ->
     cursorIndicatorEl = container.parentElement?.querySelector('#cursor-indicator')
     cursorLocationEl = cursorIndicatorEl?.querySelector('.location')
 
-    # Validate data before drawing
-    validateChartData(xAxisData, adrData, latestData)
+    # Validate data before drawing -> for testing only
+    # validateChartData(xAxisData, adrData, latestData)
 
     rect = container.getBoundingClientRect();
     width = Math.floor(rect.width)

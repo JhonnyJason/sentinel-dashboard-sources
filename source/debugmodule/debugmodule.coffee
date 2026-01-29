@@ -5,7 +5,7 @@ export modulesToDebug = {
 
     # accountmodule: true
     # appcoremodule: true
-    # chartfun: true
+    chartfun: true
     # comboboxfun: true
     # datamodule: true
     datacache: true
