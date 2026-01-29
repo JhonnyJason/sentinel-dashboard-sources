@@ -150,12 +150,12 @@ updateYearsIndicator = ->
 setChartActive = ->
     seasonalityframe.classList.remove("chart-inactive")
     seasonalityframe.classList.add("chart-active")
-    seasonalityframe.classList.add("check-components")
+    seasonalityframe.classList.add("analysing")
     return
 
 setChartInactive = ->
     seasonalityframe.classList.remove("chart-active")
-    seasonalityframe.classList.remove("check-components")
+    seasonalityframe.classList.remove("analysing")
     seasonalityframe.classList.add("chart-inactive")
     return
 #endregion
