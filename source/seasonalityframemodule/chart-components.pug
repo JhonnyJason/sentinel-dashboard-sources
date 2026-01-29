@@ -1,22 +1,19 @@
 #chart-components-tab 
 
-    .legend-series.visible(series-index="1" style="--color: #fff")
-        .icon: svg: use(href="svg-chartline-icon")
-        .series-description
-            label Saisonalitätsaggregation 10J
-            .sub-text Average Daily Return
-        .visibility.visible
-
-    .legend-series.visible(series-index="2" style="--color: #eee")
-        .icon: svg: use(href="svg-chartline-icon")
-        .series-description
-            label Saisonalitätsaggregation 10J
-            .sub-text Fourier Regression 
+    .legend-series.visible(series-index="2" style="--color: #faba01")
+        .icon: svg: use(href="#svg-chartline-icon")
+        .description Jüngste Kursdynamik
         .visibility
 
-    .legend-series.visible(series-index="2" style="--color: #faba01")
-        .icon: svg: use(href="svg-chartline-icon")
-        .series-description
-            label Jüngste Kursdynamik
-            .sub-text
-        .visibility.visble
+    h2 Saisonalitätsaggregation <span id="aggregation-years-indicator">5J</span>
+
+    .legend-series.visible(series-index="1" style="--color: #fff")
+        .icon: svg: use(href="#svg-chartline-icon")
+        .description Average Daily Return
+        .visibility
+
+    .legend-series.visible.experimental(series-index="2" style="--color: #eee")
+        .icon: svg: use(href="#svg-chartline-icon")
+        .description Fourier Regression 
+        .visibility
+

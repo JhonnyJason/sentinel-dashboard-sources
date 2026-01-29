@@ -6,25 +6,48 @@
     overflow-x: hidden
     overflow-y auto
     scrollbar-width: thin;
+    // padding 10px
     
+    h2
+        color #fff
+        margin-top 30px
+        margin-bottom 20px
+
     .legend-series
+        padding 10px 20px
+        display flex
+        align-items: center
+        box-sizing: border-box
+        justify-content: space-between
+        gap 10px
         cursor: pointer
         opacity 0.4
         color var(--color)
+        font-size: 12pt
+
+    .legend-series:first-child
+        margin-top 20px
+
+    .icon
+        width: 25px
+        height 25px
+        svg
+            height: inherit
+            width: inherit
 
     .visibility
-        height 25px
-        width 25px
+        height 15px
+        width 15px
         box-sizing: border-box
-        border solid 1px --var(--color)
+        border solid 1px var(--color)
         background-color transparent
 
     .experimental
-        .sub-text::before
-            content:"Experimental! "
+        .description::after
+            content:" Experimental!"
             color cd-danger-red
 
     .legend-series.visible
         opacity 1.0
         .visibility
-            background-color --var(--color)
+            background-color var(--color)

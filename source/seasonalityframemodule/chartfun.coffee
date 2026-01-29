@@ -18,6 +18,10 @@ legendContainer = null
 legendTimestampEl = null
 legendSeriesEls = null
 
+# Cursor indicator state
+cursorIndicatorEl = null
+cursorLocationEl = null
+
 ############################################################
 monthNames = {
     MMMM:["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"]
@@ -34,6 +38,14 @@ formatLegendDate = (ts) ->
     month = monthNames.MMMM[d.getMonth()]
     year = d.getFullYear()
     "#{day}. #{month} #{year}"
+
+# Cursor indicator date formatting - dd.mm.yyyy
+formatCursorDate = (ts) ->
+    d = new Date(ts * 1000)
+    day = String(d.getDate()).padStart(2, '0')
+    month = String(d.getMonth() + 1).padStart(2, '0')
+    year = d.getFullYear()
+    "#{day}.#{month}.#{year}"
 
 ############################################################
 export initLegend = (container) ->
@@ -54,27 +66,31 @@ export initLegend = (container) ->
 
 ############################################################
 onCursorMove = (u) ->
-    return unless legendContainer?
-
     idx = u.cursor.idx
 
-    if !idx?
-        # Cursor left chart - show placeholder
-        legendTimestampEl.textContent = "--. --- ----"
-        legendSeriesEls.forEach (el) ->
-            el.querySelector('.series-value').textContent = "--%"
-        return
+    # Update cursor indicator
+    if cursorIndicatorEl?
+        if !idx?
+            cursorIndicatorEl.classList.remove("shown")
+        else
+            timestamp = u.data[0][idx]
+            cursorLocationEl.textContent = formatCursorDate(timestamp)
+            cursorIndicatorEl.classList.add("shown")
 
-    # Update timestamp
-    timestamp = u.data[0][idx]
-    legendTimestampEl.textContent = formatLegendDate(timestamp)
-
-    # Update series values
-    legendSeriesEls.forEach (el) ->
-        seriesIdx = parseInt(el.dataset.series)
-        val = u.data[seriesIdx]?[idx]
-        valueEl = el.querySelector('.series-value')
-        valueEl.textContent = if val? then "#{val.toFixed(1)}%" else "--%"
+    # Update legend (if present)
+    if legendContainer?
+        if !idx?
+            legendTimestampEl.textContent = "--. --- ----"
+            legendSeriesEls.forEach (el) ->
+                el.querySelector('.series-value').textContent = "--%"
+        else
+            timestamp = u.data[0][idx]
+            legendTimestampEl.textContent = formatLegendDate(timestamp)
+            legendSeriesEls.forEach (el) ->
+                seriesIdx = parseInt(el.dataset.series)
+                val = u.data[seriesIdx]?[idx]
+                valueEl = el.querySelector('.series-value')
+                valueEl.textContent = if val? then "#{val.toFixed(1)}%" else "--%"
     return
 
 ############################################################
@@ -88,6 +104,10 @@ export resetChart = (container) ->
     legendContainer = null
     legendTimestampEl = null
     legendSeriesEls = null
+    # Reset cursor indicator state
+    cursorIndicatorEl?.classList.remove("shown")
+    cursorIndicatorEl = null
+    cursorLocationEl = null
     return
 
 ############################################################
@@ -214,6 +234,10 @@ validateChartData = (xAxisData, seasonalityData, latestData) ->
 export drawChart = (container, xAxisData, seasonalityData, latestData) ->
     log "drawChart"
     chartContainer = container
+
+    # Initialize cursor indicator (sibling in parent #chart-container)
+    cursorIndicatorEl = container.parentElement?.querySelector('#cursor-indicator')
+    cursorLocationEl = cursorIndicatorEl?.querySelector('.location')
 
     # Validate data before drawing
     validateChartData(xAxisData, seasonalityData, latestData)

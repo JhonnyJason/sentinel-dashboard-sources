@@ -40,6 +40,8 @@ export initialize = (c) ->
     timeframeSelect.addEventListener("change", timeframeSelected)
     currentSelectedTimeframe = timeframeSelect.value
 
+    closeChartButton.addEventListener("click", onCloseChart)
+
     # Initialize legend
     legendEl = document.querySelector('#chart-container .chart-legend')
     initLegend(legendEl) if legendEl?
@@ -61,7 +63,44 @@ timeframeSelected = ->
     resetAndRender()
     return
 
+onCloseChart = ->
+    log "onCloseChart"
+    resetSeasonalityState()
+    currentSelectedStock = null
+    selectedSymbol.textContent = ""
+    symbolInput.value = ""
+    resetTimeframeSelect()
+    setChartInactive()
+    return
+
 #endregion
+
+############################################################
+#region Chart State Classes
+setChartActive = ->
+    seasonalityframe.classList.remove("chart-inactive")
+    seasonalityframe.classList.add("chart-active")
+    seasonalityframe.classList.add("check-components")
+    return
+
+setChartInactive = ->
+    seasonalityframe.classList.remove("chart-active")
+    seasonalityframe.classList.remove("check-components")
+    seasonalityframe.classList.add("chart-inactive")
+    return
+#endregion
+
+############################################################
+resetTimeframeSelect = ->
+    log "resetTimeframeSelect"
+    currentSelectedTimeframe = "5"
+    timeframeSelect.innerHTML = ""
+    optionEl = document.createElement("option")
+    optionEl.value = "5"
+    optionEl.textContent = "5 Jahre"
+    optionEl.selected = true
+    timeframeSelect.appendChild(optionEl)
+    return
 
 ############################################################
 updateYearsOptions = ->
@@ -110,11 +149,12 @@ resetAndRender = ->
             await retrieveRelevantData()
         else
             selectedSymbol.textContent = ""
-    
+
         updateYearsOptions()
         ## TODO reset preloader -> start rendering ;-)
-        # seasonalityChart.
+        # seasonalityChart. <- we need this to trigger implicit-dom-connect sometimes
         drawChart(seasonalityChart, xAxisData, seasonalityData, latestData)
+        setChartActive() if currentSelectedStock
     catch err then console.error(err) ## TODO: Maybe signal Error in chart and reset all state?
     # finally: ## TODO reset preloader on if it was not before
     return
