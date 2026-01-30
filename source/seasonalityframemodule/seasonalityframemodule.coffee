@@ -15,11 +15,19 @@ import { runBacktesting } from "./backtesting.js"
 ## Re-export for symboloptions callback
 
 ############################################################
+#region DOM cache for the cases where the implicit-dom-connect fails
 aggregationYearsIndicator = document.getElementById("aggregation-years-indicator")
 backtestingDirection = document.getElementById("backtesting-direction")
 backtestingTimeframe = document.getElementById("backtesting-timeframe")
 winRateNumber = document.getElementById("win-rate-number")
 lossCircle = document.getElementById("loss-circle")
+
+maxRiseValue = document.querySelector('#max-rise .value')
+maxDropValue = document.querySelector('#max-drop .value')
+averageChangeValue = document.querySelector('#average-change .value')
+medianChangeValue = document.querySelector('#median-change .value')
+daysInTradeValue = document.querySelector('#days-in-trade .value')
+#endresult
 
 ############################################################
 #region State
@@ -88,14 +96,18 @@ onCloseChart = ->
     setChartInactive()
     return
 
-onChartRangeSelected = (startIdx, endIdx) ->
+onChartRangeSelected = (pickedStartIdx, pickedEndIdx) ->
     log "onChartRangeSelected"
-    pickedStartIdx = startIdx
-    pickedEndIdx = endIdx
     olog { pickedStartIdx, pickedEndIdx }
+    { startIdx, endIdx } = normalizeSelectionIndices(pickedStartIdx, pickedEndIdx)
+    olog {startIdx, endIdx}
 
+    symbol = currentSelectedStock
+    years = parseInt(currentSelectedTimeframe)
+
+    backtestingData = await mData.getHistoryHLC(symbol, years)
     # Run backtesting (stub for now)
-    results = runBacktesting(startIdx, endIdx)
+    results = runBacktesting(backtestingData, startIdx, endIdx)
 
     # Update backtesting UI
     updateBacktestingUI(results)
@@ -218,17 +230,17 @@ updateBacktestingUI = (results) ->
     backtestingTimeframe.textContent = results.timeframeString
 
     # Win rate
-    winRateNumber.textContent = "#{results.winRate}%"
+    winRateNumber.textContent = "#{results.winRate.toFixed(1)}%"
     lossRate = 100 - results.winRate
     strokeDashArray = "#{lossRate * 6.294 / 100} #{6.294}"
     lossCircle.setAttribute("stroke-dasharray", strokeDashArray)
 
     # Summary stats
-    document.querySelector('#max-rise .value').textContent = "#{results.maxRise}%"
-    document.querySelector('#max-drop .value').textContent = "#{results.maxDrop}%"
-    document.querySelector('#average-change .value').textContent = "#{results.averageProfit}%"
-    document.querySelector('#median-change .value').textContent = "#{results.medianProfit}%"
-    document.querySelector('#days-in-trade .value').textContent = "#{results.daysInTrade} Tage"
+    maxRiseValue.textContent = "#{results.maxRise.toFixed(1)}%"
+    maxDropValue.textContent = "#{results.maxDrop.toFixed(1)}%"
+    averageChangeValue.textContent = "#{results.averageProfit.toFixed(1)}%"
+    medianChangeValue.textContent = "#{results.medianProfit.toFixed(1)}%"
+    daysInTradeValue.textContent = "#{results.daysInTrade} Tage"
 
     # TODO: Populate details table with yearlyResults
     return
@@ -417,8 +429,54 @@ prepareChartData = (rawAdr, rawLatest) ->
     return
 
 ############################################################
-removeFeb29 = (arr) -> 
+removeFeb29 = (arr) ->
     result = []
     for val,i in arr when i != utl.FEB29
         result.push(val)
     return result
+
+############################################################
+#region Selection Index Normalization
+# Converts raw chart indices (in 2-year display) to normalized indices
+# relative to a standard 365-day year.
+#
+# Chart layout: [...lastYearData, ...currentYearData]
+#
+# Three selection cases:
+# 1. Both in last year: startIdx=0-364, endIdx=0-364 (both positive)
+# 2. Overlapping: startIdx=negative, endIdx=0-364 (spans year boundary)
+# 3. Both in current year: startIdx=0-364, endIdx=0-364 (both positive)
+#
+# Feb 29 handling: In leap years, Feb 29 (index 59) maps to Feb 28,
+# and subsequent days shift down by 1.
+############################################################
+
+normalizeToStandardYear = (dayOfYear, isLeapYear) ->
+    return dayOfYear unless isLeapYear
+    return dayOfYear if dayOfYear < utl.FEB29
+    return utl.FEB28 if dayOfYear == utl.FEB29
+    return dayOfYear - 1
+
+normalizeSelectionIndices = (pickedStartIdx, pickedEndIdx) ->
+    cfg = getLeapYearConfig()
+    lastYearDays = cfg.lastYearDays
+
+    startInLastYear = pickedStartIdx < lastYearDays
+    endInLastYear = pickedEndIdx < lastYearDays
+
+    if startInLastYear
+        startIdx = normalizeToStandardYear(pickedStartIdx, cfg.lastYearIsLeap)
+    else
+        startIdx = normalizeToStandardYear(pickedStartIdx - lastYearDays, cfg.currentYearIsLeap)
+
+    if endInLastYear
+        endIdx = normalizeToStandardYear(pickedEndIdx, cfg.lastYearIsLeap)
+    else
+        endIdx = normalizeToStandardYear(pickedEndIdx - lastYearDays, cfg.currentYearIsLeap)
+
+    # Only make startIdx negative when selection overlaps years
+    if startInLastYear and !endInLastYear
+        startIdx = startIdx - 365
+
+    return { startIdx, endIdx }
+#endregion

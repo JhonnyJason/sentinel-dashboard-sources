@@ -7,12 +7,13 @@ import { createLogFunctions } from "thingy-debug"
 ############################################################
 import * as utl from "./utilsmodule.js"
 import { 
-    getHistoricCloseData, getLatestCloseData, getHistoricDepth 
+    getHistoricCloseData, getLatestCloseData, getHistoricDepth,
+    getHistoryHLC 
 } from "./datacache.js"
 import { calculateSeasonalityComposite } from "./seasonality.js"
 
 ############################################################
-export { getHistoricDepth }
+export { getHistoricDepth, getHistoryHLC }
 
 ############################################################
 export getSeasonalityComposite = (symbol, years, method) ->
