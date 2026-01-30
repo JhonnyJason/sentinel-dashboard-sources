@@ -91,6 +91,9 @@ runOverlappingBacktest = (dataPerYear, startIdx, endIdx) ->
     directionString = if isLong then "Long" else "Short"
     timeframeString = "[#{indexToDate(startIdx)} - #{indexToDate(endIdx)}]"
     daysInTrade = (endIdx - startIdx) % 365
+    
+    profitF = 100.0
+    if !isLong then profitF = -100.0 # on Short we get positiv profit on negative change
 
     return {
         directionString
@@ -98,8 +101,8 @@ runOverlappingBacktest = (dataPerYear, startIdx, endIdx) ->
         winRate
         maxRise: (maxRiseF - 1) * 100
         maxDrop: (maxDropF - 1) * 100
-        averageProfit: (avgChangeF - 1) * 100
-        medianProfit: (medChangeF - 1) * 100
+        averageProfit: profitF * (avgChangeF - 1)
+        medianProfit: profitF * (medChangeF - 1)
         daysInTrade
         warn
         yearlyResults
@@ -138,14 +141,17 @@ runBacktest = (dataPerYear, startIdx, endIdx) ->
     timeframeString = "[#{indexToDate(startIdx)} - #{indexToDate(endIdx)}]"
     daysInTrade = endIdx - startIdx
 
+    profitF = 100.0
+    if !isLong then profitF = -100.0 # on Short we get positiv profit on negative change
+
     return {
         directionString
         timeframeString
         winRate
         maxRise: (maxRiseF - 1) * 100
         maxDrop: (maxDropF - 1) * 100
-        averageProfit: (avgChangeF - 1) * 100
-        medianProfit: (medChangeF - 1) * 100
+        averageProfit: profitF * (avgChangeF - 1)
+        medianProfit: profitF * (medChangeF - 1)
         daysInTrade
         warn
         yearlyResults
