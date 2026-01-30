@@ -59,14 +59,14 @@ export runBacktesting = (dataPerYear, startIdx, endIdx) ->
 ############################################################
 runOverlappingBacktest = (dataPerYear, startIdx, endIdx) ->
     log "runOverlappingBacktest"
-    olog { startIdx, endIdx, yearsAvailable: dataPerYear.length }
+    # olog { startIdx, endIdx, yearsAvailable: dataPerYear.length }
 
     # For overlapping: we need year pairs (currYear, prevYear)
     # dataPerYear[0] = current, dataPerYear[1] = last year, etc.
     # We combine end of prevYear with start of currYear
     sequences = getTradeDaySequencesOverlapped(dataPerYear, startIdx, endIdx)
-    olog { sequencesLength: sequences.length }
-    olog sequences
+    # olog { sequencesLength: sequences.length }
+    # olog sequences
 
     backtestResults = sequences.map((seq) -> backtestSequence(seq))
     { avgChangeF, medChangeF } = getAverageAndMedianChanges(backtestResults)
@@ -108,11 +108,11 @@ runOverlappingBacktest = (dataPerYear, startIdx, endIdx) ->
 ############################################################
 runBacktest = (dataPerYear, startIdx, endIdx) ->
     log "runBacktest"
-    olog { startIdx, endIdx, yearsAvailable: dataPerYear.length }
+    # olog { startIdx, endIdx, yearsAvailable: dataPerYear.length }
 
     sequences = getTradeDaySequences(dataPerYear, startIdx, endIdx)
-    olog { sequencesLength: sequences.length }
-    olog sequences
+    # olog { sequencesLength: sequences.length }
+    # olog sequences
 
     backtestResults = sequences.map((seq) -> backtestSequence(seq))
     { avgChangeF, medChangeF } = getAverageAndMedianChanges(backtestResults)

@@ -96,8 +96,11 @@ onCloseChart = ->
     setChartInactive()
     return
 
-onChartRangeSelected = (pickedStartIdx, pickedEndIdx) ->
+onChartRangeSelected = (startIdx, endIdx) ->
     log "onChartRangeSelected"
+    pickedStartIdx = startIdx # the local State
+    pickedEndIdx = endIdx # the local State
+
     olog { pickedStartIdx, pickedEndIdx }
     { startIdx, endIdx } = normalizeSelectionIndices(pickedStartIdx, pickedEndIdx)
     olog {startIdx, endIdx}
@@ -244,6 +247,7 @@ updateBacktestingUI = (results) ->
 
     # TODO: Populate details table with yearlyResults
     return
+
 #endregion
 
 ############################################################
@@ -457,22 +461,22 @@ normalizeToStandardYear = (dayOfYear, isLeapYear) ->
     return utl.FEB28 if dayOfYear == utl.FEB29
     return dayOfYear - 1
 
-normalizeSelectionIndices = (pickedStartIdx, pickedEndIdx) ->
+normalizeSelectionIndices = (startIdx, endIdx) ->
     cfg = getLeapYearConfig()
     lastYearDays = cfg.lastYearDays
 
-    startInLastYear = pickedStartIdx < lastYearDays
-    endInLastYear = pickedEndIdx < lastYearDays
+    startInLastYear = startIdx < lastYearDays
+    endInLastYear = endIdx < lastYearDays
 
     if startInLastYear
-        startIdx = normalizeToStandardYear(pickedStartIdx, cfg.lastYearIsLeap)
+        startIdx = normalizeToStandardYear(startIdx, cfg.lastYearIsLeap)
     else
-        startIdx = normalizeToStandardYear(pickedStartIdx - lastYearDays, cfg.currentYearIsLeap)
+        startIdx = normalizeToStandardYear(startIdx - lastYearDays, cfg.currentYearIsLeap)
 
     if endInLastYear
-        endIdx = normalizeToStandardYear(pickedEndIdx, cfg.lastYearIsLeap)
+        endIdx = normalizeToStandardYear(endIdx, cfg.lastYearIsLeap)
     else
-        endIdx = normalizeToStandardYear(pickedEndIdx - lastYearDays, cfg.currentYearIsLeap)
+        endIdx = normalizeToStandardYear(endIdx - lastYearDays, cfg.currentYearIsLeap)
 
     # Only make startIdx negative when selection overlaps years
     if startInLastYear and !endInLastYear
