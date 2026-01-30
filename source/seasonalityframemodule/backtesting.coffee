@@ -197,12 +197,13 @@ backtestSequence = (seq) ->
 
 ############################################################
 #region summarizing results
-getAverageAndMedianChanges = (results) ->
+getAverageAndMedianChanges = (results, ignoreWithWarning = true) ->
     log "getAverageAndMedianChanges"
     changeSum = 0
     factors = []
     num = 0
     for el,i in results when el?
+        if ignoreWithWarning and el.warn then continue
         changeSum += el.changeF
         factors.push(el.changeF)
         num++
@@ -219,11 +220,12 @@ getAverageAndMedianChanges = (results) ->
 
     return { avgChangeF, medChangeF }
 
-getMaxRiseAndMaxDrop = (results) ->
+getMaxRiseAndMaxDrop = (results, ignoreWithWarning = true) ->
     log "getMaxRiseAndMaxDrop"
     maxDropF = Infinity
     maxRiseF = -Infinity
     for el in results when el?
+        if ignoreWithWarning and el.warn then continue
         if el.maxRiseF > maxRiseF then maxRiseF = el.maxRiseF
         if el.maxDropF < maxDropF then maxDropF = el.maxDropF
 
@@ -232,11 +234,12 @@ getMaxRiseAndMaxDrop = (results) ->
 ############################################################
 # Calculate win rate: % of years profitable in detected direction
 # Long wins when changeF > 1, Short wins when changeF < 1
-calculateWinRate = (results, isLong) ->
+calculateWinRate = (results, isLong, ignoreWithWarning = true) ->
     log "calculateWinRate"
     wins = 0
     total = 0
     for el in results when el?
+        if ignoreWithWarning and el.warn then continue
         total++
         if isLong and el.changeF > 1 then wins++
         else if not isLong and el.changeF < 1 then wins++
