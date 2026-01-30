@@ -40,7 +40,7 @@ import { createLogFunctions } from "thingy-debug"
 #   - hlcData: historic HLC data from datacache (per year)
 #   - startDayOfYear: 0-365 index for trade start
 #   - endDayOfYear: 0-365 index for trade end
-#
+#   
 # Returns: BacktestingResult object
 ############################################################
 export runBacktesting = (startIdx, endIdx) ->
@@ -49,7 +49,8 @@ export runBacktesting = (startIdx, endIdx) ->
 
     # Return mock data for UI development
     return {
-        tradeDescription: "[12.01. - 24.01.] Long"
+        directionString: "Long" 
+        timeframeString: "[12.01. - 24.01.]"
         winRate: 75
         maxRise: 8.5
         maxDrop: -3.2

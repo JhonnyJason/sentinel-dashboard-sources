@@ -16,8 +16,10 @@ import { runBacktesting } from "./backtesting.js"
 
 ############################################################
 aggregationYearsIndicator = document.getElementById("aggregation-years-indicator")
-backtestingTradeDescription = document.getElementById("backtesting-trade-description")
+backtestingDirection = document.getElementById("backtesting-direction")
+backtestingTimeframe = document.getElementById("backtesting-timeframe")
 winRateNumber = document.getElementById("win-rate-number")
+lossCircle = document.getElementById("loss-circle")
 
 ############################################################
 #region State
@@ -212,11 +214,14 @@ updateBacktestingUI = (results) ->
     olog results
 
     # Trade description
-    backtestingTradeDescription.textContent = results.tradeDescription
+    backtestingDirection.textContent = results.directionString
+    backtestingTimeframe.textContent = results.timeframeString
 
     # Win rate
     winRateNumber.textContent = "#{results.winRate}%"
-    # TODO: Update pie chart visualization
+    lossRate = 100 - results.winRate
+    strokeDashArray = "#{lossRate * 6.294 / 100} #{6.294}"
+    lossCircle.setAttribute("stroke-dasharray", strokeDashArray)
 
     # Summary stats
     document.querySelector('#max-rise .value').textContent = "#{results.maxRise}%"
