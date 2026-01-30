@@ -128,14 +128,14 @@ runBacktest = (dataPerYear, startIdx, endIdx) ->
 
     yearlyResults = []
     # the most recent trade potentially started this year
-    year = (new Date()).getFullYear()
-    for el in backtestResults when el?
+    currentYear = (new Date()).getFullYear()
+    for el, i in backtestResults when el?
+        year = currentYear - i
         warn = warn or el.warn
         profitP = (el.changeF - 1) * 100
         maxRiseP = (el.maxRiseF - 1) * 100
         maxDropP = (el.maxDropF - 1) * 100
         yearlyResults.push({ year, profitP, maxRiseP, maxDropP, warn: el.warn })
-        year--
 
     directionString = if isLong then "Long" else "Short"
     timeframeString = "[#{indexToDate(startIdx)} - #{indexToDate(endIdx)}]"

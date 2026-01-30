@@ -27,7 +27,16 @@ maxDropValue = document.querySelector('#max-drop .value')
 averageChangeValue = document.querySelector('#average-change .value')
 medianChangeValue = document.querySelector('#median-change .value')
 daysInTradeValue = document.querySelector('#days-in-trade .value')
-#endresult
+
+backtestingDetailsTable = document.getElementById("backtesting-details-table")
+backtestingWarning = document.querySelector('#backtesting-details-container .warning')
+
+# Table sorting state
+currentYearlyResults = null
+currentIsShort = false
+sortColumn = "year"  # "year", "profit", "maxRise", "maxDrop"
+sortAscending = false  # default: newest year first
+#endregion
 
 ############################################################
 #region State
@@ -226,7 +235,7 @@ setBacktestingActive = ->
 #region Backtesting UI Updates
 updateBacktestingUI = (results) ->
     log "updateBacktestingUI"
-    olog results
+    # olog results
 
     # Trade description
     backtestingDirection.textContent = results.directionString
@@ -245,8 +254,120 @@ updateBacktestingUI = (results) ->
     medianChangeValue.textContent = "#{results.medianProfit.toFixed(1)}%"
     daysInTradeValue.textContent = "#{results.daysInTrade} Tage"
 
-    # TODO: Populate details table with yearlyResults
+    # Populate details table (reset sort state for new data)
+    currentYearlyResults = results.yearlyResults
+    currentIsShort = results.directionString == "Short"
+    sortColumn = "year"
+    sortAscending = false
+    renderBacktestingTable()
+
+    # Show warning if any year had anomalies
+    if results.warn
+        backtestingWarning.style.display = "block"
+    else
+        backtestingWarning.style.display = "none"
     return
+
+renderBacktestingTable = ->
+    log "renderBacktestingTable"
+    return unless currentYearlyResults?
+
+    backtestingDetailsTable.innerHTML = ""
+
+    # Sort data
+    sortedResults = sortYearlyResults(currentYearlyResults)
+
+    # Create header row with sort indicators
+    thead = document.createElement("thead")
+    headerRow = document.createElement("tr")
+    headers = [
+        { label: "Jahr", key: "year" }
+        { label: "Profit", key: "profit" }
+        { label: "Max Anstieg", key: "maxRise" }
+        { label: "Max Abstieg", key: "maxDrop" }
+    ]
+    for { label, key } in headers
+        th = document.createElement("th")
+        th.dataset.sortKey = key
+        th.classList.add("sortable")
+        if key == sortColumn
+            th.classList.add("sorted")
+            th.classList.add(if sortAscending then "asc" else "desc")
+        th.textContent = label
+        th.addEventListener("click", onSortColumnClick)
+        headerRow.appendChild(th)
+    thead.appendChild(headerRow)
+    backtestingDetailsTable.appendChild(thead)
+
+    # Create body with sorted results
+    tbody = document.createElement("tbody")
+    for result in sortedResults
+        row = document.createElement("tr")
+        if result.warn then row.classList.add("warn")
+
+        # Year column
+        yearCell = document.createElement("td")
+        yearCell.textContent = result.year
+        row.appendChild(yearCell)
+
+        # Profit column (flip sign for Short)
+        profitCell = document.createElement("td")
+        profit = if currentIsShort then -result.profitP else result.profitP
+        profitCell.textContent = formatPercent(profit)
+        profitCell.classList.add(if profit >= 0 then "positive" else "negative")
+        row.appendChild(profitCell)
+
+        # Max Rise column
+        maxRiseCell = document.createElement("td")
+        maxRiseCell.textContent = formatPercent(result.maxRiseP)
+        row.appendChild(maxRiseCell)
+
+        # Max Drop column
+        maxDropCell = document.createElement("td")
+        maxDropCell.textContent = formatPercent(result.maxDropP)
+        row.appendChild(maxDropCell)
+
+        tbody.appendChild(row)
+
+    backtestingDetailsTable.appendChild(tbody)
+    return
+
+onSortColumnClick = (evnt) ->
+    key = evnt.target.getAttribute("data-sort-key")
+    log "onSortColumnClick: #{key}"
+    if sortColumn == key
+        sortAscending = !sortAscending  # Toggle direction
+    else
+        sortColumn = key
+        sortAscending = false  # New column: start descending
+    renderBacktestingTable()
+    return
+
+sortYearlyResults = (results) ->
+    sorted = [...results]  # Copy to avoid mutating original
+
+    compareFn = switch sortColumn
+        when "year"
+            (a, b) -> a.year - b.year
+        when "profit"
+            if currentIsShort
+                (a, b) -> (-a.profitP) - (-b.profitP)  # Flipped for Short
+            else
+                (a, b) -> a.profitP - b.profitP
+        when "maxRise"
+            (a, b) -> a.maxRiseP - b.maxRiseP
+        when "maxDrop"
+            (a, b) -> (-a.maxDropP) - (-b.maxDropP) # Flipped for max Drops
+        else
+            (a, b) -> 0
+
+    sorted.sort(compareFn)
+    unless sortAscending then sorted.reverse()
+    return sorted
+
+formatPercent = (value) ->
+    sign = if value >= 0 then "+" else ""
+    return "#{sign}#{value.toFixed(1)}%"
 
 #endregion
 

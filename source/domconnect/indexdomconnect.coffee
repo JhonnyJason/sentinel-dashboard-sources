@@ -15,6 +15,7 @@ indexdomconnect.initialize = () ->
     global.seasonalityChart = document.getElementById("seasonality-chart")
     global.backtestingButton = document.getElementById("backtesting-button")
     global.componentsButton = document.getElementById("components-button")
+    global.backtestingDetailsTable = document.getElementById("backtesting-details-table")
     global.winRate = document.getElementById("win-rate")
     global.maxRise = document.getElementById("max-rise")
     global.maxDrop = document.getElementById("max-drop")
