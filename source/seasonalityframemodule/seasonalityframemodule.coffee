@@ -51,6 +51,13 @@ maxHistory = null
 
 pickedStartIdx = null
 pickedEndIdx = null
+
+# Series visibility configuration (persists until chart closed)
+seriesVisibility = {
+    latestData: true   # default visible
+    adr: true          # default visible
+    fourier: false     # default hidden (experimental)
+}
 #endregion
 
 ############################################################
@@ -155,6 +162,11 @@ onLegendSeriesClick = (el) ->
     log "onLegendSeriesClick"
     isExperimental = el.classList.contains('experimental')
     isVisible = el.classList.toggle('visible')
+    seriesKey = el.getAttribute('series-key')
+
+    # Persist visibility state
+    if seriesKey and seriesVisibility.hasOwnProperty(seriesKey)
+        seriesVisibility[seriesKey] = isVisible
 
     if isExperimental and isVisible
         # Fourier toggled visible - calculate on-demand and redraw
@@ -182,8 +194,7 @@ ensureFourierData = ->
     return
 
 isFourierVisible = ->
-    frEl = document.querySelector('#chart-components-tab .legend-series.experimental')
-    return frEl?.classList.contains('visible') ? false
+    return seriesVisibility.fourier
 
 updateSeriesIndices = ->
     # latestData is always drawn last; its index depends on whether Fourier is visible
@@ -194,14 +205,45 @@ updateSeriesIndices = ->
     document.querySelector('#chart-components-tab .legend-series:first-child')?.setAttribute('series-index', latestIdx)
     return
 
+syncLegendVisibility = ->
+    # Sync DOM legend classes with seriesVisibility state
+    legendSeriesEls = document.querySelectorAll('#chart-components-tab .legend-series')
+    legendSeriesEls.forEach (el) ->
+        seriesKey = el.getAttribute('series-key')
+        if seriesKey and seriesVisibility.hasOwnProperty(seriesKey)
+            if seriesVisibility[seriesKey]
+                el.classList.add('visible')
+            else
+                el.classList.remove('visible')
+    return
+
+applySeriesVisibility = ->
+    # Apply stored visibility to chart series after redraw
+    log "applySeriesVisibility"
+    frVisible = seriesVisibility.fourier
+
+    # Series indices: 1=ADR, 2=Fourier(if visible)/latestData, 3=latestData(if Fourier visible)
+    adrIdx = 1
+    latestIdx = if frVisible then 3 else 2
+
+    toggleSeriesVisibility(adrIdx, seriesVisibility.adr)
+    toggleSeriesVisibility(latestIdx, seriesVisibility.latestData)
+    return
+
 redrawChart = ->
     log "redrawChart"
     return unless adrAggregation?
     resetChart(seasonalityChart)
-    if isFourierVisible() and frAggregation?
+
+    # Draw with Fourier if visibility state says so AND data is available
+    if seriesVisibility.fourier and frAggregation?
         drawChart(seasonalityChart, xAxisData, adrAggregation, frAggregation, latestData)
     else
         drawChart(seasonalityChart, xAxisData, adrAggregation, null, latestData)
+
+    # Restore series visibility after chart is drawn
+    updateSeriesIndices()
+    applySeriesVisibility()
     return
 
 updateYearsIndicator = ->
@@ -283,8 +325,11 @@ renderBacktestingTable = ->
     headers = [
         { label: "Jahr", key: "year" }
         { label: "Profit", key: "profit" }
+        { label: "Profit Abs", key: "profitA" }
         { label: "Max Anstieg", key: "maxRise" }
-        { label: "Max Abstieg", key: "maxDrop" }
+        { label: "Max Anstieg Abs", key: "maxRiseA" }
+        { label: "Max Rückgang", key: "maxDrop" }
+        { label: "Max Rückgang Abs", key: "maxDropA" }
     ]
     for { label, key } in headers
         th = document.createElement("th")
@@ -317,15 +362,34 @@ renderBacktestingTable = ->
         profitCell.classList.add(if profit >= 0 then "positive" else "negative")
         row.appendChild(profitCell)
 
+        # Profit Abs column
+        profitAbsCell = document.createElement("td")
+        profitAbs = result.startA * profit / 100
+        profitAbsCell.textContent = formatAbsolute(profitAbs)
+        profitAbsCell.classList.add(if profitAbs >= 0 then "positive" else "negative")
+        row.appendChild(profitAbsCell)
+
         # Max Rise column
         maxRiseCell = document.createElement("td")
         maxRiseCell.textContent = formatPercent(result.maxRiseP)
         row.appendChild(maxRiseCell)
 
+        # Max Rise Abs column
+        maxRiseAbsCell = document.createElement("td")
+        maxRiseAbs = result.startA * result.maxRiseP / 100
+        maxRiseAbsCell.textContent = formatAbsolute(maxRiseAbs)
+        row.appendChild(maxRiseAbsCell)
+
         # Max Drop column
         maxDropCell = document.createElement("td")
         maxDropCell.textContent = formatPercent(result.maxDropP)
         row.appendChild(maxDropCell)
+
+        # Max Drop Abs column
+        maxDropAbsCell = document.createElement("td")
+        maxDropAbs = result.startA * result.maxDropP / 100
+        maxDropAbsCell.textContent = formatAbsolute(maxDropAbs)
+        row.appendChild(maxDropAbsCell)
 
         tbody.appendChild(row)
 
@@ -354,10 +418,19 @@ sortYearlyResults = (results) ->
                 (a, b) -> (-a.profitP) - (-b.profitP)  # Flipped for Short
             else
                 (a, b) -> a.profitP - b.profitP
+        when "profitA"
+            if currentIsShort
+                (a, b) -> (-a.startA * a.profitP) - (-b.startA * b.profitP)
+            else
+                (a, b) -> (a.startA * a.profitP) - (b.startA * b.profitP)
         when "maxRise"
             (a, b) -> a.maxRiseP - b.maxRiseP
+        when "maxRiseA"
+            (a, b) -> (a.startA * a.maxRiseP) - (b.startA * b.maxRiseP)
         when "maxDrop"
             (a, b) -> (-a.maxDropP) - (-b.maxDropP) # Flipped for max Drops
+        when "maxDropA"
+            (a, b) -> (-a.startA * a.maxDropP) - (-b.startA * b.maxDropP)
         else
             (a, b) -> 0
 
@@ -368,6 +441,10 @@ sortYearlyResults = (results) ->
 formatPercent = (value) ->
     sign = if value >= 0 then "+" else ""
     return "#{sign}#{value.toFixed(1)}%"
+
+formatAbsolute = (value) ->
+    sign = if value >= 0 then "+" else ""
+    return "#{sign}#{value.toFixed(2)}"
 
 #endregion
 
@@ -422,12 +499,15 @@ updateYearsOptions = ->
 ############################################################
 resetAndRender = ->
     log "resetAndRender"
-    resetSeasonalityState()
+    resetChartData()
     try
         ## TODO start a preloader to signal data wating :-)
         if currentSelectedStock
             selectedSymbol.textContent = ""+currentSelectedStock
             await retrieveRelevantData()
+            # Recalculate Fourier data if it was visible (data was reset but visibility preserved)
+            if seriesVisibility.fourier
+                await ensureFourierData()
         else
             selectedSymbol.textContent = ""
 
@@ -442,22 +522,34 @@ resetAndRender = ->
     return
 
 ############################################################
-resetSeasonalityState = ->
-    log "resetSeasonalityState"
+# Resets chart data but preserves series visibility configuration
+resetChartData = ->
+    log "resetChartData"
     resetChart(seasonalityChart)
 
     xAxisData = null
     adrAggregation = null
-    frAggregation = null
+    frAggregation = null  # data needs recalc, but visibility state preserved
     latestData = null
     maxHistory = null
 
     pickedStartIdx = null
     pickedEndIdx = null
+    return
 
-    # Reset Fourier visibility in UI (it will need recalculation for new data)
-    frEl = document.querySelector('#chart-components-tab .legend-series.experimental')
-    frEl?.classList.remove('visible')
+############################################################
+# Full reset including visibility - called only when chart is closed
+resetSeasonalityState = ->
+    log "resetSeasonalityState"
+    resetChartData()
+
+    # Reset visibility to defaults
+    seriesVisibility = {
+        latestData: true
+        adr: true
+        fourier: false
+    }
+    syncLegendVisibility()
     updateSeriesIndices()
     return
 

@@ -85,7 +85,7 @@ runOverlappingBacktest = (dataPerYear, startIdx, endIdx) ->
         profitP = (el.changeF - 1) * 100
         maxRiseP = (el.maxRiseF - 1) * 100
         maxDropP = (el.maxDropF - 1) * 100
-        yearlyResults.push({ year, profitP, maxRiseP, maxDropP, warn: el.warn })
+        yearlyResults.push({ year, profitP, maxRiseP, maxDropP, startA: el.startA, warn: el.warn })
         year--
 
     directionString = if isLong then "Long" else "Short"
@@ -135,7 +135,7 @@ runBacktest = (dataPerYear, startIdx, endIdx) ->
         profitP = (el.changeF - 1) * 100
         maxRiseP = (el.maxRiseF - 1) * 100
         maxDropP = (el.maxDropF - 1) * 100
-        yearlyResults.push({ year, profitP, maxRiseP, maxDropP, warn: el.warn })
+        yearlyResults.push({ year, profitP, maxRiseP, maxDropP, startA: el.startA, warn: el.warn })
 
     directionString = if isLong then "Long" else "Short"
     timeframeString = "[#{indexToDate(startIdx)} - #{indexToDate(endIdx)}]"
@@ -199,7 +199,7 @@ backtestSequence = (seq) ->
     maxRiseF = 1.0 * maxRiseA / startA
     maxDropF = 1.0 * maxDropA / startA
 
-    return { changeF, maxRiseF, maxDropF, warn }
+    return { startA, changeF, maxRiseF, maxDropF, warn }
 
 ############################################################
 #region summarizing results
