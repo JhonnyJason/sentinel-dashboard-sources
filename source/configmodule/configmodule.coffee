@@ -3,7 +3,7 @@ export appVersion = "v0.1.0"
 export heartbeatMS = 120_000 # ~2min
 
 ############################################################
-export urlAccessManager = "https://sentinel-access-manager-dev.dotv.ee"
+export urlAccessManager = "https://sentinel-access-manager.dotv.ee"
 export urlWebsocketBackend = "https://sentinel-backend.dotv.ee"
 export urlDatahub = "https://sentinel-datahub.dotv.ee"
 
