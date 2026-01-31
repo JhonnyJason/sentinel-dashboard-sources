@@ -16,6 +16,10 @@ chartContainer = null
 cursorIndicatorEl = null
 cursorLocationEl = null
 
+# Reset button state
+resetButtonEl = null
+defaultMax = null  # Store the default rightmost position
+
 # Selection callback
 selectionCallback = null
 
@@ -67,6 +71,38 @@ export resetChart = (container) ->
     cursorIndicatorEl?.classList.remove("shown")
     cursorIndicatorEl = null
     cursorLocationEl = null
+    # Reset button state
+    resetButtonEl?.classList.remove("shown")
+    resetButtonEl = null
+    defaultMax = null
+    return
+
+############################################################
+updateResetButtonVisibility = (currentMax) ->
+    return unless resetButtonEl? and defaultMax?
+    # Show button when not at the rightmost (default) position
+    # Small tolerance for floating point comparison
+    if currentMax < defaultMax - 1
+        resetButtonEl.classList.add("shown")
+    else
+        resetButtonEl.classList.remove("shown")
+    return
+
+############################################################
+onScaleChange = (u, scaleKey) ->
+    return unless scaleKey == "x"
+    currentMax = u.scales.x.max
+    updateResetButtonVisibility(currentMax)
+    return
+
+############################################################
+export resetTimeAxis = ->
+    log "resetTimeAxis"
+    return unless chartHandle? and defaultMax?
+    rangeDif = chartHandle.scales.x.max - chartHandle.scales.x.min
+    newMax = defaultMax
+    newMin = newMax - rangeDif
+    chartHandle.setScale("x", { min: newMin, max: newMax })
     return
 
 ############################################################
@@ -199,6 +235,9 @@ export drawChart = (container, xAxisData, adrData, fourierData, latestData) ->
     cursorIndicatorEl = container.parentElement?.querySelector('#cursor-indicator')
     cursorLocationEl = cursorIndicatorEl?.querySelector('.location')
 
+    # Initialize reset button (sibling in parent #chart-container)
+    resetButtonEl = container.parentElement?.querySelector('#reset-time-axis-button')
+
     # Validate data before drawing -> for testing only
     # validateChartData(xAxisData, adrData, latestData)
 
@@ -217,6 +256,7 @@ export drawChart = (container, xAxisData, adrData, fourierData, latestData) ->
 
     absoluteMax = max
     absoluteMin = jan1Before.getTime() / 1000
+    defaultMax = absoluteMax  # Store for reset functionality
 
     setXRange = (u, min, max) ->
         min = max - rangeDif
@@ -282,6 +322,7 @@ export drawChart = (container, xAxisData, adrData, fourierData, latestData) ->
             init: [onInit]
             setSelect: [onSetSelect]
             setCursor: [onCursorMove]
+            setScale: [onScaleChange]
         },
         cursor: {
             drag: {

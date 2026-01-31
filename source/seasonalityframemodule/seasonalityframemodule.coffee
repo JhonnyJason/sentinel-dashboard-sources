@@ -8,7 +8,7 @@ import { createLogFunctions } from "thingy-debug"
 import * as mData from "./marketdatamodule.js"
 import * as utl from "./utilsmodule.js"
 import { Combobox } from "./comboboxfun.js"
-import { drawChart, resetChart, toggleSeriesVisibility, onRangeSelected } from "./chartfun.js"
+import { drawChart, resetChart, toggleSeriesVisibility, onRangeSelected, resetTimeAxis } from "./chartfun.js"
 import { runBacktesting } from "./backtesting.js"
 
 ############################################################
@@ -84,6 +84,9 @@ export initialize = (c) ->
     # Wire up tab buttons
     componentsButton.addEventListener("click", onComponentsButtonClick)
     backtestingButton.addEventListener("click", onBacktestingButtonClick)
+
+    # Wire up reset time axis button
+    resetTimeAxisButton.addEventListener("click", resetTimeAxis)
     return
 
 ############################################################
@@ -193,14 +196,10 @@ ensureFourierData = ->
     log "Fourier data ready, length: " + frAggregation.length
     return
 
-isFourierVisible = ->
-    return seriesVisibility.fourier
-
 updateSeriesIndices = ->
     # latestData is always drawn last; its index depends on whether Fourier is visible
     latestEl = document.querySelector('#chart-components-tab .legend-series[series-index]')
-    frVisible = isFourierVisible()
-    latestIdx = if frVisible then 3 else 2
+    latestIdx = if seriesVisibility.fourier then 3 else 2
     # Update the first legend-series element (latestData) with correct index
     document.querySelector('#chart-components-tab .legend-series:first-child')?.setAttribute('series-index', latestIdx)
     return

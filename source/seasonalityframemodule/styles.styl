@@ -185,6 +185,31 @@
         width 20px
         height 20px
 
+#reset-time-axis-button
+    position absolute
+    bottom 10px
+    right 10px
+    display none
+    color white
+    height 30px
+    width 30px
+    // transition transform 0.2s ease-out
+    svg
+        height inherit
+        width inherit
+
+#reset-time-axis-button:hover
+    animation nudge-right 0.4s ease-in-out
+
+@keyframes nudge-right
+    0%
+        transform translateX(3px)
+    50%
+        transform translateX(-2px)
+    100%
+        transform translateX(0)
+
+
 #seasonality-chart
     position absolute
     top 0
