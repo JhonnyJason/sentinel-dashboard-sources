@@ -24,6 +24,12 @@ class EconomicArea
         @calculateGDPScore = o.gdpScoreFunction
         @calculateCOTScore = scoreHelper.generalCOTScore
 
+        @inflationParams = o.inflationParams
+        @interestParams = o.interestParams
+        @inflationParams = o.inflationParams
+        @gdpParams = o.gdpParams
+        @cotParams = o.cotParams
+        
         @metaData = {
             hicp: {}
             mrr: {}
@@ -39,7 +45,7 @@ class EconomicArea
 
         cObj = {
             "icon-href": o["icon-href"]
-            "title": o.title
+            title: o.title
             "inflation": @data.hicp
             "policyRate": @data.mrr
             "gdpg": @data.gdpg
@@ -167,28 +173,60 @@ class EconomicArea
         @infoTitleEl.textContent = ""
         @infoDescriptionEl.textContent = ""
         return
+    
+    ########################################################
+    normalizedInflationScore:  ->
+        { a, b, c } = @inflationParams
+        x = @data.hicp
+        n = a + b * x + c * x * x
+        if n < 0 then return 0 
+        return n
+
+    normalizedInterestScore:  ->
+        { a, b } = @interestParams
+        x = @data.mrr
+        return a + b * x
+
+    normalizedGDPScore:  ->
+        { a, b, c } = @gdpParams
+        x = @data.gdpg
+        n = a + b * x + c * x * x
+        if n < 0 then return 0 
+        return n
+
+    normalizedCOTScore:  -> 
+        f = @cotParams.f
+        # c6 = 0.0333 * @data.cotIndex6
+        # c32 = 0.0333 * @data.cotIndex36
+        c6 = 0.02 * @data.cotIndex6
+        c32 = 0.02 * @data.cotIndex36
+        return f * (c6 * c32 * c32)
 
 ############################################################
 eurozone = new EconomicArea({ #  351.4 mio Citizens 
     "icon-href": "#svg-europe-icon"
-    "title": "Eurozone"
-    "key": "eurozone"
-    "currencyName": "Euro"
-    "currencyShort":"EUR"
-    "populationM": 351.4,
-    "gdpScoreFunction": (gdpg) ->
+    title: "Eurozone"
+    key: "eurozone"
+    currencyName: "Euro"
+    currencyShort:"EUR"
+    populationM: 351.4,
+    gdpScoreFunction: (gdpg) ->
         switch
             when gdpg < 0.8 then return -1.0
             when gdpg < 1.5  then return 0.0
             when gdpg < 2.0 then return 2.0
             when gdpg < 3 then return 1.0
             else return -1.0
-    "cotScoreFunction": (index) -> return
+    cotScoreFunction: (index) -> return
+    inflationParams: { a: 1.667, b: 0.667, c: -0.083 }
+    interestParams: { a: -2.5, b: 1.0 }
+    gdpParams: { a: 2.25, b: 0.75, c: -0.188 }
+    cotParams: { f: 1.0 }
 })
 
 usa = new EconomicArea({ # 340.1mio Citizens
     "icon-href": "#svg-usa-icon"
-    "title": "USA"
+    title: "USA"
     "key": "usa"
     "currencyName": "US-Dollar"
     "currencyShort": "USD"
@@ -201,28 +239,36 @@ usa = new EconomicArea({ # 340.1mio Citizens
             when gdpg < 4 then return 1.0
             else return -1.0
     "cotScoreFunction": (index) -> return
+    inflationParams: { a: 1.667, b: 0.667, c: -0.083 }
+    interestParams: { a: -3, b: 1.0 }
+    gdpParams: { a: 2.074, b: 0.741, c: -0.148 }
+    cotParams: { f: 1.0 }
 })
 
 japan =  new EconomicArea({ # 124mio Citizens
     "icon-href": "#svg-japan-icon"
-    "title": "Japan"
-    "key": "japan"
-    "currencyName": "Yen"
-    "currencyShort": "JPY"
-    "populationM": 124,
-    "gdpScoreFunction": (gdpg) ->
+    title: "Japan"
+    key: "japan"
+    currencyName: "Yen"
+    currencyShort: "JPY"
+    populationM: 124,
+    gdpScoreFunction: (gdpg) ->
         switch
             when gdpg < 0.0 then return -1.0
             when gdpg < 1.0  then return 0.0
             when gdpg < 1.5 then return 2.0
             when gdpg < 2.5 then return 1.0
             else return -1.0
-    "cotScoreFunction": (index) -> return
+    cotScoreFunction: (index) -> return
+    inflationParams: { a: 2.38, b: 0.496, c: -0.099 }
+    interestParams: { a: -0.75, b: 1.5 }
+    gdpParams: { a: 2.813, b: 0.375, c: -0.188 }
+    cotParams: { f: 0.9 }
 })
 
 uk = new EconomicArea({ # 69.2mio Citizens
     "icon-href": "#svg-uk-icon"
-    "title": "Großbritannien"
+    title: "Großbritannien"
     "key": "uk"
     "currencyName": "Pfund"
     "currencyShort": "GBP"
@@ -235,11 +281,15 @@ uk = new EconomicArea({ # 69.2mio Citizens
             when gdpg < 3.5 then return 1.0
             else return -1.0
     "cotScoreFunction": (index) -> return
+    inflationParams: { a: 1.667, b: 0.667, c: -0.083 }
+    interestParams: { a: -2.5, b: 1.0 }
+    gdpParams: { a: 2.25, b: 0.75, c: -0.188 }
+    cotParams: { f: 1.0 }
 })
 
 canada = new EconomicArea({ # 41.3mio Citizens
     "icon-href": "#svg-canada-icon"
-    "title": "Kanada"
+    title: "Kanada"
     "key": "canada"
     "currencyName": "Canada Dollar"
     "currencyShort": "CAD"
@@ -252,11 +302,15 @@ canada = new EconomicArea({ # 41.3mio Citizens
             when gdpg < 3.5 then return 1.0
             else return -1.0
     "cotScoreFunction": (index) -> return
+    inflationParams: { a: 1.667, b: 0.667, c: -0.083 }
+    interestParams: { a: -2.5, b: 1.0 }
+    gdpParams: { a: 2.25, b: 0.75, c: -0.188 }
+    cotParams: { f: 1.0 }
 })
 
 australia = new EconomicArea({ # 27.4mio Citizens
     "icon-href": "#svg-australia-icon"
-    "title": "Australien"
+    title: "Australien"
     "key": "australia"
     "currencyName": "Australia Dollar"
     "currencyShort": "AUD"
@@ -269,11 +323,15 @@ australia = new EconomicArea({ # 27.4mio Citizens
             when gdpg < 4 then return 1.0
             else return -1.0
     "cotScoreFunction": (index) -> return
+    inflationParams: { a: 0.917, b: 0.833, c: -0.083 }
+    interestParams: { a: -3.0, b: 0.9 }
+    gdpParams: { a: 1.313, b: 1.125, c: -0.188 }
+    cotParams: { f: 1.0 }
 })
 
 switzerland = new EconomicArea({ # 9mio Citizens
     "icon-href": "#svg-switzerland-icon"
-    "title": "Schweiz"
+    title: "Schweiz"
     "key": "switzerland"
     "currencyName": "Franken"
     "currencyShort": "CHF"
@@ -286,11 +344,15 @@ switzerland = new EconomicArea({ # 9mio Citizens
             when gdpg < 3.0 then return 1.0
             else return -1.0
     "cotScoreFunction": (index) -> return
+    inflationParams: { a: 2.38, b: 0.496, c: -0.099 }
+    interestParams: { a: -0.7, b: 1.4 }
+    gdpParams: { a: 2.813, b: 0.375, c: -0.188 }
+    cotParams: { f: 0.9 }
 })
 
 newzealand = new EconomicArea({ # 5.4mio Citizens
     "icon-href": "#svg-newzealand-icon"
-    "title": "Neuseeland"
+    title: "Neuseeland"
     "key": "newzealand"
     "currencyName": "New Zealand Dollar"
     "currencyShort": "NZD"
@@ -303,6 +365,10 @@ newzealand = new EconomicArea({ # 5.4mio Citizens
             when gdpg < 4 then return 1.0
             else return -1.0
     "cotScoreFunction": (index) -> return
+    inflationParams: { a: 0.917, b: 0.833, c: -0.083 }
+    interestParams: { a: -3.0, b: 0.9 }
+    gdpParams: { a: 1.313, b: 1.125, c: -0.188 }
+    cotParams: { f: 1.0 }
 })
 
 

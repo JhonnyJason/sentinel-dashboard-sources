@@ -10,6 +10,13 @@ minScore = -25
 scoreRange = Math.abs(maxScore - minScore)
 
 ############################################################
+inflationDiffParams = { b: 1.4, d: 0.12 }
+interestDiffParams = { b: 0, d: 0.04 }
+gdpDiffParams = { b: 1.4, d: 0.12 }
+cotDiffParams = { b: 0, d: 0.01 }
+
+
+############################################################
 colors = [
     # 6 gradient to red and green + grey neutral color
     "#33cc00"
@@ -79,6 +86,24 @@ getInflationFactor = (baseInfl, quoteInfl) ->
 
         else throw new Error("Unexpected dif: #{dif} is of type: #{typeof dif}")
     return
+
+############################################################
+export inflationDiffCurve = (diff) ->
+    { b, d } = inflationDiffParams
+    return b * diff + d * diff * diff * diff
+
+export interestDiffCurve = (diff) ->
+    { b, d } = interestDiffParams
+    return b * diff + d * diff * diff * diff
+
+export gdpDiffCurve = (diff) ->
+    { b, d } = gdpDiffParams
+    return b * diff + d * diff * diff * diff
+
+export cotDiffCurve = (diff) ->
+    { b, d } = cotDiffParams
+    return b * diff + d * diff * diff * diff
+
 
 ############################################################
 export getInterestScore = (baseInterest, quoteInterest) ->

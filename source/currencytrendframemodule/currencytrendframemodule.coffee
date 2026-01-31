@@ -20,6 +20,28 @@ allCurrencyPairs = {}
 shownCurrencyPairs = []
 
 ############################################################
+nWeights = {
+    i: 6
+    l: 9
+    g: 3
+    c: 13
+}
+
+n6Weights = {
+    i: 7
+    l: 11
+    g: 5
+    c: 7
+}
+
+ypWeights = {
+    i: 10
+    l: 6
+    g: 9
+    c: 5
+}
+
+############################################################
 export initialize = ->
     log "initialize"
     for lblB,base of aA
@@ -107,20 +129,45 @@ class CurrencyPair
     updateScore: =>
         # log "updateScore #{@short}"
         try
-            interestScore = scoreHelper.getInterestScore(@baseArea.data.mrr, @quoteArea.data.mrr)
-            # log "interestScore: #{interestScore}"
-            inflationScore = scoreHelper.getInflationScore(@baseArea.data.hicp, @quoteArea.data.hicp)
-            # log "inflationScore: #{inflationScore}"
-            ## not implemented in this way
-            # gdpScore = scoreHelper.getGDPScore(@baseArea.data.gdpg, @quoteArea.data.gdpg)
-            # log "gdpScore: #{gdpScore}"
-            gdpScore = @baseArea.gdpScore - @quoteArea.gdpScore
-            log "@#{@short}: gdpScore is #{gdpScore}"
+            nInfScoreBase = @baseArea.normalizedInflationScore()
+            nInfScoreQuote = @quoteArea.normalizedInflationScore()
+            diff = nInfScoreBase - nInfScoreQuote
+            infScore = scoreHelper.inflationDiffCurve(diff)
+            
+            nMrrScoreBase = @baseArea.normalizedInterestScore()
+            nMrrScoreQuote = @quoteArea.normalizedInterestScore()
+            diff = nMrrScoreBase - nMrrScoreQuote
+            mrrScore = scoreHelper.interestDiffCurve(diff)
 
-            cotScore = @baseArea.cotScore - @quoteArea.cotScore
-            log "@#{@short}: cotScore is #{cotScore}"
+            nGdpScoreBase = @baseArea.normalizedGDPScore()
+            nGdpScoreQuote = @quoteArea.normalizedGDPScore()
+            diff = nGdpScoreBase - nGdpScoreQuote
+            gdpScore = scoreHelper.gdpDiffCurve(diff)
 
-            @score = Math.round((0.7 * (interestScore + inflationScore + gdpScore) + 1.3 * cotScore) * 1.2)
+            nCotScoreBase = @baseArea.normalizedCOTScore()
+            nCotScoreQuote = @quoteArea.normalizedCOTScore()
+            diff = nCotScoreBase - nCotScoreQuote
+            cotScore = scoreHelper.cotDiffCurve(diff)
+            if !isNaN(infScore)
+                log "#{@baseArea.currencyShort}#{@quoteArea.currencyShort}"
+                olog {
+                    infScore,
+                    mrrScore,
+                    gdpScore,
+                    # nCotScoreBase
+                    # nCotScoreQuote
+                    # diff
+                    cotScore
+                }
+            ## Top Level combination of individual scores already implemented :-)
+            { i, l, g, c } = nWeights
+            fullScore = i * infScore + l * mrrScore + g * gdpScore + c * cotScore
+
+            if fullScore > 30 then fullScore = 30
+            else if fullScore < -30 then fullScore = -30
+            else fullScore = Math.round(fullScore) 
+            
+            @score = fullScore
             
             trendColor = scoreHelper.getColorForScore(@score)
             trendText = scoreHelper.getTrendTextForScore(@score)
