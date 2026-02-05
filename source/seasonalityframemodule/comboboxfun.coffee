@@ -21,6 +21,7 @@ export class Combobox
         @dropdownVisible = false
         @highlightedIndex = -1
         @selectionCallback = null
+        @blurTimeoutId = null
 
         @inputEl.addEventListener("focus", @onFocus)
         @inputEl.addEventListener("input", @onInput)
@@ -69,6 +70,9 @@ export class Combobox
     #region Event Handlers
     onFocus: =>
         log "onFocus"
+        if @blurTimeoutId
+            clearTimeout(@blurTimeoutId)
+            @blurTimeoutId = null
         @updateCurrentOptions()
         @showDropdown()
         return
@@ -119,7 +123,7 @@ export class Combobox
 
     onBlur: =>
         log "onBlur"
-        setTimeout((=> @hideDropdown()), 150)
+        @blurTimeoutId = setTimeout((=> @hideDropdown()), 150)
         return
 
     onDropdownMousedown: (e) =>
