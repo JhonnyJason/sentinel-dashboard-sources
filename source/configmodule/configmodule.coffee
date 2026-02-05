@@ -1,9 +1,13 @@
 ############################################################
-export appVersion = "v0.1.0"
+export appVersion = "v0.1.1"
 export heartbeatMS = 120_000 # ~2min
 
 ############################################################
-export urlAccessManager = "https://sentinel-access-manager.dotv.ee"
+url = "https://sentinel-access-manager-dev.dotv.ee"
+if window.location.origin == "https://sentinel.ewag-handelssysteme.de"
+    url = "https://sentinel-access-manager.dotv.ee"
+export urlAccessManager = url
+
 export urlWebsocketBackend = "https://sentinel-backend.dotv.ee"
 export urlDatahub = "https://sentinel-datahub.dotv.ee"
 

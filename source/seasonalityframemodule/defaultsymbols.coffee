@@ -501,5 +501,13 @@ export defaultSymbols = [
     {symbol:"MOS",name:"Mosaic Company (The)"},
     {symbol:"MTCH",name:"Match Group"},
     {symbol:"LW",name:"Lamb Weston"},
-    {symbol:"NWS",name:"News Corp (Class B)"}
+    {symbol:"NWS",name:"News Corp (Class B)"},
+    {symbol:"DAX",name:"GLOBAL X DAX GERMANY ETF"},
+    {symbol:"RCI.INDX",name:"Dow Jones Composite All REIT"},
+    {symbol:"NDAQ",name:"Nasdaq Inc - 144A"},
+    {symbol:"0P0001ODCC.F",name:"STOXX Europe 600 Index FAM A EUR Acc"},
+    {symbol:"SPXB",name:"ProShares S&P 500 Bond ETF"},
+    {symbol:"SPY",name:"SPDR S&P 500 ETF Trust"},
+    {symbol:"RUTAX",name:"Russell Investment Company - Unconstrained Total R"},
+    {symbol:"ATX.INDX",name:"Austrian Traded Index in EUR"}   
 ]

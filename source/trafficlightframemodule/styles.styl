@@ -1,3 +1,133 @@
 // trafficlightframe styles
+@import "../seasonalityframemodule/uplot.min.css"
 #trafficlightframe
     width 100%
+    height "calc(100vh - %s)" % header-height
+    overflow-y auto
+    scrollbar-gutter stable
+    padding 20px 10px 20px 20px
+    box-sizing border-box
+
+#tl-chart-row
+    display flex
+    gap 5px
+
+#tl-chart-container
+    position relative
+    background-color cd-dark-blue
+    width 100%
+    box-sizing border-box
+    height 500px
+    border-radius 3px
+
+#trafficlight-chart
+    position absolute
+    top 0
+    left 0
+    height 100%
+    width 100%
+    overflow visible
+
+tl-green = rgb(46, 204, 113)
+tl-yellow = rgb(241, 196, 15)
+tl-red = rgb(231, 76, 60)
+tl-blue = rgb(52, 152, 219)
+
+#tl-side-container
+    background-color cd-dark-blue
+    width 30%
+    min-width 30%
+    box-sizing border-box
+    height 500px
+    border-radius 3px
+    display flex
+    flex-direction column
+    align-items center
+    padding-top 40px
+
+    .tl-bulb
+        width 120px
+        height 120px
+        border-radius 50%
+        background rgba(255, 255, 255, 0.05)
+        flex-shrink 0
+        transition all 0.4s ease
+
+    .tl-state-text
+        display none
+        padding 25px 20px
+        color #ffffff
+        text-align center
+
+        h3
+            margin-top 30px
+            font-size 22pt
+            font-weight: bold
+            text-transform: uppercase
+
+        p
+            margin-top 30px
+            font-size 12pt
+
+    &.state-green
+        .tl-bulb
+            background-color tl-green
+            // background radial-gradient(circle at 38% 38%, rgba(255,255,255,0.9) 0%, tl-green 35%, darken(tl-green, 20%) 100%)
+            box-shadow 0 0 15px 5px rgba(tl-green, 0.5), 0 0 40px 10px rgba(tl-green, 0.3), 0 0 80px 20px rgba(tl-green, 0.12)
+        .for-green
+            display block
+
+    &.state-yellow
+        .tl-bulb
+            background-color tl-yellow
+            // background radial-gradient(circle at 38% 38%, rgba(255,255,255,0.9) 0%, tl-yellow 35%, darken(tl-yellow, 20%) 100%)
+            box-shadow 0 0 15px 5px rgba(tl-yellow, 0.5), 0 0 40px 10px rgba(tl-yellow, 0.3), 0 0 80px 20px rgba(tl-yellow, 0.12)
+        .for-yellow
+            display block
+
+    &.state-red
+        .tl-bulb
+            background-color tl-red
+            // background radial-gradient(circle at 38% 38%, rgba(255,255,255,0.9) 0%, tl-red 35%, darken(tl-red, 20%) 100%)
+            box-shadow 0 0 15px 5px rgba(tl-red, 0.5), 0 0 40px 10px rgba(tl-red, 0.3), 0 0 80px 20px rgba(tl-red, 0.12)
+        .for-red
+            display block
+
+    &.state-blue
+        .tl-bulb
+            background-color tl-blue
+            // background radial-gradient(circle at 38% 38%, rgba(255,255,255,0.9) 0%, tl-blue 35%, darken(tl-blue, 20%) 100%)
+            box-shadow 0 0 15px 5px rgba(tl-blue, 0.5), 0 0 40px 10px rgba(tl-blue, 0.3), 0 0 80px 20px rgba(tl-blue, 0.12)
+        .for-blue
+            display block
+
+// Hide uPlot legend
+#trafficlightframe .u-legend
+    display none
+
+// Sidenav indicator dot
+#tl-nav-indicator
+    width 12px
+    height 12px
+    border-radius 50%
+    background-color rgba(255, 255, 255, 0.1)
+    margin-left auto
+    align-self center
+    flex-shrink 0
+    transition background-color 0.5s ease, box-shadow 0.5s ease
+
+    &.state-green
+        background-color tl-green
+        box-shadow 0 0 6px 2px rgba(tl-green, 0.6)
+
+    &.state-yellow
+        background-color tl-yellow
+        box-shadow 0 0 6px 2px rgba(tl-yellow, 0.6)
+
+    &.state-red
+        background-color tl-red
+        box-shadow 0 0 6px 2px rgba(tl-red, 0.6)
+
+    &.state-blue
+        background-color tl-blue
+        box-shadow 0 0 6px 2px rgba(tl-blue, 0.6)

@@ -10,6 +10,7 @@ import * as content from "./contentmodule.js"
 import * as sideNav from "./sidenavmodule.js"
 import * as noAccount from "./noaccountmodule.js"
 import * as dataModule from "./datamodule.js"
+import * as trafficlight from "./trafficlightframemodule.js"
 
 #endregion
 
@@ -31,6 +32,7 @@ applyBaseState["summary"] = ->
     sideNav.setSummaryState()
     noAccount.hide()
     header.className = "logged-in"
+    trafficlight.fetchData()
     return
 
 applyBaseState["currencytrend"] = ->
@@ -68,6 +70,7 @@ applyBaseState["trafficlight"] = ->
     sideNav.setTrafficlightState()
     noAccount.hide()
     header.className = "logged-in"
+    trafficlight.activate()
     return
 
 applyBaseState["account"] = ->
