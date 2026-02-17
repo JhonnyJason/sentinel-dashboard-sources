@@ -6,14 +6,21 @@
         #tl-side-container
             .tl-bulb
             .tl-state-text.for-green
-                h3 Entspannt
-                p The Märkte signalisieren Stärke.
+                h3 Bullishe Marktstimmung
+                p Der Markt ist im Normalzustand.
             .tl-state-text.for-yellow
-                h3 Vorsicht
-                p Die Märkte könnten geschwächt werden.
+                h3 Warnung
+                p Der Markt könnte korrigieren.
             .tl-state-text.for-red
-                h3 Gefahr
-                p Die Märkte signalisieren Schwäche.
+                h3 Bearishe Marktstimmung
+                p Der Markt ist in einer Korrektur.
             .tl-state-text.for-blue
-                h3 Vorsicht
-                p Die Märkte sind sich am erholen.
+                h3 Neutrale Marktstimmung
+                p Der Markt stabilisiert sich.
+    #tl-controls-row
+        label(for="zoom-level-select") Zoomstufe:
+        .select-wrapper: select#zoom-level-select
+            option(value="max" selected) Maximal
+            option(value="12") 12 Monate
+            option(value="6") 6 Monate
+            option(value="3") 3 Monate
