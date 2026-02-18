@@ -18,11 +18,17 @@ STATE_BG =
     blue:   "rgba(52, 152, 219, 1)"
 
 ############################################################
+# DOM Cache for buggy elements where implicit-dom-connect did not work
+trafficlightCursorIndicator =  document.getElementById("traffliclight-cursor-indicator")
+
+############################################################
 # Internal chart state
 chartHandle = null
 currentZoomLevel = "max"
-# Stored references for zoom recalculation
+# Stored references for zoom recalculation and cursor
 storedTimestamps = null
+storedStates = null
+cursorLocationEl = null
 
 ############################################################
 export initZoomControl = ->
@@ -45,6 +51,8 @@ export renderChart = (timestamps, spyCloses, states) ->
     return unless w > 0 and h > 0
 
     storedTimestamps = timestamps
+    storedStates = states
+    cursorLocationEl = trafficlightCursorIndicator.querySelector('.location')
     dataMin = timestamps[0]
     dataMax = timestamps[timestamps.length - 1]
 
@@ -97,9 +105,10 @@ export renderChart = (timestamps, spyCloses, states) ->
         ]
         hooks: {
             init: [onChartInit]
+            setCursor: [onCursorMove]
         }
         cursor: {
-            show: false
+            drag: { x: false, y: false, setScale: false }
         }
     }
 
@@ -129,6 +138,29 @@ applyZoomLevel = (level) ->
         months = parseInt(level)
         min = max - (months * 30.44 * 86400)
     chartHandle.setScale("x", { min, max })
+    return
+
+#endregion
+
+############################################################
+#region cursor indicator
+
+formatCursorDate = (ts) ->
+    d = new Date(ts * 1000)
+    day = String(d.getDate()).padStart(2, '0')
+    month = String(d.getMonth() + 1).padStart(2, '0')
+    "#{day}.#{month}.#{d.getFullYear()}"
+
+onCursorMove = (u) ->
+    idx = u.cursor.idx
+    unless idx?
+        trafficlightCursorIndicator.classList.remove("shown")
+        return
+    cursorLocationEl.textContent = formatCursorDate(u.data[0][idx])
+    state = storedStates[idx]
+    cursorDayStateIndicator.classList.remove("state-green", "state-yellow", "state-red", "state-blue")
+    cursorDayStateIndicator.classList.add("state-#{state}") if state?
+    trafficlightCursorIndicator.classList.add("shown")
     return
 
 #endregion

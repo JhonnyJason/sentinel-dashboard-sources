@@ -5,6 +5,7 @@ indexdomconnect.initialize = () ->
     global.content = document.getElementById("content")
     global.accountframe = document.getElementById("accountframe")
     global.newEmailInput = document.getElementById("new-email-input")
+    global.cursorDayStateIndicator = document.getElementById("cursor-day-state-indicator")
     global.zoomLevelSelect = document.getElementById("zoom-level-select")
     global.seasonalityframe = document.getElementById("seasonalityframe")
     global.symbolCombobox = document.getElementById("symbol-combobox")

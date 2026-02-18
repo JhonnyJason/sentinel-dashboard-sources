@@ -1,5 +1,7 @@
 // trafficlightframe styles
-@import "../seasonalityframemodule/uplot.min.css"
+// @import "../seasonalityframemodule/uplot.min.css" # unnecessary here already importet
+@import "visibility.styl"
+
 #trafficlightframe
     width 100%
     height "calc(100vh - %s)" % header-height
@@ -28,10 +30,30 @@
     width 100%
     overflow visible
 
+#traffliclight-cursor-indicator
+    position absolute
+    top 10px
+    left 10px
+    background-color #fff
+    border-radius 2px
+    display: none // should turn to flex in visibility.styl
+    align-items: center
+    padding 5px 10px 5px 3px
+    gap 3px
+    svg
+        position relative
+        width 20px
+        height 20px
+
+    #cursor-day-state-indicator
+        margin-left 5px
+        
 tl-green = rgb(46, 204, 113)
 tl-yellow = rgb(241, 196, 15)
 tl-red = rgb(231, 76, 60)
 tl-blue = rgb(52, 152, 219)
+
+
 
 #tl-side-container
     background-color cd-dark-blue
@@ -153,6 +175,7 @@ tl-blue = rgb(52, 152, 219)
 
 // Sidenav indicator dot
 #tl-nav-indicator
+#cursor-day-state-indicator
     width 12px
     height 12px
     border-radius 50%
