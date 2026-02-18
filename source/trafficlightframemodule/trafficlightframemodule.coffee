@@ -25,6 +25,7 @@ cachedTimestamps = null
 cachedSpyCloses = null
 cachedStates = null
 currentState = null
+lastFetch = null
 
 ############################################################
 export initialize = ->
@@ -36,7 +37,7 @@ export initialize = ->
 # Can be called early (e.g. on login) without rendering the chart
 export fetchData = ->
     log "fetchData"
-    return if cachedStates?
+    return if cachedStates? and dataIsRecent()
 
     authCode = getAuthCode()
     unless authCode?
@@ -54,6 +55,7 @@ export fetchData = ->
 
         olog spyResult.meta
         olog hygResult.meta
+        lastFetch = Date.now()
         processData(spyResult, hygResult)
     catch err
         log "fetch error: #{err.message}"
@@ -63,11 +65,18 @@ export fetchData = ->
 # Public: activate frame — fetch if needed, then render chart
 export activate = ->
     log "activate"
-    unless cachedStates?
+    unless cachedStates? and dataIsRecent()
         await fetchData()
     unless chart.isRendered()
         chart.renderChart(cachedTimestamps, cachedSpyCloses, cachedStates)
     return
+
+
+dataIsRecent = ->
+    return false if !lastFetch?
+    now = Date.now()
+    return (now - lastFetch) < (2 * 60 * 60 * 1000) # less than 2 hours ago
+
 
 ############################################################
 processData = (spyResult, hygResult) ->
