@@ -24,6 +24,8 @@ lossCircle = document.getElementById("loss-circle")
 
 maxRiseValue = document.querySelector('#max-rise .value')
 maxDropValue = document.querySelector('#max-drop .value')
+maxRiseAbsValue = document.querySelector('#max-rise-abs .value')
+maxDropAbsValue = document.querySelector('#max-drop-abs .value')
 averageChangeValue = document.querySelector('#average-change .value')
 medianChangeValue = document.querySelector('#median-change .value')
 daysInTradeValue = document.querySelector('#days-in-trade .value')
@@ -128,8 +130,8 @@ onChartRangeSelected = (startIdx, endIdx) ->
     years = parseInt(currentSelectedTimeframe)
 
     backtestingData = await mData.getHistoryHLC(symbol, years)
-    # Run backtesting (stub for now)
-    results = runBacktesting(backtestingData, startIdx, endIdx)
+    metaData = mData.getCurrentMetaData(symbol)
+    results = runBacktesting(backtestingData, metaData, startIdx, endIdx)
 
     # Update backtesting UI
     updateBacktestingUI(results)
@@ -291,6 +293,8 @@ updateBacktestingUI = (results) ->
     # Summary stats
     maxRiseValue.textContent = "#{results.maxRise.toFixed(1)}%"
     maxDropValue.textContent = "#{results.maxDrop.toFixed(1)}%"
+    maxRiseAbsValue.textContent = "#{results.maxRiseA.toFixed(2)}"
+    maxDropAbsValue.textContent = "#{results.maxDropA.toFixed(2)}"
     averageChangeValue.textContent = "#{results.averageProfit.toFixed(1)}%"
     medianChangeValue.textContent = "#{results.medianProfit.toFixed(1)}%"
     daysInTradeValue.textContent = "#{results.daysInTrade} Tage"
@@ -323,6 +327,8 @@ renderBacktestingTable = ->
     headerRow = document.createElement("tr")
     headers = [
         { label: "Jahr", key: "year" }
+        # { label: "Start", key: "startDate" }
+        # { label: "Ende", key: "endDate" }
         { label: "Profit", key: "profit" }
         { label: "Profit Abs", key: "profitA" }
         { label: "Max Anstieg", key: "maxRise" }

@@ -51,13 +51,13 @@ import * as utl from "./utilsmodule.js"
 #   - endIdx: normalized day-of-year (0-364)
 #
 # Returns: BacktestingResult object
-export runBacktesting = (dataPerYear, startIdx, endIdx) ->
+export runBacktesting = (dataPerYear, metaData, startIdx, endIdx) ->
     log "runBacktesting"
-    if startIdx < 0 then return runOverlappingBacktest(dataPerYear, startIdx, endIdx)
-    else return runBacktest(dataPerYear, startIdx, endIdx)
+    if startIdx < 0 then return runOverlappingBacktest(dataPerYear, metaData, startIdx, endIdx)
+    else return runBacktest(dataPerYear, metaData, startIdx, endIdx)
 
 ############################################################
-runOverlappingBacktest = (dataPerYear, startIdx, endIdx) ->
+runOverlappingBacktest = (dataPerYear,  metaData, startIdx, endIdx) ->
     log "runOverlappingBacktest"
     # olog { startIdx, endIdx, yearsAvailable: dataPerYear.length }
 
@@ -69,8 +69,11 @@ runOverlappingBacktest = (dataPerYear, startIdx, endIdx) ->
     # olog sequences
 
     backtestResults = sequences.map((seq) -> backtestSequence(seq))
+    splitFactors = metaData?.splitFactors
+    correctAbsoluteValues(backtestResults, splitFactors, startIdx, endIdx, true)
+
     { avgChangeF, medChangeF } = getAverageAndMedianChanges(backtestResults)
-    { maxRiseF, maxDropF } = getMaxRiseAndMaxDrop(backtestResults)
+    { maxRiseF, maxDropF, maxRiseA, maxDropA } = getMaxRiseAndMaxDrop(backtestResults)
 
     isLong = avgChangeF > 1
     winRate = calculateWinRate(backtestResults, isLong)
@@ -86,12 +89,13 @@ runOverlappingBacktest = (dataPerYear, startIdx, endIdx) ->
         maxRiseP = (el.maxRiseF - 1) * 100
         maxDropP = (el.maxDropF - 1) * 100
         yearlyResults.push({ year, profitP, maxRiseP, maxDropP, startA: el.startA, warn: el.warn })
+
         year--
 
     directionString = if isLong then "Long" else "Short"
     timeframeString = "[#{indexToDate(startIdx)} - #{indexToDate(endIdx)}]"
     daysInTrade = (endIdx - startIdx) % 365
-    
+
     profitF = 100.0
     if !isLong then profitF = -100.0 # on Short we get positiv profit on negative change
 
@@ -100,7 +104,9 @@ runOverlappingBacktest = (dataPerYear, startIdx, endIdx) ->
         timeframeString
         winRate
         maxRise: (maxRiseF - 1) * 100
+        maxRiseA
         maxDrop: (maxDropF - 1) * 100
+        maxDropA
         averageProfit: profitF * (avgChangeF - 1)
         medianProfit: profitF * (medChangeF - 1)
         daysInTrade
@@ -109,7 +115,7 @@ runOverlappingBacktest = (dataPerYear, startIdx, endIdx) ->
     }
 
 ############################################################
-runBacktest = (dataPerYear, startIdx, endIdx) ->
+runBacktest = (dataPerYear, metaData, startIdx, endIdx) ->
     log "runBacktest"
     # olog { startIdx, endIdx, yearsAvailable: dataPerYear.length }
 
@@ -118,8 +124,11 @@ runBacktest = (dataPerYear, startIdx, endIdx) ->
     # olog sequences
 
     backtestResults = sequences.map((seq) -> backtestSequence(seq))
+    splitFactors = metaData?.splitFactors
+    correctAbsoluteValues(backtestResults, splitFactors, startIdx, endIdx, false)
+
     { avgChangeF, medChangeF } = getAverageAndMedianChanges(backtestResults)
-    { maxRiseF, maxDropF } = getMaxRiseAndMaxDrop(backtestResults)
+    { maxRiseF, maxDropF, maxRiseA, maxDropA } = getMaxRiseAndMaxDrop(backtestResults)
 
     isLong = avgChangeF > 1
     winRate = calculateWinRate(backtestResults, isLong)
@@ -149,13 +158,63 @@ runBacktest = (dataPerYear, startIdx, endIdx) ->
         timeframeString
         winRate
         maxRise: (maxRiseF - 1) * 100
+        maxRiseA
         maxDrop: (maxDropF - 1) * 100
+        maxDropA
         averageProfit: profitF * (avgChangeF - 1)
         medianProfit: profitF * (medChangeF - 1)
         daysInTrade
         warn
         yearlyResults
     }
+
+#endregion
+
+############################################################
+#region Split Factor Correction
+
+############################################################
+# Correct absolute values (startA) on each backtestResult using split factors.
+# splitFactors: [{f, end, applied}, ...] from metaData, sorted by end date
+# A factor f is valid from the previous factor's end date to its own end date.
+# If applied: true, the data has been divided by f — multiply to get real price.
+# Uses the trade start date to determine the applicable factor for the whole sequence.
+correctAbsoluteValues = (backtestResults, splitFactors, startIdx, endIdx, isOverlapping) ->
+    return unless splitFactors?.length
+    hasApplied = splitFactors.some((sf) -> sf.applied)
+    return unless hasApplied
+
+    if isOverlapping
+        year = (new Date()).getFullYear() - 1
+    else
+        year = (new Date()).getFullYear()
+
+    for el in backtestResults when el?
+        dateStr = normalizedIdxToDateStr(year, startIdx)
+        corrF = getSplitCorrectionFactor(splitFactors, dateStr)
+        el.startA = el.startA / corrF
+        year--
+    return
+
+############################################################
+# Get the correction multiplier for a given date.
+# Returns f if the date falls within an applied split range, 1 otherwise.
+getSplitCorrectionFactor = (splitFactors, dateStr) ->
+    return 1 unless splitFactors?.length
+    for sf in splitFactors
+        if dateStr <= sf.end
+            return if sf.applied then sf.f else 1
+    return 1
+
+############################################################
+# Convert year + normalized day index (0-364 or negative) to "YYYY-MM-DD"
+normalizedIdxToDateStr = (year, dayIdx) ->
+    if dayIdx < 0
+        year = year - 1
+        dayIdx = 365 + dayIdx
+    jan1 = new Date(year, 0, 1, 12)
+    target = new Date(jan1.getTime() + dayIdx * 86_400_000)
+    return target.toISOString().slice(0, 10)
 
 #endregion
 
@@ -184,8 +243,13 @@ backtestSequence = (seq) ->
     for i in [1...seq.length]
         high = seq[i][0]
         low = seq[i][1]
-        if high > maxRiseA then maxRiseA = high
-        if low < maxDropA then maxDropA = low
+        
+        if high > maxRiseA 
+            maxRiseA = high
+            riseEndedIndex = i
+        if low < maxDropA 
+            maxDropA = low
+            dropEndedIndex = i
 
         # add a warning if any day to day difference is too much (+42.9% or -30%)
         close = seq[i][2]
@@ -199,7 +263,7 @@ backtestSequence = (seq) ->
     maxRiseF = 1.0 * maxRiseA / startA
     maxDropF = 1.0 * maxDropA / startA
 
-    return { startA, changeF, maxRiseF, maxDropF, warn }
+    return { startA, changeF, maxRiseF, maxDropF, warn, dropEndedIndex, riseEndedIndex }
 
 ############################################################
 #region summarizing results
@@ -230,12 +294,20 @@ getMaxRiseAndMaxDrop = (results, ignoreWithWarning = true) ->
     log "getMaxRiseAndMaxDrop"
     maxDropF = Infinity
     maxRiseF = -Infinity
+    maxRiseStartA = 0
+    maxDropStartA = 0
     for el in results when el?
         if ignoreWithWarning and el.warn then continue
-        if el.maxRiseF > maxRiseF then maxRiseF = el.maxRiseF
-        if el.maxDropF < maxDropF then maxDropF = el.maxDropF
+        if el.maxRiseF > maxRiseF
+            maxRiseF = el.maxRiseF
+            maxRiseStartA = el.startA
+        if el.maxDropF < maxDropF
+            maxDropF = el.maxDropF
+            maxDropStartA = el.startA
 
-    return { maxDropF, maxRiseF }
+    maxRiseA = maxRiseStartA * (maxRiseF - 1)
+    maxDropA = maxDropStartA * (maxDropF - 1)
+    return { maxDropF, maxRiseF, maxRiseA, maxDropA }
 
 ############################################################
 # Calculate win rate: % of years profitable in detected direction
