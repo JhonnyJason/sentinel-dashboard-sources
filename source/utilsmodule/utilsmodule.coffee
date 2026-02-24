@@ -9,6 +9,7 @@ import { createLogFunctions } from "thingy-debug"
 export FEB29 = 59
 export FEB28 = 58
 
+############################################################
 export isLeapYear = (year) ->
     return false unless (year % 4) == 0
     if (year % 100) == 0 and (year % 400) != 0 then return false
@@ -16,6 +17,34 @@ export isLeapYear = (year) ->
 
 export getDaysOfYear = (year) ->
     if isLeapYear(year) then 366 else 365
+
+############################################################
+# Index Conventions:
+#   nonLeapNorm (0-364): Jan1=0, Feb28=58, Mar1=59. No Feb29.
+#   leapNorm (0-365): Jan1=0, Feb28=58, Feb29=59, Mar1=60.
+#   real: actual day-of-year. NonLeap 0-364, Leap 0-365.
+
+export leapNormToRealIdx = (normed, isLeap) ->
+    return normed if isLeap                # leap real == leap norm
+    return normed if normed < FEB29        # 0-58 unchanged
+    return FEB28 if normed == FEB29        # Feb29 → Feb28
+    return normed - 1                      # 60+ shift down
+
+export nonLeapNormToRealIdx = (normed, isLeap) ->
+    return normed unless isLeap            # nonLeap real == nonLeap norm
+    return normed if normed < FEB29        # 0-58 (through Feb28) unchanged
+    return normed + 1                      # 59+ (Mar1+) shift forward for Feb29
+
+export realToLeapNormIdx = (real, isLeap) ->
+    return real if isLeap                  # leap real == leap norm
+    return real if real < FEB29            # 0-58 unchanged
+    return real + 1                        # 59+ shift (skip Feb29 slot)
+
+export realToNonLeapNormIdx = (real, isLeap) ->
+    return real unless isLeap              # nonLeap real == nonLeap norm
+    return real if real < FEB29            # 0-58 unchanged
+    return FEB28 if real == FEB29          # Feb29 → Feb28
+    return real - 1                        # 60+ shift down
 
 #endregion
 
@@ -108,6 +137,49 @@ export getDec31Date = (date) ->
 
 #endregion
 
+############################################################
+# Convert year + real day-of-year index to "DD.MM.YYYY" display string
+dayIndexToDateStr = (year, dayIdx) ->
+    jan1 = new Date(year, 0, 1, 12)
+    target = new Date(jan1.getTime() + dayIdx * 86_400_000)
+    day = target.getDate()
+    month = target.getMonth() + 1
+    dayStr = if day < 10 then "0#{day}" else "#{day}"
+    monthStr = if month < 10 then "0#{month}" else "#{month}"
+    return "#{dayStr}.#{monthStr}.#{year}"
+
+############################################################
+# Convenience class to handle day of year with associated index values.
+# @nIndex: nonLeapNorm index (0-364)
+# @rIndex: real day-of-year index (accounts for leap year)
+# Whenever we have a specific day as (year + nonLeapNorm index) use this class.
+export class Day
+    constructor: (@nIndex, @year) ->
+        @nIndex = (@nIndex + 2 * 365) % 365 # deal with some overflows
+        @isLeap = isLeapYear(@year)
+        @rIndex = nonLeapNormToRealIdx(@nIndex, @isLeap)
+        @yearIdx = (new Date()).getFullYear() - @year
+        @daysOfYear = getDaysOfYear(@year)
+
+    getDayNextYear: => return new Day(@nIndex, (@year + 1))
+    getDayPrevYear: => return new Day(@nIndex, (@year - 1))
+    getNextDay: => return new Day(((@nIndex + 1) % 365), (@year + (@nIndex == 364)))
+    getPrevDay: => return new Day(((@nIndex + 364) % 365), (@year - (@nIndex == 0)))
+    getDateStr: => return dayIndexToDateStr(@year, @rIndex)
+
+    lookupIn: (perYearData) =>
+        yearData = perYearData[@yearIdx]
+        return null unless yearData?
+
+        if @yearIdx == 0 # current Year might be incomplete to the year end
+            if @rIndex >= yearData.length then return null
+            else return yearData[@rIndex]
+
+        numMissing = @daysOfYear - yearData.length
+        # missing in older years means incomplete from the year start  
+        rIndex = @rIndex - numMissing 
+        if rIndex < 0 then return null
+        return yearData[rIndex] 
 
 ############################################################
 export scanForFreakValues = (dataArray, label) ->

@@ -36,7 +36,7 @@ backtestingWarning = document.querySelector('#backtesting-details-container .war
 # Table sorting state
 currentYearlyResults = null
 currentIsShort = false
-sortColumn = "year"  # "year", "profit", "maxRise", "maxDrop"
+sortColumn = "startDate"  # "startDate", "profit", "maxRise", "maxDrop"
 sortAscending = false  # default: newest year first
 #endregion
 
@@ -130,8 +130,9 @@ onChartRangeSelected = (startIdx, endIdx) ->
     years = parseInt(currentSelectedTimeframe)
 
     backtestingData = await mData.getHistoryHLC(symbol, years)
+    tradingDays = await mData.getHistoricTradingDays(symbol, years)
     metaData = mData.getCurrentMetaData(symbol)
-    results = runBacktesting(backtestingData, metaData, startIdx, endIdx)
+    results = runBacktesting(backtestingData, metaData, startIdx, endIdx, tradingDays)
 
     # Update backtesting UI
     updateBacktestingUI(results)
@@ -302,7 +303,7 @@ updateBacktestingUI = (results) ->
     # Populate details table (reset sort state for new data)
     currentYearlyResults = results.yearlyResults
     currentIsShort = results.directionString == "Short"
-    sortColumn = "year"
+    sortColumn = "startDate"
     sortAscending = false
     renderBacktestingTable()
 
@@ -326,9 +327,8 @@ renderBacktestingTable = ->
     thead = document.createElement("thead")
     headerRow = document.createElement("tr")
     headers = [
-        { label: "Jahr", key: "year" }
-        # { label: "Start", key: "startDate" }
-        # { label: "Ende", key: "endDate" }
+        { label: "Start", key: "startDate" }
+        { label: "Ende" }
         { label: "Profit", key: "profit" }
         { label: "Profit Abs", key: "profitA" }
         { label: "Max Anstieg", key: "maxRise" }
@@ -338,13 +338,14 @@ renderBacktestingTable = ->
     ]
     for { label, key } in headers
         th = document.createElement("th")
-        th.dataset.sortKey = key
-        th.classList.add("sortable")
-        if key == sortColumn
-            th.classList.add("sorted")
-            th.classList.add(if sortAscending then "asc" else "desc")
+        if key?
+            th.dataset.sortKey = key
+            th.classList.add("sortable")
+            if key == sortColumn
+                th.classList.add("sorted")
+                th.classList.add(if sortAscending then "asc" else "desc")
+            th.addEventListener("click", onSortColumnClick)
         th.textContent = label
-        th.addEventListener("click", onSortColumnClick)
         headerRow.appendChild(th)
     thead.appendChild(headerRow)
     backtestingDetailsTable.appendChild(thead)
@@ -355,10 +356,15 @@ renderBacktestingTable = ->
         row = document.createElement("tr")
         if result.warn then row.classList.add("warn")
 
-        # Year column
-        yearCell = document.createElement("td")
-        yearCell.textContent = result.year
-        row.appendChild(yearCell)
+        # Start date column
+        startDateCell = document.createElement("td")
+        startDateCell.textContent = result.startDate
+        row.appendChild(startDateCell)
+
+        # End date column
+        endDateCell = document.createElement("td")
+        endDateCell.textContent = result.endDate
+        row.appendChild(endDateCell)
 
         # Profit column (flip sign for Short)
         profitCell = document.createElement("td")
@@ -416,7 +422,7 @@ sortYearlyResults = (results) ->
     sorted = [...results]  # Copy to avoid mutating original
 
     compareFn = switch sortColumn
-        when "year"
+        when "startDate"
             (a, b) -> a.year - b.year
         when "profit"
             if currentIsShort
@@ -659,25 +665,16 @@ removeFeb29 = (arr) ->
 
 ############################################################
 #region Selection Index Normalization
-# Converts raw chart indices (in 2-year display) to normalized indices
-# relative to a standard 365-day year.
+# Converts raw chart indices (real indices in 2-year display) to nonLeapNorm
+# indices (0-364). Uses utl.realToNonLeapNormIdx for the conversion.
 #
 # Chart layout: [...lastYearData, ...currentYearData]
 #
-# Three selection cases:
+# Three selection cases after normalization:
 # 1. Both in last year: startIdx=0-364, endIdx=0-364 (both positive)
 # 2. Overlapping: startIdx=negative, endIdx=0-364 (spans year boundary)
 # 3. Both in current year: startIdx=0-364, endIdx=0-364 (both positive)
-#
-# Feb 29 handling: In leap years, Feb 29 (index 59) maps to Feb 28,
-# and subsequent days shift down by 1.
 ############################################################
-
-normalizeToStandardYear = (dayOfYear, isLeapYear) ->
-    return dayOfYear unless isLeapYear
-    return dayOfYear if dayOfYear < utl.FEB29
-    return utl.FEB28 if dayOfYear == utl.FEB29
-    return dayOfYear - 1
 
 normalizeSelectionIndices = (startIdx, endIdx) ->
     cfg = getLeapYearConfig()
@@ -687,14 +684,14 @@ normalizeSelectionIndices = (startIdx, endIdx) ->
     endInLastYear = endIdx < lastYearDays
 
     if startInLastYear
-        startIdx = normalizeToStandardYear(startIdx, cfg.lastYearIsLeap)
+        startIdx = utl.realToNonLeapNormIdx(startIdx, cfg.lastYearIsLeap)
     else
-        startIdx = normalizeToStandardYear(startIdx - lastYearDays, cfg.currentYearIsLeap)
+        startIdx = utl.realToNonLeapNormIdx(startIdx - lastYearDays, cfg.currentYearIsLeap)
 
     if endInLastYear
-        endIdx = normalizeToStandardYear(endIdx, cfg.lastYearIsLeap)
+        endIdx = utl.realToNonLeapNormIdx(endIdx, cfg.lastYearIsLeap)
     else
-        endIdx = normalizeToStandardYear(endIdx - lastYearDays, cfg.currentYearIsLeap)
+        endIdx = utl.realToNonLeapNormIdx(endIdx - lastYearDays, cfg.currentYearIsLeap)
 
     # Only make startIdx negative when selection overlaps years
     if startInLastYear and !endInLastYear

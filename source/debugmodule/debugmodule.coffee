@@ -5,7 +5,7 @@ export modulesToDebug = {
 
     # accountmodule: true
     # appcoremodule: true
-    # backtesting: true
+    backtesting: true
     # chartfun: true
     # comboboxfun: true
     # datamodule: true
@@ -13,13 +13,13 @@ export modulesToDebug = {
     # economicareasmodule: true
     # fouriermodule: true
     # summaryframemodule: true
-    currencytrendframemodule: true
+    # currencytrendframemodule: true
     # marketdatamodule: true
     # sampledata: true
     # scimodule: true
     # navtriggers: true
     # scimodule: true
-    scorehelper: true
+    # scorehelper: true
     # seasonality: true
     # seasonalityframemodule: true
     # symboloptions: true

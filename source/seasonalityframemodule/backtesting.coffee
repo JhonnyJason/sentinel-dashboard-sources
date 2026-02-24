@@ -15,8 +15,9 @@ import * as utl from "./utilsmodule.js"
 #
 # Data Structure:
 # - dataPerYear[0] = current year (incomplete), dataPerYear[n-1] = oldest
-# - Each year: [[h,l,c], ...] with 365 or 366 entries (leap year)
-# - Normalized indices assume 365-day year, must denormalize for leap years
+# - Each year: [[h,l,c], ...] with 365 or 366 entries (real/denormalized indices)
+# - All indices passed to this module are nonLeapNorm (0-364)
+# - Use utl.nonLeapNormToRealIdx to convert for data access
 #
 # Direction Detection:
 # - Positive average profit → "Long"
@@ -40,6 +41,7 @@ import * as utl from "./utilsmodule.js"
 # When accessing actual data, must re-expand indices for leap years.
 #
 
+
 ############################################################
 #region Top Level Backtesting Implementations
 ############################################################
@@ -51,22 +53,16 @@ import * as utl from "./utilsmodule.js"
 #   - endIdx: normalized day-of-year (0-364)
 #
 # Returns: BacktestingResult object
-export runBacktesting = (dataPerYear, metaData, startIdx, endIdx) ->
+export runBacktesting = (dataPerYear, metaData, startIdx, endIdx, tradingDaysPerYear) ->
     log "runBacktesting"
-    if startIdx < 0 then return runOverlappingBacktest(dataPerYear, metaData, startIdx, endIdx)
-    else return runBacktest(dataPerYear, metaData, startIdx, endIdx)
+    if startIdx < 0 then return runOverlappingBacktest(dataPerYear, metaData, startIdx, endIdx, tradingDaysPerYear)
+    else return runBacktest(dataPerYear, metaData, startIdx, endIdx, tradingDaysPerYear)
 
 ############################################################
-runOverlappingBacktest = (dataPerYear,  metaData, startIdx, endIdx) ->
+runOverlappingBacktest = (dataPerYear, metaData, startIdx, endIdx, tradingDaysPerYear) ->
     log "runOverlappingBacktest"
-    # olog { startIdx, endIdx, yearsAvailable: dataPerYear.length }
 
-    # For overlapping: we need year pairs (currYear, prevYear)
-    # dataPerYear[0] = current, dataPerYear[1] = last year, etc.
-    # We combine end of prevYear with start of currYear
     sequences = getTradeDaySequencesOverlapped(dataPerYear, startIdx, endIdx)
-    # olog { sequencesLength: sequences.length }
-    # olog sequences
 
     backtestResults = sequences.map((seq) -> backtestSequence(seq))
     splitFactors = metaData?.splitFactors
@@ -79,25 +75,35 @@ runOverlappingBacktest = (dataPerYear,  metaData, startIdx, endIdx) ->
     winRate = calculateWinRate(backtestResults, isLong)
 
     warn = false
-
     yearlyResults = []
-    # for overlapp the most recent trade started in last year.
-    year = (new Date()).getFullYear() - 1
-    for el in backtestResults when el?
+    currentYear = (new Date()).getFullYear()
+    prevYearNormIdx = startIdx + 365
+
+    for el, i in backtestResults
+        continue unless el?
+        # sequences[i]: currYear=currentYear-i, prevYear=currentYear-i-1
+        currYear = currentYear - i
+        prevYear = currYear - 1
+
         warn = warn or el.warn
         profitP = (el.changeF - 1) * 100
         maxRiseP = (el.maxRiseF - 1) * 100
         maxDropP = (el.maxDropF - 1) * 100
-        yearlyResults.push({ year, profitP, maxRiseP, maxDropP, startA: el.startA, warn: el.warn })
 
-        year--
+        # Compute effective trading dates (use positive nonLeapNorm index for prev year)
+        sDay = new utl.Day(prevYearNormIdx, prevYear)
+        startDate = effectiveStartDate(sDay, tradingDaysPerYear)
+        eDay = new utl.Day(endIdx, currYear)
+        endDate = effectiveEndDate(eDay, tradingDaysPerYear)
+        
+        yearlyResults.push({ year: prevYear, startDate, endDate, profitP, maxRiseP, maxDropP, startA: el.startA, warn: el.warn })
 
     directionString = if isLong then "Long" else "Short"
     timeframeString = "[#{indexToDate(startIdx)} - #{indexToDate(endIdx)}]"
     daysInTrade = (endIdx - startIdx) % 365
 
     profitF = 100.0
-    if !isLong then profitF = -100.0 # on Short we get positiv profit on negative change
+    if !isLong then profitF = -100.0
 
     return {
         directionString
@@ -115,13 +121,10 @@ runOverlappingBacktest = (dataPerYear,  metaData, startIdx, endIdx) ->
     }
 
 ############################################################
-runBacktest = (dataPerYear, metaData, startIdx, endIdx) ->
+runBacktest = (dataPerYear, metaData, startIdx, endIdx, tradingDaysPerYear) ->
     log "runBacktest"
-    # olog { startIdx, endIdx, yearsAvailable: dataPerYear.length }
 
     sequences = getTradeDaySequences(dataPerYear, startIdx, endIdx)
-    # olog { sequencesLength: sequences.length }
-    # olog sequences
 
     backtestResults = sequences.map((seq) -> backtestSequence(seq))
     splitFactors = metaData?.splitFactors
@@ -134,24 +137,32 @@ runBacktest = (dataPerYear, metaData, startIdx, endIdx) ->
     winRate = calculateWinRate(backtestResults, isLong)
 
     warn = false
-
     yearlyResults = []
-    # the most recent trade potentially started this year
     currentYear = (new Date()).getFullYear()
-    for el, i in backtestResults when el?
+
+    for el, i in backtestResults
+        continue unless el?
         year = currentYear - i
         warn = warn or el.warn
         profitP = (el.changeF - 1) * 100
         maxRiseP = (el.maxRiseF - 1) * 100
         maxDropP = (el.maxDropF - 1) * 100
-        yearlyResults.push({ year, profitP, maxRiseP, maxDropP, startA: el.startA, warn: el.warn })
+
+        # Compute effective trading dates
+        sDay = new utl.Day(startIdx, year)
+        startDate = effectiveStartDate(sDay, tradingDaysPerYear)
+        eDay = new utl.Day(endIdx, year)
+        endDate = effectiveEndDate(eDay, tradingDaysPerYear)
+
+
+        yearlyResults.push({ year, startDate, endDate, profitP, maxRiseP, maxDropP, startA: el.startA, warn: el.warn })
 
     directionString = if isLong then "Long" else "Short"
     timeframeString = "[#{indexToDate(startIdx)} - #{indexToDate(endIdx)}]"
     daysInTrade = endIdx - startIdx
 
     profitF = 100.0
-    if !isLong then profitF = -100.0 # on Short we get positiv profit on negative change
+    if !isLong then profitF = -100.0
 
     return {
         directionString
@@ -183,6 +194,8 @@ correctAbsoluteValues = (backtestResults, splitFactors, startIdx, endIdx, isOver
     return unless splitFactors?.length
     hasApplied = splitFactors.some((sf) -> sf.applied)
     return unless hasApplied
+    log "correctAbsoluteValues - - - - - - - - --> "
+    olog splitFactors
 
     if isOverlapping
         year = (new Date()).getFullYear() - 1
@@ -192,7 +205,10 @@ correctAbsoluteValues = (backtestResults, splitFactors, startIdx, endIdx, isOver
     for el in backtestResults when el?
         dateStr = normalizedIdxToDateStr(year, startIdx)
         corrF = getSplitCorrectionFactor(splitFactors, dateStr)
+        log "startA before correction: " + el.startA
         el.startA = el.startA / corrF
+        log "startA after correction: " + el.startA
+
         year--
     return
 
@@ -201,19 +217,26 @@ correctAbsoluteValues = (backtestResults, splitFactors, startIdx, endIdx, isOver
 # Returns f if the date falls within an applied split range, 1 otherwise.
 getSplitCorrectionFactor = (splitFactors, dateStr) ->
     return 1 unless splitFactors?.length
-    for sf in splitFactors
-        if dateStr <= sf.end
-            return if sf.applied then sf.f else 1
+    # lastEl = splitFactors[splitFactors.length - 1]
+    # if lastEl.end? then console.error("Unexpected! Last entry of SplitFactors did also have an end date!")
+
+    # lastEl.end = (new Date()).toISOString().slice(0, 10) # set fictional End date of today.
+
+    for sf,i in splitFactors
+        if dateStr <= sf.end or !sf.end?
+            if sf.applied then return sf.f 
+            else return 1
     return 1
 
 ############################################################
-# Convert year + normalized day index (0-364 or negative) to "YYYY-MM-DD"
+# Convert year + nonLeapNorm day index (0-364 or negative) to "YYYY-MM-DD"
 normalizedIdxToDateStr = (year, dayIdx) ->
     if dayIdx < 0
         year = year - 1
         dayIdx = 365 + dayIdx
+    realIdx = utl.nonLeapNormToRealIdx(dayIdx, utl.isLeapYear(year))
     jan1 = new Date(year, 0, 1, 12)
-    target = new Date(jan1.getTime() + dayIdx * 86_400_000)
+    target = new Date(jan1.getTime() + realIdx * 86_400_000)
     return target.toISOString().slice(0, 10)
 
 #endregion
@@ -233,26 +256,33 @@ backtestSequence = (seq) ->
     maxDropA = Infinity
 
     # We start at end of day of the first trade and we leave at end of day of the last Tradeday
-    startA = seq[0][2] # start price is the close of day 0
-    endA = seq[seq.length - 1][2] # end price is the close of the last day
+    startA = seq[0][seq[0].length - 1] # start price is close of day 0
+    endA = seq[seq.length - 1][seq[seq.length - 1].length - 2] # end price is close of the last day
+
     changeA = endA - startA
     warn = false
     
     lastClose = startA
 
     for i in [1...seq.length]
-        high = seq[i][0]
-        low = seq[i][1]
         
-        if high > maxRiseA 
+        if seq[i].length == 3
+            high = seq[i][0]
+            low = seq[i][1]
+            close = seq[i][2]
+        else 
+            close = seq[i][0]
+            low = close
+            high = close
+        
+        if high > maxRiseA
             maxRiseA = high
             riseEndedIndex = i
-        if low < maxDropA 
+        if low < maxDropA
             maxDropA = low
             dropEndedIndex = i
 
         # add a warning if any day to day difference is too much (+42.9% or -30%)
-        close = seq[i][2]
         closeDelta = close - lastClose
         closeDeltaF = 1.0 * closeDelta / lastClose
         warn = (warn or closeDeltaF > 0.429 or closeDeltaF < -0.3)   
@@ -327,22 +357,15 @@ calculateWinRate = (results, isLong, ignoreWithWarning = true) ->
 #endregion
 
 ############################################################
-#region Index Denormalization & Sequence Extraction
-
-############################################################
-# Denormalize a 365-day index back to actual year index
-denormalizeIndex = (normalizedIdx, isLeapYear) ->
-    return normalizedIdx unless isLeapYear
-    return normalizedIdx if normalizedIdx < utl.FEB28  # Before Feb 28
-    return normalizedIdx + 1  # Feb 28+ shifts forward due to Feb 29
+#region Sequence Extraction
 
 ############################################################
 # Extract HLC sequence from a single year
 # returns null in the case of an incomplete sequence
 extractSequence = (yearData, startIdx, endIdx, isLeapYear) ->
     log "extractSequence"
-    actualStart = denormalizeIndex(startIdx, isLeapYear)
-    actualEnd = denormalizeIndex(endIdx, isLeapYear)
+    actualStart = utl.nonLeapNormToRealIdx(startIdx, isLeapYear)
+    actualEnd = utl.nonLeapNormToRealIdx(endIdx, isLeapYear)
     sequence = yearData.slice(actualStart, actualEnd + 1)
     if sequence[0]? and sequence[sequence.length - 1]?
         return sequence
@@ -358,9 +381,9 @@ extractOverlappingSequence = (prevYearData, currYearData, startIdx, endIdx, year
     currIsLeap = utl.isLeapYear(year)
     prevIsLeap = utl.isLeapYear(year - 1)
     prevYearNormalizedIdx = startIdx + 365
-    prevActualStart = denormalizeIndex(prevYearNormalizedIdx, prevIsLeap)
+    prevActualStart = utl.nonLeapNormToRealIdx(prevYearNormalizedIdx, prevIsLeap)
 
-    currActualEnd = denormalizeIndex(endIdx, currIsLeap)
+    currActualEnd = utl.nonLeapNormToRealIdx(endIdx, currIsLeap)
 
     prevPart = prevYearData.slice(prevActualStart)  # to end of prev year
     currPart = currYearData.slice(0, currActualEnd + 1)  # from start of curr year
@@ -403,9 +426,48 @@ getTradeDaySequences = (dataPerYear, startIdx, endIdx) ->
 
 #endregion
 
+
 ############################################################
-# Helper to format day-of-year index to "DD.MM." string
+effectiveStartDate = (day, tradingDaysPerYear) ->
+    log "effectiveStartDate"
+    safetyCount = 32
+    startDate = day.getDateStr()
+    loop
+        if --safetyCount < 0 # prevent infinite loops
+            console.error("effeciveStartDate reached safety Limit!") 
+            return startDate # fallback
+
+        isTradingDay = day.lookupIn(tradingDaysPerYear)
+        if isTradingDay then return day.getDateStr() # found tradingDay
+        # When we donot find a trading day we have 2 options:
+        #    1.) isTradingDay is false - we need check the earlier day
+        #    2.) isTradingDay is undefined or null - exeeded bounds -> fallback 
+        if isTradingDay != false then return startDate
+        day = day.getPrevDay()
+    return # for code beauty 
+
+effectiveEndDate = (day, tradingDaysPerYear) ->
+    log "effectiveEndDate"
+    safetyCount = 32
+    startDate = day.getDateStr()
+    loop
+        if --safetyCount < 0 # prevent infinite loops
+            console.error("effeciveEndDate reached safety Limit!") 
+            return startDate # fallback
+
+        isTradingDay = day.lookupIn(tradingDaysPerYear)
+        if isTradingDay then return day.getDateStr() # found tradingDay
+        # When we donot find a trading day we have 2 options:
+        #    1.) isTradingDay is false - we need check the next later day
+        #    2.) isTradingDay is undefined or null - exeeded bounds -> fallback 
+        if isTradingDay != false then return startDate
+        day = day.getNextDay()
+    return # just for the shape
+
+############################################################
+# Helper to format nonLeapNorm day index to "DD.MM." string
 # Handles negative indices for overlapping selections (-1 = Dec 31)
+# Input: nonLeapNorm index (0-364 or negative)
 indexToDate = (dayIdx) ->
     # Normalize negative indices: -1 → 364, -365 → 0
     if dayIdx < 0 then dayIdx = 365 + dayIdx

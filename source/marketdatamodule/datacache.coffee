@@ -10,7 +10,7 @@ import * as utl from "./utilsmodule.js"
 
 ############################################################
 keyToHistory = Object.create(null)
-keyToMetaData =Object.create(null)
+keyToMetaData = Object.create(null)
 
 ############################################################
 #region Interface
@@ -26,11 +26,26 @@ export  getLatestCloseData = (dataKey) ->
     
     for yearData in dataPerYear
         yearResult = [] 
-        yearResult[i] = d[2] for d,i in yearData when d?
+        yearResult[i] = d[d.length - 1] for d,i in yearData when d?
         result.push(yearResult)
         
     return result
 
+############################################################
+# @params dataKey (e.g. symbol of stock)
+# @params toAge the oldest year to retrieve
+# @returns array of daily booleans of the last `toAge` years
+export getHistoricTradingDays = (dataKey, toAge) ->
+    dataPerYear = await getHistoryHLC(dataKey, toAge)
+
+    result = []
+
+    for yearData in dataPerYear
+        yearResult = []
+        yearResult[i] = (d.length == 3) for d,i in yearData when d?
+        result.push(yearResult)
+
+    return result
 
 ############################################################
 ##
@@ -44,7 +59,7 @@ export getHistoricCloseData = (dataKey, toAge) ->
 
     for yearData in dataPerYear
         yearResult = []
-        yearResult[i] = d[2] for d,i in yearData when d?
+        yearResult[i] = d[d.length - 1] for d,i in yearData when d?
         result.push(yearResult)
 
     return result
@@ -61,7 +76,10 @@ export getHistoricHighLowData = (dataKey, toAge) ->
     
     for yearData in dataPerYear
         yearResult = [] 
-        yearResult[i] = [d[0], d[1]] for d,i in yearData when d?
+        for d,i in yearData when d?
+            if d.length >= 2 then yearResult[i] = [d[0], d[1]]
+            else yearResult[i] = [d[0], d[0]]
+
         result.push(yearResult)
         
     return result
@@ -90,24 +108,6 @@ export getHistoricDepth = (dataKey) ->
     return keyToHistory[dataKey].length
 
 #endregion
-
-
-############################################################
-export testFetch = (dataKey, yearsBack) ->
-    log  "Well we'll always try to retrieve 30 years of history for now :-)"
-    yearsBack = 30
-    # yearsBack = undefined
-    log "testFetch: #{dataKey}, #{yearsBack} years"
-    try
-        startMS = performance.now()
-        result = await getEodData(dataKey, yearsBack)
-        olog result.meta
-        timeMS = performance.now() - startMS
-        log "received #{result.data.length} datapoints - request took #{timeMS}ms"
-        return result
-    catch err
-        log "testFetch error: #{err.message}"
-        return null
 
 ############################################################
 retrieveFullHistory = (dataKey) ->

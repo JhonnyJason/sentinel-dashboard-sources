@@ -70,9 +70,11 @@ export renderChart = (timestamps, spyCloses, states) ->
     TWO_YEARS = 2 * 365.25 * 86400
 
     options = {
-        width: w - 15
+        # width: w - 15
+        width: w - 5 
         height: h
-        padding: [30, 15, 15, 15]
+        # padding: [30, 15, 15, 15]
+        padding: [30, 0, 5, 0]
         plugins: [createStatePlugin(states, timestamps)]
         scales: {
             x: { time: true, range: clampRange }
@@ -206,6 +208,7 @@ createStatePlugin = (states, timestamps) ->
     drawFn = (u) ->
         ctx = u.ctx
         {top, height} = u.bbox
+        dxHalf = 0.5 * (u.valToPos(timestamps[0], 'x', true) - u.valToPos(timestamps[1], 'x', true))
 
         i = 0
         while i < states.length
@@ -222,7 +225,7 @@ createStatePlugin = (states, timestamps) ->
             x1 = u.valToPos(timestamps[endIdx], 'x', true)
 
             ctx.fillStyle = STATE_BG[state]
-            ctx.fillRect(x0, top, x1 - x0, height)
+            ctx.fillRect(x0 + dxHalf, top, x1 - x0 - dxHalf, height)
         return
 
     return { hooks: { drawAxes: [drawFn] } }
