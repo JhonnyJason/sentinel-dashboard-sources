@@ -8,8 +8,11 @@ import { createLogFunctions } from "thingy-debug"
 import * as mData from "./marketdatamodule.js"
 import * as utl from "./utilsmodule.js"
 import { Combobox } from "./comboboxfun.js"
-import { drawChart, resetChart, toggleSeriesVisibility, onRangeSelected, resetTimeAxis } from "./chartfun.js"
+# import * as chf from "./chartfun.js"
+# { drawChart, resetChart, toggleSeriesVisibility, onRangeSelected, resetTimeAxis }
+import { Chart } from "./chartfun.js"
 import { runBacktesting } from "./backtesting.js"
+
 
 ############################################################
 ## Re-export for symboloptions callback
@@ -53,6 +56,7 @@ maxHistory = null
 
 pickedStartIdx = null
 pickedEndIdx = null
+xAxisDrag = null
 
 # Series visibility configuration (persists until chart closed)
 seriesVisibility = {
@@ -60,6 +64,8 @@ seriesVisibility = {
     adr: true          # default visible
     fourier: false     # default hidden (experimental)
 }
+
+seasonalityChart = null
 #endregion
 
 ############################################################
@@ -71,6 +77,11 @@ export initialize = (c) ->
 
     symbolCombobox = new Combobox({ inputEl, dropdownEl, optionsLimit })
     symbolCombobox.onSelect(onStockSelected)
+    
+    seasonalityChart = new SeasonalityChart(chartContainer)
+    seasonalityChart.setOnSelectListener(onChartRangeSelected)
+    seasonalityChart.setOnTimeDragListener(onChartTimeDrag)
+
 
     timeframeSelect.addEventListener("change", timeframeSelected)
     currentSelectedTimeframe = timeframeSelect.value
@@ -79,9 +90,6 @@ export initialize = (c) ->
 
     # Wire up legend series click handlers
     wireLegendSeriesHandlers()
-
-    # Wire up chart selection callback
-    onRangeSelected(onChartRangeSelected)
 
     # Wire up tab buttons
     componentsButton.addEventListener("click", onComponentsButtonClick)
@@ -139,6 +147,11 @@ onChartRangeSelected = (startIdx, endIdx) ->
 
     # Transition to backtesting state
     setBacktestingActive()
+    return
+
+onChartTimeDrag = (xDrag) ->
+    log "onChartTimeDrag"
+    xAxisDrag = xDrag
     return
 
 onComponentsButtonClick = ->
@@ -505,7 +518,6 @@ updateYearsOptions = ->
         if opt == currentYears then optionEl.selected = true
         timeframeSelect.appendChild(optionEl)
     return
-
 
 ############################################################
 resetAndRender = ->
