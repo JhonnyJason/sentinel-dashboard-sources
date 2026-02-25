@@ -96,7 +96,7 @@ export initialize = (c) ->
     backtestingButton.addEventListener("click", onBacktestingButtonClick)
 
     # Wire up reset time axis button
-    resetTimeAxisButton.addEventListener("click", resetTimeAxis)
+    resetTimeAxisButton.addEventListener("click", seasonalityChart.resetTimeAxis)
     return
 
 ############################################################
