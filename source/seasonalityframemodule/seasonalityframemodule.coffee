@@ -8,9 +8,11 @@ import { createLogFunctions } from "thingy-debug"
 import * as mData from "./marketdatamodule.js"
 import * as utl from "./utilsmodule.js"
 import { Combobox } from "./comboboxfun.js"
-# import * as chf from "./chartfun.js"
-# { drawChart, resetChart, toggleSeriesVisibility, onRangeSelected, resetTimeAxis }
-import { Chart } from "./chartfun.js"
+# Series config constants
+adrSeriesConfig = { name: "adr", config: { label: "Average Daily Return", stroke: "#ffffff" } }
+frSeriesConfig = { name: "fourier", config: { label: "Fourier Regression", stroke: "#aabbaa" } }
+latestSeriesConfig = { name: "latestData", config: { label: "Neuester Verlauf", stroke: "#faba01" } }
+import { SeasonalityChart } from "./chartfun.js"
 import { runBacktesting } from "./backtesting.js"
 
 
@@ -19,6 +21,7 @@ import { runBacktesting } from "./backtesting.js"
 
 ############################################################
 #region DOM cache for the cases where the implicit-dom-connect fails
+chartContainer = document.getElementById("chart-container")
 aggregationYearsIndicator = document.getElementById("aggregation-years-indicator")
 backtestingDirection = document.getElementById("backtesting-direction")
 backtestingTimeframe = document.getElementById("backtesting-timeframe")
@@ -104,6 +107,9 @@ export initialize = (c) ->
 onStockSelected = (symbol) ->
     log "onStockSelected"
     currentSelectedStock = symbol
+    pickedStartIdx = null
+    pickedEndIdx = null
+    xAxisDrag = null
     olog { currentSelectedStock, currentSelectedTimeframe }
     resetAndRender()
     return
@@ -129,8 +135,13 @@ onChartRangeSelected = (startIdx, endIdx) ->
     log "onChartRangeSelected"
     pickedStartIdx = startIdx # the local State
     pickedEndIdx = endIdx # the local State
-
     olog { pickedStartIdx, pickedEndIdx }
+    await runAndDisplayBacktesting()
+    setBacktestingActive()
+    return
+
+runAndDisplayBacktesting = ->
+    log "runAndDisplayBacktesting"
     { startIdx, endIdx } = normalizeSelectionIndices(pickedStartIdx, pickedEndIdx)
     olog {startIdx, endIdx}
 
@@ -142,11 +153,7 @@ onChartRangeSelected = (startIdx, endIdx) ->
     metaData = mData.getCurrentMetaData(symbol)
     results = runBacktesting(backtestingData, metaData, startIdx, endIdx, tradingDays)
 
-    # Update backtesting UI
     updateBacktestingUI(results)
-
-    # Transition to backtesting state
-    setBacktestingActive()
     return
 
 onChartTimeDrag = (xDrag) ->
@@ -199,7 +206,7 @@ onLegendSeriesClick = (el) ->
     else
         # Regular series toggle - just show/hide via uPlot
         seriesIdx = parseInt(el.getAttribute('series-index'))
-        toggleSeriesVisibility(seriesIdx, isVisible)
+        seasonalityChart.toggleSeriesVisibility(seriesIdx, isVisible)
     return
 
 ensureFourierData = ->
@@ -241,20 +248,25 @@ applySeriesVisibility = ->
     adrIdx = 1
     latestIdx = if frVisible then 3 else 2
 
-    toggleSeriesVisibility(adrIdx, seriesVisibility.adr)
-    toggleSeriesVisibility(latestIdx, seriesVisibility.latestData)
+    seasonalityChart.toggleSeriesVisibility(adrIdx, seriesVisibility.adr)
+    seasonalityChart.toggleSeriesVisibility(latestIdx, seriesVisibility.latestData)
     return
 
 redrawChart = ->
     log "redrawChart"
     return unless adrAggregation?
-    resetChart(seasonalityChart)
+    seasonalityChart.reset()
 
-    # Draw with Fourier if visibility state says so AND data is available
+    seasonalityChart.setTimeSeries(xAxisData)
+    series = []
+    series.push({ adrSeriesConfig..., data: adrAggregation })
     if seriesVisibility.fourier and frAggregation?
-        drawChart(seasonalityChart, xAxisData, adrAggregation, frAggregation, latestData)
-    else
-        drawChart(seasonalityChart, xAxisData, adrAggregation, null, latestData)
+        series.push({ frSeriesConfig..., data: frAggregation })
+    series.push({ latestSeriesConfig..., data: latestData })
+    seasonalityChart.setDataSeries(series)
+
+    selection = if pickedStartIdx? and pickedEndIdx? then { startIdx: pickedStartIdx, endIdx: pickedEndIdx } else null
+    seasonalityChart.render(selection, xAxisDrag)
 
     # Restore series visibility after chart is drawn
     updateSeriesIndices()
@@ -537,9 +549,13 @@ resetAndRender = ->
         updateYearsOptions()
         updateYearsIndicator()
         ## TODO reset preloader -> start rendering ;-)
-        # seasonalityChart. <- we need this to trigger implicit-dom-connect sometimes
         redrawChart()
-        setChartActive() if currentSelectedStock
+        if currentSelectedStock
+            if pickedStartIdx? and pickedEndIdx?
+                await runAndDisplayBacktesting()
+                setBacktestingActive()
+            else
+                setChartActive()
     catch err then console.error(err) ## TODO: Maybe signal Error in chart and reset all state?
     # finally: ## TODO reset preloader on if it was not before
     return
@@ -548,16 +564,13 @@ resetAndRender = ->
 # Resets chart data but preserves series visibility configuration
 resetChartData = ->
     log "resetChartData"
-    resetChart(seasonalityChart)
+    seasonalityChart.reset()
 
     xAxisData = null
     adrAggregation = null
     frAggregation = null  # data needs recalc, but visibility state preserved
     latestData = null
     maxHistory = null
-
-    pickedStartIdx = null
-    pickedEndIdx = null
     return
 
 ############################################################
@@ -565,6 +578,10 @@ resetChartData = ->
 resetSeasonalityState = ->
     log "resetSeasonalityState"
     resetChartData()
+
+    pickedStartIdx = null
+    pickedEndIdx = null
+    xAxisDrag = null
 
     # Reset visibility to defaults
     seriesVisibility = {

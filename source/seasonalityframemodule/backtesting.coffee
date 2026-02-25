@@ -429,7 +429,7 @@ getTradeDaySequences = (dataPerYear, startIdx, endIdx) ->
 
 ############################################################
 effectiveStartDate = (day, tradingDaysPerYear) ->
-    log "effectiveStartDate"
+    # log "effectiveStartDate"
     safetyCount = 32
     startDate = day.getDateStr()
     loop
@@ -447,7 +447,7 @@ effectiveStartDate = (day, tradingDaysPerYear) ->
     return # for code beauty 
 
 effectiveEndDate = (day, tradingDaysPerYear) ->
-    log "effectiveEndDate"
+    # log "effectiveEndDate"
     safetyCount = 32
     startDate = day.getDateStr()
     loop

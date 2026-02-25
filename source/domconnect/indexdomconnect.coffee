@@ -15,6 +15,7 @@ indexdomconnect.initialize = () ->
     global.selectedSymbol = document.getElementById("selected-symbol")
     global.closeChartButton = document.getElementById("close-chart-button")
     global.seasonalityChart = document.getElementById("seasonality-chart")
+    global.cursorIndicator = document.getElementById("cursor-indicator")
     global.resetTimeAxisButton = document.getElementById("reset-time-axis-button")
     global.backtestingButton = document.getElementById("backtesting-button")
     global.componentsButton = document.getElementById("components-button")
