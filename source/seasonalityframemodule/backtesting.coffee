@@ -257,7 +257,7 @@ backtestSequence = (seq) ->
 
     # We start at end of day of the first trade and we leave at end of day of the last Tradeday
     startA = seq[0][seq[0].length - 1] # start price is close of day 0
-    endA = seq[seq.length - 1][seq[seq.length - 1].length - 2] # end price is close of the last day
+    endA = seq[seq.length - 1][seq[seq.length - 1].length - 1] # end price is close of the last day
 
     changeA = endA - startA
     warn = false

@@ -110,8 +110,8 @@ processData = (spyResult, hygResult) ->
 
     for i in [0...len]
         timestamps[i] = d.getTime() / 1000
-        spyCloses[i] = spyData[i][2]
-        hygCloses[i] = hygData[i][2]
+        spyCloses[i] = spyData[i][spyData[i].length - 1]
+        hygCloses[i] = hygData[i][hygData[i].length - 1]
         d.setDate(d.getDate() + 1)
 
     # HYG analysis
