@@ -13,12 +13,12 @@ export urlDatahub = "https://sentinel-datahub.dotv.ee"
 
 # export urlWebsocketBackend = "wss://sentinel-backend.dotv.ee/"
 
+############################################################
 # local testing
 # export urlAccessManager = "https://localhost:6999"
 # export urlWebsocketBackend = "http://localhost:3333"
 # export urlWebsocketBackend = "wss://localhost:6999/"
 # export urlWebsocketBackend = "https://localhost:6999/"
-
 
 ############################################################
 export pwdSalt = "holderradio!...<3)()0981salty"
