@@ -6,7 +6,8 @@ import { createLogFunctions } from "thingy-debug"
 
 ############################################################
 import { allAreas } from "./economicareasmodule.js"
-import { renderFrame } from "./currencytrendframemodule.js"
+import { scheduleRankingUpdate } from "./currencytrendframemodule.js"
+import { setGlobalParams } from "./scorehelper.js"
 
 ############################################################
 export initialize = ->
@@ -23,13 +24,24 @@ export updateData = (data) ->
     log "updateData"
     # keys = Object.keys(data)
     # log keys
+
     for key,d of data
-        # log lbl
+        # log key
         # olog d
+        
+        if key == "_params" # digest global params 
+            setGlobalParams(d)
+            continue
+
         area = allAreas[key]
         if area? then area.updateData(d) 
         else log("No Economic Area by key: #{key}")
     
-    try renderFrame()
-    catch err then console.error(err)
+    scheduleRankingUpdate()
     return
+
+    ## Reference how the data is created
+    # pubShot = paramdata.getPublishedSnapshot()
+    # data = getAllMakroData()
+    # data.eurozone._params = pubShot.areaParams.eurozone
+    # data._params = params.globalParams

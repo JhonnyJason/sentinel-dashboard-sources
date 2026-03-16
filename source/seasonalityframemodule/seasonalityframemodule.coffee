@@ -308,6 +308,7 @@ updateBacktestingUI = (results) ->
 
     # Trade description
     backtestingDirection.textContent = results.directionString
+    backtestingDirection.className = results.directionString.toLowerCase()
     backtestingTimeframe.textContent = results.timeframeString
 
     # Win rate

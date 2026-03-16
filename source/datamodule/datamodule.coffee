@@ -7,10 +7,18 @@ import { createLogFunctions } from "thingy-debug"
 ############################################################
 import * as cfg from "./configmodule.js"
 import * as summary from "./summaryframemodule.js"
-import { getAuthCode } from "./accountmodule.js"
+import * as accM from "./accountmodule.js"
 
 ############################################################
 socket = null
+
+############################################################
+pendingRequests = Object.create(null)
+firstLoad = false
+
+############################################################
+heartbeatMS = 60_000 # 60 s
+COMMAND_TIMEOUT_MS = 10_000 # 10 s
 
 ############################################################
 export initialize = ->
@@ -18,6 +26,7 @@ export initialize = ->
     createSocket()
     return
 
+############################################################
 createSocket = ->
     log "createSocket"
     try
@@ -32,12 +41,42 @@ createSocket = ->
     return
 
 ############################################################
+sendCommand = (command, payload, expectedResponseType) ->
+    new Promise (resolve, reject) ->
+        unless socket? and socket.readyState == WebSocket.OPEN
+            reject(new Error("Socket not connected"))
+            return
+        
+        authCode = accM.getAuthCode()
+        reject(new Error("We are not logged in!")) unless authCode?
+        
+        if payload?
+            socket.send("#{command} #{authCode} #{JSON.stringify(payload)}")
+        else
+            socket.send("#{command} #{authCode}")
+        
+        requestTimedOut = ->
+            if pendingRequests[expectedResponseType]?
+                delete pendingRequests[expectedResponseType]
+                reject(new Error("Timeout waiting for #{expectedResponseType}"))
+            return
+
+        timer = setTimeout(requestTimedOut, COMMAND_TIMEOUT_MS) 
+
+        # overwriting previous requests is fine if we clear the previous timeout
+        if pendingRequests[expectedResponseType]? 
+            clearTimeout(pendingRequests[expectedResponseType].timer)
+        pendingRequests[expectedResponseType] = { resolve, reject, timer }
+        return
+
+############################################################
 export heartbeat = ->
     log "heartbeat"
     if !socket? then return createSocket()
     
     if socket.readyState == WebSocket.OPEN
-        socket.send("getAllData #{getAuthCode()}")
+        executeFirstLoad() ## TODO remove this and listen on updates instead...
+        # sendCommand("ping", null, "pong")
         return
 
     if socket.readyState == WebSocket.socketClosed
@@ -48,17 +87,34 @@ export heartbeat = ->
 ############################################################
 socketOpened = (evnt) ->
     log "socketOpened"
-    socket.send("getAllData #{getAuthCode()}")
+    if !firstLoad then executeFirstLoad()
     return
 
 receiveData = (evnt) ->
     log "receiveData"
     try
-        # log evnt.data
         data = JSON.parse(evnt.data)
-        # olog data
-        summary.updateData(data)
-        ## Update other parts
+        olog data
+        if(data == "Unauthorized!") then accM.assertAuthorization()
+        
+        ## TODO listen specifically on data updates
+        
+        # Compatibility with older version ;-)
+        if !data.type? and typeof data == "object" and 
+        pendingRequests["allData"]?
+            pending = pendingRequests["allData"]
+            delete pendingRequests["allData"]
+            clearTimeout(pending.timer)
+            pending.resolve(data)
+
+        # Check pending promise-based requests first
+        if data.type? and pendingRequests[data.type]?
+            pending = pendingRequests[data.type]
+            delete pendingRequests[data.type]
+            clearTimeout(pending.timer)
+            pending.resolve(data.data)
+            return
+
     catch err then console.error(err)
     return
 
@@ -80,6 +136,17 @@ destroySocket = ->
     socket.removeEventListener("error", receiveError)
     socket.removeEventListener("close", socketClosed)
     socket = null
+    return
+
+############################################################
+executeFirstLoad = ->
+    log "executeFirstLoad"
+    try
+        data = await sendCommand("getAllData", null, "allData")
+        ## TODO upgrade to more sophisticated update mechanism
+        summary.updateData(data)
+        firstLoad = true
+    catch err then log "@executeFirstLoad: "+err.messages
     return
 
 ############################################################

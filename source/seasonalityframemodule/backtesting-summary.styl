@@ -39,10 +39,14 @@
         bottom -25px
         left 0
 
-    // #backtesting-direction
-    //     text-align: left
-    // #backtesting-timeframe
-    //     text-align right
+    #backtesting-direction
+        font-weight: bold
+
+    #backtesting-direction.long
+        color cd-up-green
+
+    #backtesting-direction.short
+        color cd-down-red
 
     #backtesting-winning-rate
         display flex
@@ -59,7 +63,7 @@
         height 45px
         width 45px
         svg
-            --color-profit: green
-            --color-loss: red
+            --color-profit: cd-up-green
+            --color-loss: cd-down-red
             height inherit
             width inherit

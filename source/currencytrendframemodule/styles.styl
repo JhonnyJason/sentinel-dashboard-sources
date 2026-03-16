@@ -1,8 +1,51 @@
 // currencytrendframe styles
+// #currencytrendframe
+//     width 100%
+//     padding 20px
+//     box-sizing: border-box
+//     .info-display
+//         position absolute
+//         opacity: 0
+//         z-index: -1
+//         pointer-events: none
+
+//     .currency-pair
+//         // background-color #eee
+//         display flex
+//         margin-bottom 20px
+//         padding-left 40px
+//         align-items: center
+//         max-width 300px
+//         .left
+//             text-align: right
+//         .title
+//             width 100px
+//             margin-bottom 3px
+//             font-size 14pt
+//             font-weight bold
+//         .score
+//             font-size 11pt
+//         .right
+//             padding 10px
+//             b
+//                 margin-left 20px
+//         .inner-frame
+//             background-color #eeeeee99
+//             padding 20px
+//         .info-button
+//             height 25px
+//             width 25px
+//             cursor: pointer
+//             color: cd-info
+            
 #currencytrendframe
+    // display flex
+    justify-content: space-evenly
     width 100%
-    padding 20px
+    padding-bottom 50px
     box-sizing: border-box
+    margin-top 50px
+
     .info-display
         position absolute
         opacity: 0
@@ -32,10 +75,22 @@
         .inner-frame
             background-color #eeeeee99
             padding 20px
-        .info-button
-            height 25px
-            width 25px
-            cursor: pointer
-            color: cd-info
             
 
+#currencytrendframes > *
+    // border solid 1px #888
+    box-sizing: border-box
+    width 33.3%
+
+
+.score-list-head
+    color cd-dark-blue
+    font-size: 24pt
+    font-weight: bold
+    margin-bottom 20px
+    text-align: left
+    
+.score-list
+    width 100%
+    box-sizing: border-box
+    

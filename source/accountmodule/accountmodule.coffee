@@ -105,7 +105,7 @@ checkSession = ->
     ## our sesssion is close to expiry
     else if remainingValidMS < refreshMarginMS
         try await refreshSession()
-        catch err 
+        catch err
             console.error(err)
             ## maybe authCode is invalid so reLogin could help
             try await reLogin()
@@ -201,6 +201,19 @@ export executeLogin = ( email, password ) ->
     }
     saveAccountData()
     triggers.toSummary()
+    return
+
+export assertAuthorization = ->
+    log "assertAuthorization"
+    try await refreshSession()
+    catch err
+        console.error(err)
+        ## maybe authCode is invalid so reLogin could help
+        try await reLogin()
+        catch err 
+            console.error(err)
+            ## seems all is invalid we may just delete it
+            deleteAccountData()
     return
 
 export getAuthCode = ->
