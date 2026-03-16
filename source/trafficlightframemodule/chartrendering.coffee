@@ -24,7 +24,7 @@ trafficlightCursorIndicator =  document.getElementById("traffliclight-cursor-ind
 ############################################################
 # Internal chart state
 chartHandle = null
-currentZoomLevel = "max"
+currentZoomLevel = "12"
 # Stored references for zoom recalculation and cursor
 storedTimestamps = null
 storedStates = null
