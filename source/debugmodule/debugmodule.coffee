@@ -24,7 +24,7 @@ export modulesToDebug = {
     scorehelper: true
     # seasonality: true
     # seasonalityframemodule: true
-    summaryframemodule: true
+    # summaryframemodule: true
     # symboloptions: true
     # uistatemodule: true
 }
