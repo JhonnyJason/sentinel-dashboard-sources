@@ -40,6 +40,14 @@ trendTexts = [
     "Stark Bearish" # "#db591e"
     "Super Bearish" # "#cc3300"
 ]
+
+############################################################
+#special values for +4 / -4
+lightBullishColor = "#bfdac9"
+lightBullishText = "Leicht Bullish"
+lightBearishColor = "#e1c1ad"
+lightBearishText = "Leicht Bearish"
+
 #endregion
 
 ############################################################
@@ -99,6 +107,9 @@ export getTrendForScore = (score) ->
     log "getTrendForScore #{score}"
     if score > maxScore then return { color: colors[0], text: trendTexts[0] }
     if score < minScore then return { color: colors[colors.length - 1], text: trendTexts[trendTexts.length - 1] }
+
+    if Math.round(score) == 4 then return { color: lightBullishColor, text: lightBullishText }
+    if Math.round(score) == -4 then return { color: lightBearishColor, text: lightBearishText }
 
     regionSize = 1.0 * scoreRange / colors.length
     score = 1.0 * score - minScore # shift lower end to 0
