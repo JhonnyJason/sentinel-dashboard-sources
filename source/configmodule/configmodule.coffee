@@ -14,6 +14,9 @@ export urlDatahub = "https://sentinel-datahub.dotv.ee"
 # export urlWebsocketBackend = "wss://sentinel-backend.dotv.ee/"
 
 ############################################################
+export uriAllSymbolsFile = "all_symbols.json"
+
+############################################################
 # local testing
 # export urlAccessManager = "https://localhost:6999"
 # export urlWebsocketBackend = "http://localhost:3333"

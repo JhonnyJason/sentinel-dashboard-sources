@@ -7,7 +7,7 @@ import { createLogFunctions } from "thingy-debug"
 ############################################################
 import * as mData from "./marketdatamodule.js"
 import * as utl from "./utilsmodule.js"
-import { Combobox } from "./comboboxfun.js"
+import { SymbolSelect } from "./symbolselectmodule.js"
 # Series config constants
 adrSeriesConfig = { name: "adr", config: { label: "Average Daily Return", stroke: "#ffffff" } }
 frSeriesConfig = { name: "fourier", config: { label: "Fourier Regression", stroke: "#aabbaa" } }
@@ -74,12 +74,11 @@ seasonalityChart = null
 ############################################################
 export initialize = (c) ->
     log "initialize"
-    inputEl = symbolInput # symbolInput.
-    dropdownEl = symbolDropdown # symbolDropdown.
+    container = symbolSelectSeasonality # symbolSelectSeasonality.
     optionsLimit = 70
 
-    symbolCombobox = new Combobox({ inputEl, dropdownEl, optionsLimit })
-    symbolCombobox.onSelect(onStockSelected)
+    symbolSelect = new SymbolSelect({ container, optionsLimit })
+    symbolSelect.setOnSelectListener(onStockSelected)
     
     seasonalityChart = new SeasonalityChart(chartContainer)
     seasonalityChart.setOnSelectListener(onChartRangeSelected)

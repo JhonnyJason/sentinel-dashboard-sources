@@ -15,6 +15,8 @@ import * as scimodule from "./scimodule.js"
 import * as seasonalityframemodule from "./seasonalityframemodule.js"
 import * as sidenavmodule from "./sidenavmodule.js"
 import * as summaryframemodule from "./summaryframemodule.js"
+import * as symboloptionsmodule from "./symboloptionsmodule.js"
+import * as symbolselectmodule from "./symbolselectmodule.js"
 import * as trafficlightframemodule from "./trafficlightframemodule.js"
 import * as uistatemodule from "./uistatemodule.js"
 import * as utilsmodule from "./utilsmodule.js"
@@ -37,6 +39,8 @@ Modules = {
     seasonalityframemodule,
     sidenavmodule,
     summaryframemodule,
+    symboloptionsmodule,
+    symbolselectmodule,
     trafficlightframemodule,
     uistatemodule,
     utilsmodule,

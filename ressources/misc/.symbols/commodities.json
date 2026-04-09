@@ -1,0 +1,237 @@
+[
+    {
+        "code": "aluminum",
+        "unit": "usd/t",
+        "name": "Aluminum"
+    },
+    {
+        "code": "bitumen",
+        "unit": "cny/t",
+        "name": "Bitumen"
+    },
+    {
+        "code": "brent",
+        "unit": "usd/bbl",
+        "name": "Brent Crude Oil"
+    },
+    {
+        "code": "coal",
+        "unit": "usd/t",
+        "name": "Coal"
+    },
+    {
+        "code": "cobalt",
+        "unit": "usd/t",
+        "name": "Cobalt"
+    },
+    {
+        "code": "copper",
+        "unit": "usd/lbs",
+        "name": "Copper"
+    },
+    {
+        "code": "crude oil",
+        "unit": "usd/bbl",
+        "name": "Crude Oil (WTI)"
+    },
+    {
+        "code": "di-ammonium",
+        "unit": "usd/t",
+        "name": "Di-Ammonium Phosphate"
+    },
+    {
+        "code": "ethanol",
+        "unit": "usd/gal",
+        "name": "Ethanol"
+    },
+    {
+        "code": "gallium",
+        "unit": "cny/kg",
+        "name": "Gallium"
+    },
+    {
+        "code": "gasoline",
+        "unit": "usd/gal",
+        "name": "Gasoline"
+    },
+    {
+        "code": "germanium",
+        "unit": "cny/kg",
+        "name": "Germanium"
+    },
+    {
+        "code": "gold",
+        "unit": "usd/t.oz",
+        "name": "Gold"
+    },
+    {
+        "code": "heating oil",
+        "unit": "usd/gal",
+        "name": "Heating Oil"
+    },
+    {
+        "code": "hrc steel",
+        "unit": "usd/t",
+        "name": "Hot-Rolled Coil Steel"
+    },
+    {
+        "code": "indium",
+        "unit": "cny/kg",
+        "name": "Indium"
+    },
+    {
+        "code": "iron ore",
+        "unit": "usd/t",
+        "name": "Iron Ore (USD)"
+    },
+    {
+        "code": "iron ore cny",
+        "unit": "cny/t",
+        "name": "Iron Ore (CNY)"
+    },
+    {
+        "code": "kraft pulp",
+        "unit": "cny/t",
+        "name": "Kraft Pulp"
+    },
+    {
+        "code": "lead",
+        "unit": "usd/t",
+        "name": "Lead"
+    },
+    {
+        "code": "lithium",
+        "unit": "cny/t",
+        "name": "Lithium"
+    },
+    {
+        "code": "magnesium",
+        "unit": "cny/t",
+        "name": "Magnesium"
+    },
+    {
+        "code": "manganese",
+        "unit": "cny/mtu",
+        "name": "Manganese"
+    },
+    {
+        "code": "methanol",
+        "unit": "cny/t",
+        "name": "Methanol"
+    },
+    {
+        "code": "molybdenum",
+        "unit": "cny/kg",
+        "name": "Molybdenum"
+    },
+    {
+        "code": "naphtha",
+        "unit": "usd/t",
+        "name": "Naphtha"
+    },
+    {
+        "code": "natural gas",
+        "unit": "usd/mmbtu",
+        "name": "Natural Gas (US)"
+    },
+    {
+        "code": "neodymium",
+        "unit": "cny/t",
+        "name": "Neodymium"
+    },
+    {
+        "code": "nickel",
+        "unit": "usd/t",
+        "name": "Nickel"
+    },
+    {
+        "code": "palladium",
+        "unit": "usd/t.oz",
+        "name": "Palladium"
+    },
+    {
+        "code": "platinum",
+        "unit": "usd/t.oz",
+        "name": "Platinum"
+    },
+    {
+        "code": "polyethylene",
+        "unit": "cny/t",
+        "name": "Polyethylene"
+    },
+    {
+        "code": "polypropylene",
+        "unit": "cny/t",
+        "name": "Polypropylene"
+    },
+    {
+        "code": "polyvinyl",
+        "unit": "cny/t",
+        "name": "Polyvinyl Chloride"
+    },
+    {
+        "code": "propane",
+        "unit": "usd/gal",
+        "name": "Propane"
+    },
+    {
+        "code": "rhodium",
+        "unit": "usd/t oz.",
+        "name": "Rhodium"
+    },
+    {
+        "code": "silver",
+        "unit": "usd/t.oz",
+        "name": "Silver"
+    },
+    {
+        "code": "soda ash",
+        "unit": "cny/t",
+        "name": "Soda Ash"
+    },
+    {
+        "code": "steel",
+        "unit": "cny/t",
+        "name": "Steel Rebar"
+    },
+    {
+        "code": "tellurium",
+        "unit": "cny/kg",
+        "name": "Tellurium"
+    },
+    {
+        "code": "tin",
+        "unit": "usd/t",
+        "name": "Tin"
+    },
+    {
+        "code": "titanium",
+        "unit": "cny/kg",
+        "name": "Titanium"
+    },
+    {
+        "code": "ttf gas",
+        "unit": "eur/mwh",
+        "name": "TTF Natural Gas (EU)"
+    },
+    {
+        "code": "uk gas",
+        "unit": "gbp/thm",
+        "name": "Natural Gas (UK)"
+    },
+    {
+        "code": "uranium",
+        "unit": "usd/lbs",
+        "name": "Uranium"
+    },
+    {
+        "code": "urea",
+        "unit": "usd/t",
+        "name": "Urea"
+    },
+    {
+        "code": "zinc",
+        "unit": "usd/t",
+        "name": "Zinc"
+    }
+]

@@ -8,24 +8,25 @@ export modulesToDebug = {
     # backtesting: true
     # chartfun: true
     # comboboxfun: true
-    datamodule: true
+    # datamodule: true
     # datacache: true
     # economicareasmodule: true
-    EconomicArea: true
+    # EconomicArea: true
     # fouriermodule: true
     # summaryframemodule: true
-    currencytrendframemodule: true
-    CurrencyPair: true
+    # currencytrendframemodule: true
+    # CurrencyPair: true
     # marketdatamodule: true
     # sampledata: true
     # scimodule: true
     # navtriggers: true
     # scimodule: true
-    scorehelper: true
+    # scorehelper: true
     # seasonality: true
     # seasonalityframemodule: true
     # summaryframemodule: true
-    # symboloptions: true
+    symboloptionsmodule: true
+    symbolselectmodule: true
     # uistatemodule: true
 }
 

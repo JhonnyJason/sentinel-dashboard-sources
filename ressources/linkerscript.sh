@@ -12,6 +12,7 @@ ln -sfT ../../sources/ressources/video video
 
 ln -sf ../../sources/ressources/manifest/* .
 ln -sf ../../sources/ressources/favicon/* .
+ln -sf ../../sources/ressources/misc/* .
 
 popd
 
