@@ -6,7 +6,8 @@ import { createLogFunctions } from "thingy-debug"
 
 ############################################################
 import * as options from "./symboloptionsmodule.js"
-import { fuzzyScore } from "./fuzzyscore.js"
+import { fuzzyScore } from "./fuzzyscoremodule.js"
+import { TopRankedList } from "./toprankedlist.js"
 
 ############################################################
 maxBusyTimeMS = 5
@@ -15,75 +16,6 @@ maxBusyTimeMS = 5
 letMainThreadRun = ->
     if window.scheduler? and window.scheduler.yield? then return scheduler.yield()
     return new Promise((reslv) -> setTimeout(reslv, 0));
-
-
-############################################################
-class TopRankedList
-    constructor: (@sizeLimit) ->
-        @bottom = null
-        @size = 0
-
-    addElement: (el, rank) =>
-        # we are the first element
-        if !@bottom? then return @addFirstElement(el, rank)
-
-        # we rank lower than the bottom
-        if @bottom.rank > rank then return @appendElement(el, rank)
-
-        ## Okay we have a higher rank than the bottom :-)
-        prev = @bottom
-        competitor = @bottom.next
-        while competitor?
-            ## we found our superior
-            if competitor.rank > rank then return @insertElement(el, rank, prev, competitor)
-            
-            ## we ranked higher so checking next iteration
-            prev = competitor
-            competitor = competitor.next
-
-        ## we run all the way through all the competitors
-        ## we arrived at the top and we have higher rank than any
-        newEl = { el, rank, next: null }
-        prev.next = newEl
- 
-        if @size == @sizeLimit then @cutOffBottom()
-        else @size++       
-        return
-
-    cutOffBottom: ->
-        @bottom = @bottom.next
-        return
-
-    addFirstElement: (el, rank) =>
-        @bottom = { el, rank, next: null }
-        return
-
-    appendElement: (el, rank) =>
-        # nothing to append if List is full
-        if @size == @sizeLimit then return
-        newEl = { el, rank, next: @bottom }
-        @bottom = newEl
-        @size++
-        return
-
-    insertElement: (el, rank, prev, next) =>
-        newEl = {el, rank, next}
-        prev.next = newEl
-        if @size == @sizeLimit then @cutOffBottom()
-        else @size++
-        return
-
-    compileToArray: =>
-        return [] unless @size > 0
-        result = new Array(@size)
-        tmp = @bottom
-
-        i = @size
-        while i--
-            result[i] = tmp.el
-            tmp = tmp.next
-
-        return result
 
 ############################################################
 ## opts = { container, optionsLimit = 30, minSearchLength = 3 }
@@ -262,8 +194,10 @@ export class SymbolSelect
         
         @isQuerying = true
         allOptions = options.getAllSymbols()
+        log "start checking through all #{allOptions.length} symbols.."
         loop
             start = performance.now()
+            log "start outer Loop"
             @restartQuery = false
             rankedList = new TopRankedList(@optionsLimit)
             scored = []
@@ -281,11 +215,13 @@ export class SymbolSelect
                 if (performance.now() - start) > maxBusyTimeMS
                     log "hit maxBusyTimeMS @#{i}"
                     await letMainThreadRun()
-                    if @restartQuery then break # restart the inner loop
+                    if @restartQuery 
+                        log "We restart the loop"
+                        break # restart the inner loop
                     start = performance.now()
 
             if i == allOptions.length # we reached the end!
-                log "we reached the end of the loop"
+                log "we reached the end of the outer loop @#{i}"
                 @shownOptions = rankedList.compileToArray()
                 @latestSuccessfulQuery = @query
                 break # the outer loop

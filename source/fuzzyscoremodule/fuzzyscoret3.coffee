@@ -5,6 +5,7 @@
 
 ############################################################
 export fuzzyScore = (query, text) ->
+    # return fuzzyScoreEfficient(query, text)
     return fuzzyScore3Ways(query, text)
     # if USE_DP_SCORING then fuzzyScoreDP(query, text)
     # else fuzzyScoreEfficient(query, text)

@@ -9,6 +9,7 @@ import * as debugmodule from "./debugmodule.js"
 import * as eventscreenerframemodule from "./eventscreenerframemodule.js"
 import * as forexscreenerframemodule from "./forexscreenerframemodule.js"
 import * as fouriermodule from "./fouriermodule.js"
+import * as fuzzyscoremodule from "./fuzzyscoremodule.js"
 import * as marketdatamodule from "./marketdatamodule.js"
 import * as noaccountmodule from "./noaccountmodule.js"
 import * as scimodule from "./scimodule.js"
@@ -33,6 +34,7 @@ Modules = {
     eventscreenerframemodule,
     forexscreenerframemodule,
     fouriermodule,
+    fuzzyscoremodule,
     marketdatamodule,
     noaccountmodule,
     scimodule,
