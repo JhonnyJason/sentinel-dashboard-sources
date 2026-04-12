@@ -65,9 +65,27 @@ export class SymbolSelect
         @updateShownOptions()
 
     ########################################################
-    #region Public Methods
+    #region Methods
     setOnSelectListener: (cb) => @selectionCallback = cb
-        
+    
+    resetSearch: =>
+        log "resetSearch"
+        @inputEl.value = ""
+        @hideDropdown()
+        @updateShownOptions()
+        @inputEl.blur()
+        return
+
+    freeze: =>
+        log "freeze" 
+        @parentEl.classList.add("frozen")
+        return
+    
+    unfreeze: =>
+        log "unfreeze"
+        @parentEl.classList.remove("frozen")
+        return
+
     destroy: =>
         @parentEl.innerHTML = ""
         @parentEl = null
@@ -88,18 +106,6 @@ export class SymbolSelect
 
         if @blurTimeoutId then clearTimeout(@blurTimeoutId)
         @blurTimeoutId = null
-
-
-    #region deprecated code to "reimplement"    
-
-    # provideSearchOptions: (opts) ->
-    #     log "provideSearchOptions"
-    #     log opts.length
-    #     @fullOptions = opts
-    #     @updateShownOptions()
-    #     @renderDropdown()
-        return
-    #endregion
 
     ############################################################
     #region Event Handlers
@@ -231,7 +237,6 @@ export class SymbolSelect
         if @dropdownVisible then @renderDropdown()
         return
 
-
     showDropdown: ->
         log "showDropdown"
         @renderDropdown()
@@ -282,7 +287,7 @@ export class SymbolSelect
         olog opt
         @inputEl.value = "#{opt[0]} #{opt[1]}"
         @hideDropdown()
-        @selectionCallback?(opt[0])
+        @selectionCallback(opt[0]) unless typeof @selectionCallback != "function"
         return
     #endregion
 

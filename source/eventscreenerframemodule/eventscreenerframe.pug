@@ -1,3 +1,14 @@
 //- eventscreenerframe structure
-#eventscreenerframe
-    include ../placeholderframemodule/placeholderframe.pug
+include ../preloader/preloader-mixins.pug
+
+#eventscreenerframe.no-result
+    #eventscreener-filter-row
+        include filtersymbolchoice.pug
+        include filtereventchoice.pug
+
+    #eventscreener-result-row
+        #eventscreener-result-hint
+            p Bitte wählen Sie die Symbole, die Sie untersuchen wollen.
+        #eventscreener-result-preloader
+            +preloader("spinner.1", "spinner-1")
+        table#eventscreener-result

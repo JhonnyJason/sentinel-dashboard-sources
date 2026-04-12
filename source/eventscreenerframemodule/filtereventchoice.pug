@@ -1,0 +1,9 @@
+#eventchoice
+    //- #event-select
+    h2 Ereignisse
+    table#event-choice-table
+        tbody#event-choice-content
+            template#event-choice-row-template: tr(data-id="i")
+                td: .label(data-name="c")
+                td: .range(data-range="c")
+                td: input.choose(type="checkbox" checked)

@@ -11,6 +11,8 @@ import * as accM from "./accountmodule.js"
 
 ############################################################
 socket = null
+setSocketReady = null
+readySocket = new Promise((rslv) -> setSocketReady = rslv)
 
 ############################################################
 pendingRequests = Object.create(null)
@@ -18,7 +20,7 @@ firstLoad = false
 
 ############################################################
 heartbeatMS = 60_000 # 60 s
-COMMAND_TIMEOUT_MS = 10_000 # 10 s
+COMMAND_TIMEOUT_MS = 20_000 # 10 s
 
 ############################################################
 export initialize = ->
@@ -43,14 +45,15 @@ createSocket = ->
 ############################################################
 sendCommand = (command, payload, expectedResponseType) ->
     new Promise (resolve, reject) ->
-        unless socket? and socket.readyState == WebSocket.OPEN
-            reject(new Error("Socket not connected"))
-            return
+        try await readySocket
+        catch err then reject(new Error("Socket not connected"))
         
         authCode = accM.getAuthCode()
         reject(new Error("We are not logged in!")) unless authCode?
         
-        if payload?
+        if payload? and typeof payload == "string"
+            socket.send("#{command} #{authCode} #{payload}")
+        else if payload?
             socket.send("#{command} #{authCode} #{JSON.stringify(payload)}")
         else
             socket.send("#{command} #{authCode}")
@@ -64,7 +67,7 @@ sendCommand = (command, payload, expectedResponseType) ->
         timer = setTimeout(requestTimedOut, COMMAND_TIMEOUT_MS) 
 
         # overwriting previous requests is fine if we clear the previous timeout
-        if pendingRequests[expectedResponseType]? 
+        if pendingRequests[expectedResponseType]?
             clearTimeout(pendingRequests[expectedResponseType].timer)
         pendingRequests[expectedResponseType] = { resolve, reject, timer }
         return
@@ -87,6 +90,7 @@ export heartbeat = ->
 ############################################################
 socketOpened = (evnt) ->
     log "socketOpened"
+    setSocketReady()
     if !firstLoad then executeFirstLoad()
     return
 
@@ -136,6 +140,7 @@ destroySocket = ->
     socket.removeEventListener("error", receiveError)
     socket.removeEventListener("close", socketClosed)
     socket = null
+    readySocket =  new Promise((rslv) -> setSocketReady = rslv)
     return
 
 ############################################################
@@ -151,3 +156,12 @@ executeFirstLoad = ->
 
 ############################################################
 export startHeartbeat = -> setInterval(heartbeat, cfg.heartbeatMS)
+
+############################################################
+export getEventList = ->
+    log "getEventSummary"
+    return await sendCommand("getEventList", null, "eventList")
+
+export getEventDates = (id) ->
+    log "getEventDates"
+    return await sendCommand("getEventDates", id, "eventDates:#{id}")

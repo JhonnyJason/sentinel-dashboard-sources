@@ -1,0 +1,13 @@
+include ../preloader/preloader-mixins.pug
+
+#filtersymbolchoice
+    h2 Symbole
+    #symbol-select-eventscreener
+        +preloader("circles", "circles")
+        
+    #symbol-choice-list
+        template#symbol-choice-row-template
+            .row
+                .label(data-symbol="c")
+                .delete.click-button(data-symbol="i"): svg: use(href="#svg-cross-icon")
+

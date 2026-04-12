@@ -181,16 +181,16 @@ export getEodData = (dataKey, yearsBack) ->
     #     data: ARRAY
     # }
 
-############################################################
-export getSymbolOptions = (query, limit) ->
-    log "getSymbolOptions"   
-    authCode = getAuthCode()
-    args = { authCode, query, limit }
-    err = validateGetSymbolOptionsArgs(args)
-    # if err then log getErrorMessage(err)
-    if err then throw new Error("Invalid getData args!")
-    # return await request(urlGetSymbolOptions, args)
+# ############################################################
+# export getSymbolOptions = (query, limit) ->
+#     log "getSymbolOptions"   
+#     authCode = getAuthCode()
+#     args = { authCode, query, limit }
+#     err = validateGetSymbolOptionsArgs(args)
+#     # if err then log getErrorMessage(err)
+#     if err then throw new Error("Invalid getData args!")
+#     # return await request(urlGetSymbolOptions, args)
     
-    ## Sample return
-    return await new Promise (rslv) ->
-        setTimeout((() -> rslv(defaultSymbols)), 500)
+#     ## Sample return
+#     return await new Promise (rslv) ->
+#         setTimeout((() -> rslv(defaultSymbols)), 500)

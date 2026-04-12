@@ -1,0 +1,206 @@
+preloader-size = 80px
+// preloader-size = 40px
+// preloader-size = 25px
+
+// Demo Styles ############################################
+#preloader-demo
+    display flex
+    padding 20px
+    justify-content space-between
+    .preloader
+        color #059862
+        width preloader-size
+        height preloader-size
+
+
+// general Styles #########################################
+.preloader
+    height: inherit
+    width: inherit
+    position: relative
+    transform: translateZ(0);
+
+// dots Styles ############################################
+.dots
+    .preloader-element-1,
+    .preloader-element-2,
+    .preloader-element-3
+        position absolute
+        top: 50%
+        transform translate(-50%, -50%)    
+        height: 20%
+        width: 20%
+        border-radius: 50%
+        animation dot-animation 1.2s infinite ease-in-out;
+        box-sizing: border-box
+        background-color currentcolor
+        
+    .preloader-element-1
+        left: 17%
+        animation-delay: -0.32s;
+    
+    .preloader-element-2 
+        left: 50%
+        animation-delay: -0.16s;
+
+    .preloader-element-3
+        left: 83%
+
+    .preloader-element-4
+        display:none
+
+@keyframes dot-animation
+	0%,
+	80%,
+	100%
+		transform: translate(-50%, -50%) scale(0)
+	40%
+		transform: translate(-50%, -50%) scale(1)
+
+// spinner 1 Styles #######################################
+.spinner-1
+    .preloader-element-1,
+        position absolute
+        top: 50%
+        left: 50%
+        transform translate(-50%, -50%)    
+        height: 100%
+        width: 100%
+        box-sizing: border-box
+        border-radius: 50%
+        border 3px solid currentcolor
+        border-bottom-color transparent
+        background-color transparent
+        animation spinner-animation 0.7s linear infinite
+        
+    .preloader-element-2 
+    .preloader-element-3
+    .preloader-element-4
+        display:none
+
+// spinner 2 Styles #######################################
+.spinner-2
+    .preloader-element-1,
+        position absolute
+        top: 50%
+        left: 50%
+        transform translate(-50%, -50%)    
+        height: 100%
+        width: 100%
+        box-sizing: border-box
+        border-radius: 50%
+        border 4px solid transparent
+        border-top 4px solid currentcolor
+        background-color transparent
+        animation spinner-animation 0.7s cubic-bezier(0.53, 0.21, 0.29, 0.67) infinite
+        
+    .preloader-element-2 
+        position absolute
+        top: 50%
+        left: 50%
+        transform translate(-50%, -50%)    
+        height: 100%
+        width: 100%
+        box-sizing: border-box
+        border-radius: 50%
+        border 3px solid currentcolor
+        opacity 0.2
+        background-color transparent
+        
+    .preloader-element-3
+    .preloader-element-4
+        display:none
+
+// spinner-animation #######################################
+@keyframes spinner-animation
+    from
+        transform: rotate(0deg)
+    to
+        transform: rotate(360deg)
+
+// squares Styles #########################################
+.squares
+    transform rotate(45deg)
+    .preloader-element-1,
+    .preloader-element-2,
+    .preloader-element-3,
+    .preloader-element-4
+        position absolute
+        height: 33%
+        width: 33%
+        animation square-animation 1.6s infinite linear;
+        box-sizing: border-box
+        background-color currentcolor
+        
+    .preloader-element-1
+        top 16.5%
+        left 16.5%
+        animation-delay: -1.2s;
+
+    .preloader-element-2 
+        top 16.5%
+        left 51.5%
+        animation-delay: -0.8s;
+
+    .preloader-element-3
+        top 51.5%
+        left 51.5%
+        animation-delay: -0.4s;
+
+    .preloader-element-4
+        top 51.5%
+        left 16.5%
+
+@keyframes square-animation
+    0%
+        opacity: 1
+    16%
+        opacity 0.5
+    32%
+        opacity: 0.2
+    68%
+        opacity: 0.2
+    84%
+        opacity: 0.5
+    100%
+        opacity: 1;
+    
+
+// circles Styles #########################################
+.circles
+    .preloader-element-1,
+    .preloader-element-2,
+    .preloader-element-3
+        position absolute
+        top 50%
+        left 50%
+        transform: translate(-50%, -50%)
+        height: 100%
+        width: 100%
+        box-sizing: border-box
+        animation circle-animation 1.2s infinite linear;
+        background-color transparent
+        border 3px solid currentcolor
+        border-radius 50%
+        
+    .preloader-element-1
+        animation-delay: -0.8s;
+
+    .preloader-element-2 
+        animation-delay: -0.4s;
+
+
+    .preloader-element-4
+        display none
+@keyframes circle-animation
+    0%
+        transform: translate(-50%, -50%) scale(0)
+        opacity: 0;
+    60%
+        transform: translate(-50%, -50%) scale(0.5)
+        opacity: 1;
+    75%
+        opacity: 1;
+    100%
+        transform: translate(-50%, -50%) scale(1)
+        opacity: 0;

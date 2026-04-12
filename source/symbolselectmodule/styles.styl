@@ -75,3 +75,15 @@
         color #999
         font-style italic
         text-align center
+
+.frozen
+    input
+        background-color alpha(#ccc, 0.3)
+        padding-right 40px
+        filter grayscale(100%)
+        pointer-events: none
+        user-select: none
+        opacity: 0.5
+
+    .preloader
+        display block !important

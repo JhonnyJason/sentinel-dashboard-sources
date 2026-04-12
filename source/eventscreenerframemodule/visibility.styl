@@ -1,0 +1,16 @@
+// Here we want to manage all the states that lead to visibility of certain elements
+// Every conditionally visible element is set to `display: none` in their place
+// Here the conditions under which they become visible is being managed
+
+//==================================================================
+#eventscreenerframe.no-result
+    #eventscreener-result-hint
+        display block
+
+#eventscreenerframe.processing
+    #eventscreener-result-preloader
+        display block
+
+#eventscreenerframe.result
+    #eventscreener-result
+        display block    

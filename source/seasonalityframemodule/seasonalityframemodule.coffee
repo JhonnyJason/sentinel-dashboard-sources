@@ -8,16 +8,16 @@ import { createLogFunctions } from "thingy-debug"
 import * as mData from "./marketdatamodule.js"
 import * as utl from "./utilsmodule.js"
 import { SymbolSelect } from "./symbolselectmodule.js"
+
+############################################################
+import { SeasonalityChart } from "./chartfun.js"
+import { runBacktesting } from "./backtesting.js"
+
+############################################################
 # Series config constants
 adrSeriesConfig = { name: "adr", config: { label: "Average Daily Return", stroke: "#ffffff" } }
 frSeriesConfig = { name: "fourier", config: { label: "Fourier Regression", stroke: "#aabbaa" } }
 latestSeriesConfig = { name: "latestData", config: { label: "Neuester Verlauf", stroke: "#faba01" } }
-import { SeasonalityChart } from "./chartfun.js"
-import { runBacktesting } from "./backtesting.js"
-
-
-############################################################
-## Re-export for symboloptions callback
 
 ############################################################
 #region DOM cache for the cases where the implicit-dom-connect fails
@@ -69,6 +69,7 @@ seriesVisibility = {
 }
 
 seasonalityChart = null
+symbolSelect = null
 #endregion
 
 ############################################################
@@ -125,7 +126,7 @@ onCloseChart = ->
     resetSeasonalityState()
     currentSelectedStock = null
     selectedSymbol.textContent = ""
-    symbolInput.value = ""
+    symbolSelect.resetSearch()
     resetTimeframeSelect()
     setChartInactive()
     return

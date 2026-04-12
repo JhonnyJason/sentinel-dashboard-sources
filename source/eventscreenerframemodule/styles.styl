@@ -1,3 +1,166 @@
 // eventscreenerframe styles
+@import 'visibility.styl'
+
 #eventscreenerframe
+    padding 25px
+    h2
+        margin-bottom 20px
+        text-align: left
+
+#eventscreener-filter-row
+    display flex
+    justify-content: flex-start
+    gap: 36px
+
+#symbol-select-eventscreener
+    position relative
+
+    .preloader
+        z-index 5
+        display none
+        width 25px
+        height 25px
+        position absolute
+        top 50%
+        right 10px
+        transform: translateY(-50%)
+        color #888
+
+// table#symbol-choice-table
+//     tbody#symbol-choice-content
+//         template#symbol-choice-row-template: tr
+//             td: .label(data-symbol="c")
+//             td: .delete.click-button(data-symbol="i"): svg: use(href="#svg-cross-icon")
+
+#symbol-choice-list
     width 100%
+    margin-top 20px
+    .row
+        display flex
+        justify-content: space-between
+        align-items: center
+        padding 8px 20px
+    
+    .row:nth-child(2n)
+        background-color alpha(#666, 0.05)
+
+    .label
+        font-size: 14pt
+        font-weight: bold
+
+    .delete
+        color cd-danger-red
+        width 23px
+        height 23px                
+
+
+// table#event-choice-table
+//     tbody#event-choice-content
+//         template#event-choice-row-template: tr 
+//             td: .label(data-name="c")
+//             td: .range(data-range="c")
+//             td: .choose(data-id="i"): input(type="checkbox" checked)
+
+#event-choice-table
+    
+    tr:nth-child(2n)
+        background-color alpha(#666, 0.05)
+    td
+        padding 8px 20px
+    
+    .label
+    .range
+        text-align left
+    
+    .choose
+        text-align right
+    
+
+#eventscreener-result-row
+    width 100%
+    min-height 20px
+    padding 40px 20px
+    box-sizing: border-box
+    background-color cd-dark-blue
+    border-radius: 3px
+    margin-top 36px
+
+#eventscreener-result
+    display: none
+    width 100%
+    box-sizing: border-box
+    font-size 9pt
+    color #fff
+    border-collapse collapse
+
+    th, td
+        padding 8px 20px
+        text-align left
+        overflow hidden
+        text-overflow: ellipsis
+
+    td, tr
+        border-left solid 1px alpha(#fff, 0.1)
+    tr
+        border-right solid 1px alpha(#fff, 0.1)
+    th
+        background-color rgba(255, 255, 255, 0.1)
+        border-bottom 2px solid rgba(255, 255, 255, 0.2)
+
+    th.sortable
+        cursor pointer
+        user-select none
+        position relative
+        padding-right 20px
+        box-sizing: border-box
+
+        &:hover
+            background-color alpha(#fff, 0.2)
+
+        &::after
+            content ""
+            position absolute
+            right 7px
+            top 50%
+            transform translateY(-50%)
+            border 4px solid transparent
+            opacity 0.3
+
+        &.sorted::after
+            opacity 1
+
+        &.asc::after
+            border-bottom-color #fff
+            margin-top -4px
+
+        &.desc::after
+            border-top-color #fff
+            margin-top 4px
+
+    tbody tr
+        border-bottom 1px solid rgba(255, 255, 255, 0.1)
+
+    tbody tr:nth-child(2n)
+        background-color alpha(#fff, 0.05)
+
+    tbody tr:hover
+        background-color alpha(#fff, 0.2)
+
+    tbody tr.warn
+        background-color rgba(255, 100, 100, 0.2)
+        opacity 0.7
+
+
+#eventscreener-result-hint
+    display none
+    margin auto
+    color #fff
+    
+#eventscreener-result-preloader
+    display none
+    width 50px
+    margin auto
+    .preloader
+        width 50px
+        height 50px
+        color #fff
