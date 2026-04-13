@@ -9,19 +9,20 @@ import { createDayFromDate } from "./utilsmodule.js"
 
 ############################################################
 export resultStructure = [
-    { label: "Symbol", key: "symbol", sort: "none" }
-    # { label: "MarketCap", key, "marketcap", sort: true }
-    { label: "Ereignis", key: "eventLabel", sort: "none"}
-    { label: "", key: "direction", sort: "none" }
-    { label: "Trefferquote", key: "winrate", sort: "number" }
-    { label: "Profit (Dur.)", key: "profitAvg", sort: "number" }
-    { label: "Profit (Med.)", key: "profitMed", sort: "number" }
-    { label: "Max Anstieg", key: "maxGain", sort: "number" }
-    { label: "Max Rückgang", key: "maxDrop", sort: "number" }
-    { label: "Nächstes Ereignis", key: "nextDate", sort: "none" }
-    { label: "Einstieg (EoD)", key: "entryDate", sort: "date" }
-    { label: "Ausstieg (EoD)", key: "exitDate", sort: "date" }
+    { label: "Symbol", key: "symbol", sort: on }
+    # { label: "MarketCap", key, "marketcap", sort: on }
+    { label: "Ereignis", key: "eventLabel", sort: on}
+    { label: "", key: "direction", sort: on }
+    { label: "Trefferquote", key: "winrate", sort: on }
+    { label: "Profit (Dur.)", key: "profitAvg", sort: on }
+    { label: "Profit (Med.)", key: "profitMed", sort: on }
+    { label: "Max Anstieg", key: "maxGain", sort: on }
+    { label: "Max Rückgang", key: "maxDrop", sort: on }
+    { label: "Nächstes Ereignis", key: "nextDate", sort: on }
+    { label: "Einstieg (EoD)", key: "entryDate", sort: on }
+    { label: "Ausstieg (EoD)", key: "exitDate", sort: on }
 ]
+
 ############################################################
 keyToInfo = Object.create(null)
 keyToInfo[d.key] = d for d in resultStructure
@@ -88,9 +89,10 @@ export startScreening = (symbolToData, eventList) ->
 
                 for trade in trades
                     evaluation = evaluateEventTrades(sym, evnt, trade)
-                    allEvals.push(evaluation)
-                    result = generateResultObject(evaluation, evnt)
-                    allResults.push(result)
+                    if evaluation?
+                        allEvals.push(evaluation)
+                        result = generateResultObject(evaluation, evnt)
+                        allResults.push(result)
     
                     if performance.now() - start > maxBusyTimeMS
                         await letMainThreadRun()
@@ -125,26 +127,36 @@ export getResults = (limit, sortKey, isAscending) ->
     return results
 
 ############################################################
+# Compare Functions
+numberCompare = (a, b, f) -> (b - a) * f
+negNumberCompare = (a, b, f) -> ((-b) - (-a)) * f
+stringCompare = (a, b, f) -> 
+    if a > b then return (-1) * f 
+    if a < b then return f 
+    return 0
+
+############################################################
 getSortFunction = (sortKey, isAscending) ->
     log "getSortFunction #{sortKey}, #{isAscending}"
     info = keyToInfo[sortKey]
     
-    if info.sort == "number" and isAscending then return (el1, el2) -> 
-        el1[sortKey] - el2[sortKey]
-    if info.sort == "number" then return (el1, el2) -> 
-        el2[sortKey] - el1[sortKey]
+    if isAscending then f = -1
+    else f = 1
 
-    if info.sort == "date" and isAscending then return (el1, el2) ->
-        if el1[sortKey] < el2[sortKey] then return -1
-        if el1[sortKey] > el2[sortKey] then return 1
-        return 0
-    
-    if info.sort == "date" then return (el1, el2) ->
-        if el1[sortKey] > el2[sortKey] then return -1
-        if el1[sortKey] < el2[sortKey] then return 1
-        return 0
-    
-    throw new Error("No Sort Function to be found!")
+    switch sortKey
+        when "symbol" then return (el1, el2) -> stringCompare(el1.symbol, el2.symbol, f)
+        when "marketcap" then return (el1, el2) -> numberCompare(el1.marketcap, el2.marketcap, f)
+        when "eventLabel" then return (el1, el2) -> stringCompare(el1.eventLabel, el2.eventLabel, f)
+        when "direction" then return (el1, el2) -> stringCompare(el1.direction, el2.direction, f)
+        when "winrate" then return (el1, el2) -> numberCompare(el1.winrate, el2.winrate, f)
+        when "profitAvg" then return (el1, el2) -> numberCompare(el1.profitAvg, el2.profitAvg, f)
+        when "profitMed" then return (el1, el2) -> numberCompare(el1.profitMed, el2.profitMed, f)
+        when "maxGain" then return (el1, el2) -> numberCompare(el1.maxGain, el2.maxGain, f)
+        when "maxDrop" then return (el1, el2) -> negNumberCompare(el1.maxDrop, el2.maxDrop, f)
+        when "nextDate" then return (el1, el2) -> stringCompare(el1.nextDate, el2.nextDate, f)
+        when "entryDate" then return (el1, el2) -> stringCompare(el1.entryDate, el2.entryDate, f)
+        when "exitDate" then return (el1, el2) -> stringCompare(el1.nextDate, el2.exitDate, f)
+        else throw new Error("No sort Function for #{sortKey}!")
     return
         
 
@@ -153,7 +165,7 @@ evaluateEventTrades = (sym, evnt, trade) ->
     key = "#{sym}:#{evnt.id}:#{trade}"
     dates = evnt.datesToScreen
     # log "#{evnt.id} has #{dates.length} dates to screen!"
-    tradeResults = dates.map((date) -> getTradeResult(sym, trade, date))
+    tradeResults = dates.map((date) -> getTradeResult(sym, trade, date)).filter((el) -> el?)
 
     direction = ""
     maxGainF = 0.0
@@ -199,6 +211,11 @@ evaluateEventTrades = (sym, evnt, trade) ->
         maxDropP = 100.0 * (maxDropF - 1.0)
         winrate = 100.0 * shortSuccessCount / tradeResults.length
     
+    if winrate == 0
+        # log "Winrate was 0 - how can this be?"
+        # olog { tradeResults }
+        return null
+
     return { key, direction, winrate, profitAvgP, profitMedP, maxGainP, maxDropP }
 
 ############################################################

@@ -38,10 +38,7 @@ eventChoiceRowTemplate = document.getElementById("event-choice-row-template")
 defaultEventNr = 12
 
 ############################################################
-results = null
-
-############################################################
-sortColumn = "winrate"
+sortColumn = "profitAvg"
 sortAscending = false
 
 ############################################################
@@ -52,12 +49,17 @@ export initialize = ->
 
     symbolSelect = new SymbolSelect({ container, optionsLimit })
     symbolSelect.setOnSelectListener(onSymbolSelected)
+    return
+
+############################################################
+export activate = ->
     retrieveEventData()
     return
 
 ############################################################
 retrieveEventData = -> # only once on startup
     log "retrieveEventData"
+    if eventList? then return
     try
         eventList = await data.getEventList()
         # olog eventList
@@ -254,12 +256,12 @@ generateScreeningResult = ->
     else eventscreenerframe.className = "no-result"
 
 
-
 ############################################################
-renderTableRow = (result) ->
-    log "renderTableRow"
-    
-    return
+getSpan = (cls, txt) ->
+    span = document.createElement("SPAN")
+    span.className = cls
+    span.textContent = txt
+    return span
 
 ############################################################
 renderResults = ->
@@ -304,9 +306,19 @@ renderResults = ->
             td = document.createElement("td")
 
             d = result[key]
-            if typeof d == "number" then td.textContent = formatPercent(d)
-            else if sort == "date" then td.textContent = formatDate(d)
-            else td.textContent = d
+            switch key
+                when "symbol" then td.appendChild(getSpan("symbol", d))
+                when "eventLabel" then td.appendChild(getSpan("", d))
+                when "direction" then td.appendChild(getSpan(d.toLowerCase(), d))
+                when "winrate" then td.appendChild(getSpan("winrate", d.toFixed(1)))
+                when "profitAvg" then td.appendChild(getSpan("profit", d.toFixed(1)))
+                when "profitMed" then td.appendChild(getSpan("profit", d.toFixed(1)))
+                when "maxGain" then td.appendChild(getSpan("up", d.toFixed(1)))
+                when "maxDrop" then td.appendChild(getSpan("down", d.toFixed(1)))
+                when "nextDate" then td.appendChild(getSpan("", formatDate(d)))
+                when "entryDate" then td.appendChild(getSpan("", formatDate(d)))
+                when "exitDate" then td.appendChild(getSpan("", formatDate(d)))
+                else console.error("Rendering TableBody: Unexpected key #{key}!")
 
             row.appendChild(td)
             

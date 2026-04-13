@@ -11,6 +11,7 @@ import * as sideNav from "./sidenavmodule.js"
 import * as noAccount from "./noaccountmodule.js"
 import * as dataModule from "./datamodule.js"
 import * as trafficlight from "./trafficlightframemodule.js"
+import * as eventscreener from "./eventscreenerframemodule.js"
 
 #endregion
 
@@ -32,6 +33,7 @@ applyBaseState["summary"] = ->
     sideNav.setSummaryState()
     noAccount.hide()
     header.className = "logged-in"
+    eventscreener.activate()
     trafficlight.fetchData()
     return
 
@@ -41,6 +43,7 @@ applyBaseState["currencytrend"] = ->
     sideNav.setCurrencytrendState()
     noAccount.hide()
     header.className = "logged-in"
+    eventscreener.activate()
     return
 
 applyBaseState["seasonality"] = ->
@@ -49,6 +52,7 @@ applyBaseState["seasonality"] = ->
     sideNav.setSeasonalityState()
     noAccount.hide()
     header.className = "logged-in"
+    eventscreener.activate()
     return
 
 applyBaseState["eventscreener"] = ->
@@ -56,6 +60,7 @@ applyBaseState["eventscreener"] = ->
     sideNav.setEventscreenerState()
     noAccount.hide()
     header.className = "logged-in"
+    eventscreener.activate()
     return
 
 applyBaseState["forexscreener"] = ->
@@ -63,6 +68,7 @@ applyBaseState["forexscreener"] = ->
     sideNav.setForexscreenerState()
     noAccount.hide()
     header.className = "logged-in"
+    eventscreener.activate()
     return
 
 applyBaseState["trafficlight"] = ->
@@ -71,6 +77,7 @@ applyBaseState["trafficlight"] = ->
     noAccount.hide()
     header.className = "logged-in"
     trafficlight.activate()
+    eventscreener.activate()
     return
 
 applyBaseState["account"] = ->
@@ -78,6 +85,7 @@ applyBaseState["account"] = ->
     sideNav.setAccountState()
     noAccount.hide()
     header.className = "logged-in"
+    eventscreener.activate()
     return
 
 applyBaseState["noaccount"] = ->
