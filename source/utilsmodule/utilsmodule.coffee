@@ -163,9 +163,22 @@ export class Day
 
     getDayNextYear: => return new Day(@nIndex, (@year + 1))
     getDayPrevYear: => return new Day(@nIndex, (@year - 1))
+    
     getNextDay: => return new Day(((@nIndex + 1) % 365), (@year + (@nIndex == 364)))
     getPrevDay: => return new Day(((@nIndex + 364) % 365), (@year - (@nIndex == 0)))
+    
+    getRelativeDay: (num) => 
+        if num > 0 
+            return new Day(((@nIndex + num) % 365), (@year + ((@nIndex + num) > 364)))
+        else 
+            return new Day(((@nIndex + (365 + num)) % 365), (@year - ((@nIndex + num) < 0)))
+    
     getDateStr: => return dayIndexToDateStr(@year, @rIndex)
+    getYYYYMMDD: => 
+        ddmmyyyy =  dayIndexToDateStr(@year, @rIndex)
+        tkns = ddmmyyyy.split(".")
+        tkns.reverse()
+        return tkns.join("-")
 
     lookupIn: (perYearData) =>
         yearData = perYearData[@yearIdx]
@@ -180,6 +193,16 @@ export class Day
         rIndex = @rIndex - numMissing 
         if rIndex < 0 then return null
         return yearData[rIndex] 
+
+############################################################
+export createDayFromDate = (dateStr) ->
+    date = new Date(dateStr)
+    date.setHours(20)
+    year = date.getFullYear()
+    isLeap = isLeapYear(year)
+    rIdx = getDayOfYear(date)
+    nIndex = realToNonLeapNormIdx(rIdx, isLeap)
+    return new Day(nIndex, year)
 
 ############################################################
 export scanForFreakValues = (dataArray, label) ->

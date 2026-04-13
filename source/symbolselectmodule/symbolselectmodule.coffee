@@ -221,9 +221,10 @@ export class SymbolSelect
                 if (performance.now() - start) > maxBusyTimeMS
                     log "hit maxBusyTimeMS @#{i}"
                     await letMainThreadRun()
-                    if @restartQuery 
+                    if @restartQuery
                         log "We restart the loop"
                         break # restart the inner loop
+                    if !@isQuerying then return # stop fully when we have aborted
                     start = performance.now()
 
             if i == allOptions.length # we reached the end!

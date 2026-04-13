@@ -12,8 +12,8 @@ export modulesToDebug = {
     # datacache: true
     # economicareasmodule: true
     # EconomicArea: true
-    eventscreenerframemodule: true
-    eventscreeningengine: true
+    # eventscreenerframemodule: true
+    # eventscreeningengine: true
     # fouriermodule: true
     # summaryframemodule: true
     # currencytrendframemodule: true
@@ -27,8 +27,8 @@ export modulesToDebug = {
     # seasonality: true
     # seasonalityframemodule: true
     # summaryframemodule: true
-    symboloptionsmodule: true
-    symbolselectmodule: true
+    # symboloptionsmodule: true
+    # symbolselectmodule: true
     # uistatemodule: true
 }
 

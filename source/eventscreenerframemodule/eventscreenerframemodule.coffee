@@ -6,12 +6,12 @@ import { createLogFunctions } from "thingy-debug"
 
 ############################################################
 import * as data from "./datamodule.js"
-import * as mData from "./marketdatamodule.js"
+import * as dCache from "./datacache.js"
 import * as utl from "./utilsmodule.js"
 
 ############################################################
 import { SymbolSelect } from "./symbolselectmodule.js"
-import { doScreening } from "./eventscreenerengine.js"
+import * as screener from "./eventscreenerengine.js"
 
 ############################################################
 setEventDataReady = null
@@ -41,7 +41,6 @@ defaultEventNr = 12
 results = null
 
 ############################################################
-sortFunction = ( ) -> false
 sortColumn = "winrate"
 sortAscending = false
 
@@ -54,8 +53,6 @@ export initialize = ->
     symbolSelect = new SymbolSelect({ container, optionsLimit })
     symbolSelect.setOnSelectListener(onSymbolSelected)
     retrieveEventData()
-
-    sortFunction = sortByWinrate
     return
 
 ############################################################
@@ -64,8 +61,14 @@ retrieveEventData = -> # only once on startup
     try
         eventList = await data.getEventList()
         # olog eventList
-        idToEvent[evnt.id] = evnt for evnt in eventList
-        
+        for evnt in eventList
+            idToEvent[evnt.id] = evnt
+            evnt.isChosen = true
+            if !evnt.numScreendEvents? then evnt.numScreendEvents = defaultEventNr
+            if !evnt.isWeekly?
+                isWeekly = (evnt.id == "e009") #Jobless Claims is weekly
+                evnt.isWeekly = isWeekly
+
         retrieveAllEventDates()
         updateEventOptions()
     catch err then log err
@@ -82,14 +85,12 @@ retrieveAllEventDates = -> # only once on startup
             dates = datesList[i]
             if !Array.isArray(dates) then throw new Error("Event #{evnt.id} had invalid response!")
             
-            evnt.dates = dates
-            isWeekly = (evnt.id == "e009") #Jobless Claims is weekly
-            evnt.isWeekly = isWeekly
-            
-            if !evnt.numScreendEvents? then evnt.numScreendEvents = defaultEventNr
+            evnt.dates = dates.sort()
+            isWeekly = evnt.isWeekly
             num = evnt.numScreendEvents
 
             { datesToScreen, nextDates } = extractRelevantDates(num, dates, isWeekly)
+            
             evnt.datesToScreen = datesToScreen
             evnt.nextDates = nextDates
 
@@ -133,6 +134,9 @@ extractRelevantDates = (num, dates, isWeekly = false) ->
     return { datesToScreen, nextDates }
 
 ############################################################
+#region Events leading to reScreen
+
+############################################################
 onSymbolSelected = (symbol) ->
     log "onSymbolSelected #{symbol}"
     if chosenSymbols.has(symbol) then return symbolSelect.resetSearch()
@@ -158,22 +162,45 @@ deleteSymbolChoiceClicked = (evnt) ->
     chosenSymbols.delete(evnt.target.dataset.symbol)
     delete symbolToData[symbol]
     updateSymbolOptions()
-    return
 
-eventChoiceChanged = (evnt) ->
-    log "eventChoiceChanged"
-    ## TODO implement
-    return
-
-eventRangeClicked = (evnt) ->
-    log "eventRangeClicked"
-    ## TODO implement
+    generateScreeningResult()
     return
 
 ############################################################
+eventChoiceChanged = (evnt) ->
+    log "eventChoiceChanged"
+    isChecked = evnt.target.checked
+    log "isChecked: #{isChecked}"
+
+    if evnt.target.dataset.id?
+        evntId = evnt.target.dataset.id
+    else if evnt.target.parentNode.dataset.id?
+        evntId = evnt.target.parentNode.dataset.id
+    else if evnt.target.parentNode.parentNode.dataset.id?
+        evntId = evnt.target.parentNode.parentNode.dataset.id
+    else console.error("There was no data-id attribute available!")
+
+    log "evntId: #{evntId}"
+    if !idToEvent[evntId]? then console.error("Event with id: #{evntId} did not exist!")
+    idToEvent[evntId].isChosen = isChecked
+
+    generateScreeningResult()
+    return
+
+############################################################
+eventRangeClicked = (evnt) ->
+    log "eventRangeClicked"
+    ## TODO implement
+    generateScreeningResult()
+    return
+
+#endregion
+
+############################################################
+#region Helper Functions
 addSymbolChoice = (symbol) ->
     log "addSymbolChoice"
-    symbolToData[symbol] = await mData.getLatestData(symbol)
+    symbolToData[symbol] = await dCache.getHistoryHLC(symbol, 30)
     chosenSymbols.add(symbol) 
     return
 
@@ -207,36 +234,26 @@ updateEventOptions = ->
         el.querySelector('.range').addEventListener("click", eventRangeClicked)
         
         el.querySelector('[data-id="i"]').dataset.id = evnt.id
+
         el.querySelector('.choose').addEventListener("change", eventChoiceChanged)
         eventChoiceContent.appendChild(el)
     return
 
+#endregion
 
 ############################################################
 generateScreeningResult = ->
     log "generateScreeningResult"
-    if chosenSymbols.size  > 0         
+    chosenEvents = eventList.filter((el) -> el.isChosen)
+
+    if chosenSymbols.size  > 0 and chosenEvents.length > 0
         eventscreenerframe.className = "processing"
-        try results = await doScreening(symbolToData, eventList)
+        try await screener.startScreening(symbolToData, chosenEvents)
         catch err then log err
-        if results? then renderResults(results)
-        else 
+        renderResults()
     else eventscreenerframe.className = "no-result"
 
 
-############################################################
-#region Sort Functions
-sortByWinrate = (el1, el2) ->  el2.winrate - el1.winrate
-sortByProfitAvg = (el1, el2) ->  el2.profitAvg - el1.profitAvg
-sortByProfitMed = (el1, el2) ->  el2.profitMed - el1.profitMed
-sortByMaxGain = (el1, el2) ->  el2.maxGain - el1.maxGain
-sortByMaxDrop = (el1, el2) ->  el2.maxDrop - el1.maxDrop
-
-sortByNextEntry = (el1, el2) ->  
-    if el1.nextEntry > el2.nextEntry then return -1
-    if el1.nextEntry < el2.nextEntry then return 1
-    return 0
-#endregion
 
 ############################################################
 renderTableRow = (result) ->
@@ -247,31 +264,16 @@ renderTableRow = (result) ->
 ############################################################
 renderResults = ->
     log "renderResults"
-    sorted = [...results]  # Copy to avoid mutating original
+    results = screener.getResults(50, sortColumn, sortAscending)
+    ## TODO properly deal with result error
+    # else eventscreenerframe.className = "error"
+
+    if !results? 
+        eventscreenerframe.className = "no-result"
+        return
 
     eventscreenerResult.innerHTML = ""
-    log "sortAscending: #{sortAscending}"
-
-    sorted.sort(sortFunction) # standard descending sort
-    if sortAscending then sorted.reverse() # reverse for ascending
-
-    ########################################################
-    #region table header definition
-    dataStructure = [
-        { label: "Symbol", key: "symbol", sort: false }
-        # { label: "MarketCap", key, "marketcap", sort: true }
-        { label: "Ereignis", key: "eventLabel", sort: false}
-        { label: "", key: "direction", sort: false }
-        { label: "Trefferquote", key: "winrate", sort: true }
-        { label: "Profit (Dur.)", key: "profitAvg", sort: true }
-        { label: "Profit (Med.)", key: "profitMed", sort: true }
-        { label: "Max Anstieg", key: "maxGain", sort: true }
-        { label: "Max Rückgang", key: "maxDrop", sort: true }
-        { label: "Nächstes Ereignis", key: "nextDate", sort: false }
-        { label: "Einstieg (EoD)", key: "entryDate", sort: true }
-        { label: "Ausstieg (EoD)", key: "exitDate", sort: true }
-    ]
-    #endregion
+    dataStructure = screener.resultStructure
 
     ########################################################
     #region render table head
@@ -281,7 +283,7 @@ renderResults = ->
         th = document.createElement("th")
         if key?
             th.dataset.key = key
-            th.classList.add("sortable") if sort
+            th.classList.add("sortable") if sort != "none"
             if key == sortColumn
                 th.classList.add("sorted")
                 th.classList.add(if sortAscending then "asc" else "desc")
@@ -295,22 +297,22 @@ renderResults = ->
     ########################################################
     #region render table body
     tbody = document.createElement("tbody")
-    for result in sorted
+    for result in results
         row = document.createElement("tr")
 
         for { label, key, sort } in dataStructure
             td = document.createElement("td")
 
             d = result[key]
-            if typeof d == "number"
-                td.textContent = "#{d.toFixed(0)}%"
+            if typeof d == "number" then td.textContent = formatPercent(d)
+            else if sort == "date" then td.textContent = formatDate(d)
             else td.textContent = d
+
             row.appendChild(td)
             
         tbody.appendChild(row)
             
     eventscreenerResult.appendChild(tbody)
-
     eventscreenerframe.className = "result"
     return
 
@@ -361,7 +363,7 @@ renderResults = ->
 
 
 ############################################################
-#region Example code for table rendering
+#region helper functions for table rendering
 onSortColumnClick = (evnt) ->
     key = evnt.target.getAttribute("data-key")
     log "onSortColumnClick: #{key}"
@@ -373,55 +375,21 @@ onSortColumnClick = (evnt) ->
         sortColumn = key
         sortAscending = false  # New column: start descending
         
-        switch sortColumn
-            when "winrate" then sortFunction = sortByWinrate
-            when "profitAvg" then sortFunction = sortByProfitAvg
-            when "profitMed" then sortFunction = sortByProfitMed
-            when "maxGain" then sortFunction = sortByMaxGain
-            when "maxDrop" then sortFunction = sortByMaxDrop
-            when "nextEntry" then sortFunction = sortByNextEntry
-            else console.error("No sort function for key: #{key}")
-
     renderResults()
     return
-
-sortYearlyResults = (results) ->
-    sorted = [...results]  # Copy to avoid mutating original
-
-    compareFn = switch sortColumn
-        when "startDate"
-            (a, b) -> a.year - b.year
-        when "profit"
-            if currentIsShort
-                (a, b) -> (-a.profitP) - (-b.profitP)  # Flipped for Short
-            else
-                (a, b) -> a.profitP - b.profitP
-        when "profitA"
-            if currentIsShort
-                (a, b) -> (-a.startA * a.profitP) - (-b.startA * b.profitP)
-            else
-                (a, b) -> (a.startA * a.profitP) - (b.startA * b.profitP)
-        when "maxRise"
-            (a, b) -> a.maxRiseP - b.maxRiseP
-        when "maxRiseA"
-            (a, b) -> (a.startA * a.maxRiseP) - (b.startA * b.maxRiseP)
-        when "maxDrop"
-            (a, b) -> (-a.maxDropP) - (-b.maxDropP) # Flipped for max Drops
-        when "maxDropA"
-            (a, b) -> (-a.startA * a.maxDropP) - (-b.startA * b.maxDropP)
-        else
-            (a, b) -> 0
-
-    sorted.sort(compareFn)
-    unless sortAscending then sorted.reverse()
-    return sorted
 
 formatPercent = (value) ->
     sign = if value >= 0 then "+" else ""
     return "#{sign}#{value.toFixed(1)}%"
 
-formatAbsolute = (value) ->
-    sign = if value >= 0 then "+" else ""
-    return "#{sign}#{value.toFixed(2)}"
+formatDate = (value) ->
+    date = new Date(value)
+    day = date.getDate()
+    month = date.getMonth() + 1
+    year = date.getFullYear()
+
+    dayStr = if day < 10 then "0#{day}" else "#{day}"
+    monthStr = if month < 10 then "0#{month}" else "#{month}"
+    return "#{dayStr}.#{monthStr}.#{year}"
 
 #endregion
