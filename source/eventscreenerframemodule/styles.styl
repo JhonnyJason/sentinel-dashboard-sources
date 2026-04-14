@@ -4,8 +4,11 @@
 #eventscreenerframe
     padding 25px
     h2
-        margin-bottom 20px
-        text-align: left
+        margin-bottom 40px
+        text-align: right
+        padding 0 20px
+        font-weight: bold
+
 
 #eventscreener-filter-row
     display flex
@@ -34,14 +37,16 @@
 
 #symbol-choice-list
     width 100%
-    margin-top 20px
+    margin-top 19px
     .row
         display flex
         justify-content: space-between
         align-items: center
         padding 8px 20px
-    
-    .row:nth-child(2n)
+        height 40px
+        box-sizing: border-box
+
+    .row:nth-child(2n+1)
         background-color alpha(#666, 0.05)
 
     .label
@@ -67,7 +72,9 @@
         background-color alpha(#666, 0.05)
     td
         padding 8px 20px
-    
+        height 40px
+        box-sizing: border-box
+
     .label
     .range
         text-align left

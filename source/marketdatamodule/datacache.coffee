@@ -28,7 +28,11 @@ export  getLatestCloseData = (dataKey) ->
         yearResult = [] 
         yearResult[i] = d[d.length - 1] for d,i in yearData when d?
         result.push(yearResult)
-        
+    
+    # checking the data
+    endExcert = result[0].slice(-30)
+    console.log(endExcert)
+
     return result
 
 ############################################################
@@ -112,14 +116,12 @@ export getHistoricDepth = (dataKey) ->
 ############################################################
 retrieveFullHistory = (dataKey) ->
     log "retrieveFullHistory #{dataKey}"
-    try
-        startMS = performance.now()
-        result = await getEodData(dataKey, 31)
-        olog result.meta
-        timeMS = performance.now() - startMS
-        log "received #{result.data.length} datapoints - request took #{timeMS}ms"
-        digestRemoteData(dataKey, result)
-    catch err then log "error: #{err.message}"
+    startMS = performance.now()
+    result = await getEodData(dataKey, 31)
+    olog result.meta
+    timeMS = performance.now() - startMS
+    log "received #{result.data.length} datapoints - request took #{timeMS}ms"
+    digestRemoteData(dataKey, result)
     return
 
 ############################################################

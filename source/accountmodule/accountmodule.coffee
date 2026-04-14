@@ -133,6 +133,7 @@ resetSessionCheckTimeout = ->
 refreshSession = ->
     log "refreshSession"
     authCode = accountData.session.authCode
+    if !authCode? then throw new Error("No autCode in session!")
     result = await sci.refreshSession(authCode)
 
     err = validateRefreshSessionResult(result)
@@ -210,7 +211,7 @@ export assertAuthorization = ->
         console.error(err)
         ## maybe authCode is invalid so reLogin could help
         try await reLogin()
-        catch err 
+        catch err
             console.error(err)
             ## seems all is invalid we may just delete it
             deleteAccountData()

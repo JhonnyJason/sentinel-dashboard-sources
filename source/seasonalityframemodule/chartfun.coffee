@@ -156,6 +156,7 @@ export class SeasonalityChart
         newMax = @defaultMax
         newMin = newMax - rangeDif
         @handle.setScale("x", { min: newMin, max: newMax })
+        cancelSelect(@handle)
         return
         
     reset: =>

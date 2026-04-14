@@ -35,6 +35,10 @@ export class SymbolSelect
         @dropdownEl.classList.add("dropdown")
         @parentEl.appendChild(@dropdownEl)
 
+        @errorEl = document.createElement("DIV")
+        @errorEl.classList.add("error-display")
+        @parentEl.appendChild(@errorEl)
+
         # @inputEl = opts.container.getElementsByClassName("")[0]
         # @dropdownEl = opts.container.getElementsByClassName("")[0]
         @minSearchLength = opts.minSearchLength ? 3        
@@ -86,6 +90,20 @@ export class SymbolSelect
         @parentEl.classList.remove("frozen")
         return
 
+    setError: (error) =>
+        log "unfreeze"
+        @inputEl.value = ""
+        @inputEl.blur()
+        @parentEl.classList.remove("frozen")
+        @parentEl.classList.add("error")
+        @errorEl.textContent = error
+        return
+
+    clearError: =>
+        @parentEl.classList.remove("error")
+        @errorEl.textContent = ""
+        return
+
     destroy: =>
         @parentEl.innerHTML = ""
         @parentEl = null
@@ -114,12 +132,14 @@ export class SymbolSelect
         # if @blurTimeoutId
         #     clearTimeout(@blurTimeoutId)
         #     @blurTimeoutId = null
+        @clearError()
         @updateShownOptions()
         @showDropdown()
         return
 
     onInput: =>
         log "onInput"
+        @clearError()
         @updateShownOptions()
         @showDropdown()
         return

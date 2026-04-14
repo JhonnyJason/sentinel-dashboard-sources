@@ -1,3 +1,5 @@
+include ../preloader/preloader-mixins.pug
+
 //- seasonalityframe structure
 #seasonalityframe.chart-inactive
     #selection-row
@@ -10,6 +12,7 @@
 
     #chart-row
         #chart-container
+            +preloader("circles", "circles")
             include chart-instructions.pug
             #seasonality-chart
             #cursor-indicator

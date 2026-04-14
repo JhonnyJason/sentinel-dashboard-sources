@@ -145,7 +145,10 @@ onSymbolSelected = (symbol) ->
 
     symbolSelect.freeze()
     try await addSymbolChoice(symbol)
-    catch err then log err
+    catch err
+        console.error(err)
+        symbolSelect.setError("Fehler in der Datenanfrage für #{symbol}!")
+        return # no change on symbol options to update
     finally symbolSelect.unfreeze()
 
     symbolSelect.resetSearch()

@@ -166,6 +166,7 @@ evaluateEventTrades = (sym, evnt, trade) ->
     dates = evnt.datesToScreen
     # log "#{evnt.id} has #{dates.length} dates to screen!"
     tradeResults = dates.map((date) -> getTradeResult(sym, trade, date)).filter((el) -> el?)
+    return null unless tradeResults.length > 0
 
     direction = ""
     maxGainF = 0.0
@@ -189,11 +190,13 @@ evaluateEventTrades = (sym, evnt, trade) ->
     avgDeltaF = avgDeltaF / tradeResults.length
 
     tradeResults.sort((el1, el2) -> el2.deltaF - el1.deltaF)
+    medIdx = Math.floor(tradeResults.length / 2)
+    
     if tradeResults.length % 2 # odd case
-        medDeltaF = tradeResults[tradeResults.length / 2].deltaF
+        medDeltaF = tradeResults[medIdx].deltaF
     else
-        medDeltaF = tradeResults[Math.floor(tradeResults.length / 2)].deltaF
-        medDeltaF += tradeResults[Math.floor(tradeResults.length / 2) - 1].deltaF
+        medDeltaF = tradeResults[medIdx].deltaF
+        medDeltaF += tradeResults[medIdx - 1].deltaF
         medDeltaF *= 0.5
 
     if avgDeltaF > 1
@@ -251,8 +254,7 @@ getTradeResult = (sym, trade, date) ->
             entryDate
             exitDate
         }
-
-    return null unless entryDP? and exitDP?
+        return null
 
     entryC = entryDP[entryDP.length - 1]
     exitC = exitDP[exitDP.length - 1]

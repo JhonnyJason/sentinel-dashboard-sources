@@ -13,7 +13,7 @@ import {
 
 ############################################################
 import { urlAccessManager, urlDatahub } from "./configmodule.js"
-import { getAuthCode } from "./accountmodule.js"
+import { getAuthCode, assertAuthorization } from "./accountmodule.js"
 import { defaultSymbols } from "./defaultsymbols.js"
 
 ############################################################
@@ -93,8 +93,13 @@ request  = (url, args) ->
     if response.status == 200
         try return await response.json()
         catch err then throw new Error("ResultParsing Error: "+err.message)
+    
+    ## Any other Error will not be "OK" - and might have an error Messge for us...
+    if response.status == 401
+        try await assertAuthorization()
+        catch err then throw new Error("Authorization could not be established! #{err.message}")
+        throw new Error("Authorization issue, but refresshed session -> try again!")
 
-        ## Any Error will not be "OK" - and might have an error Messge for us...
     try errorMessage = await response.text()
     catch err then throw new Error("ErrorParsing Error: "+err.message)
 

@@ -280,18 +280,32 @@ updateYearsIndicator = ->
 
 ############################################################
 #region Chart State Classes
+
+setStateLoading = ->
+    seasonalityframe.classList.remove("chart-active")
+    seasonalityframe.classList.remove("analysing")
+    seasonalityframe.classList.remove("backtesting")
+    seasonalityframe.classList.remove("chart-inactive")
+    seasonalityframe.classList.add("loading-data")
+    symbolSelect.freeze()
+    return
+
 setChartActive = ->
     seasonalityframe.classList.remove("chart-inactive")
     seasonalityframe.classList.remove("backtesting")
+    seasonalityframe.classList.remove("loading-data")
     seasonalityframe.classList.add("chart-active")
     seasonalityframe.classList.add("analysing")
+    symbolSelect.unfreeze()
     return
 
 setChartInactive = ->
     seasonalityframe.classList.remove("chart-active")
     seasonalityframe.classList.remove("analysing")
     seasonalityframe.classList.remove("backtesting")
+    seasonalityframe.classList.remove("loading-data")
     seasonalityframe.classList.add("chart-inactive")
+    symbolSelect.unfreeze()
     return
 
 setBacktestingActive = ->
@@ -531,13 +545,13 @@ updateYearsOptions = ->
         if opt == currentYears then optionEl.selected = true
         timeframeSelect.appendChild(optionEl)
     return
-
+    
 ############################################################
 resetAndRender = ->
     log "resetAndRender"
     resetChartData()
     try
-        ## TODO start a preloader to signal data wating :-)
+        setStateLoading()
         if currentSelectedStock
             selectedSymbol.textContent = ""+currentSelectedStock
             await retrieveRelevantData()
@@ -557,8 +571,12 @@ resetAndRender = ->
                 setBacktestingActive()
             else
                 setChartActive()
-    catch err then console.error(err) ## TODO: Maybe signal Error in chart and reset all state?
-    # finally: ## TODO reset preloader on if it was not before
+    catch err
+        console.error(err)
+        symbolSelect.setError("Fehler in der Datenanfrage für #{currentSelectedStock}!")
+        selectedSymbol.textContent = ""
+        currentSelectedStock = ""
+        setChartInactive()
     return
 
 ############################################################
@@ -593,7 +611,6 @@ resetSeasonalityState = ->
     syncLegendVisibility()
     updateSeriesIndices()
     return
-
 
 ############################################################
 retrieveRelevantData = ->
