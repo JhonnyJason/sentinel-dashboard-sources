@@ -25,7 +25,7 @@ export modulesToDebug = {
     # scimodule: true
     # scorehelper: true
     # seasonality: true
-    # seasonalityframemodule: true
+    seasonalityframemodule: true
     # summaryframemodule: true
     # symboloptionsmodule: true
     # symbolselectmodule: true

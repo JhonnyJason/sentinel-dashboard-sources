@@ -310,7 +310,9 @@ setChartInactive = ->
 
 setBacktestingActive = ->
     seasonalityframe.classList.remove("analysing")
+    seasonalityframe.classList.remove("loading-data")
     seasonalityframe.classList.add("backtesting")
+    symbolSelect.unfreeze()
     return
 #endregion
 
@@ -563,7 +565,7 @@ resetAndRender = ->
 
         updateYearsOptions()
         updateYearsIndicator()
-        ## TODO reset preloader -> start rendering ;-)
+       
         redrawChart()
         if currentSelectedStock
             if pickedStartIdx? and pickedEndIdx?
