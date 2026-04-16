@@ -302,7 +302,7 @@ getNextTradeDates = (trade, evnt) ->
             entryDate = entryDay.getYYYYMMDD()
             todayDate = (new Date()).toISOString().slice(0, 10)
 
-            if entryDate > todayDate then break
+            if entryDate >= todayDate then break
 
         nextDate = eventDay.getYYYYMMDD()
         nextEntryDate = entryDay.getYYYYMMDD()

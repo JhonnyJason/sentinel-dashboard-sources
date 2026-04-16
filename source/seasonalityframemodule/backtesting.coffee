@@ -452,7 +452,8 @@ effectiveEndDate = (day, tradingDaysPerYear) ->
     startDate = day.getDateStr()
     loop
         if --safetyCount < 0 # prevent infinite loops
-            console.error("effeciveEndDate reached safety Limit!") 
+            console.error("effeciveEndDate reached safety Limit!")
+            # console.log(tradingDaysPerYear)
             return startDate # fallback
 
         isTradingDay = day.lookupIn(tradingDaysPerYear)

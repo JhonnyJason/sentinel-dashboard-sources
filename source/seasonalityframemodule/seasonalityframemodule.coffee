@@ -282,6 +282,7 @@ updateYearsIndicator = ->
 #region Chart State Classes
 
 setStateLoading = ->
+    log "setStateLoading"
     seasonalityframe.classList.remove("chart-active")
     seasonalityframe.classList.remove("analysing")
     seasonalityframe.classList.remove("backtesting")
@@ -291,6 +292,7 @@ setStateLoading = ->
     return
 
 setChartActive = ->
+    log "setChartActive"
     seasonalityframe.classList.remove("chart-inactive")
     seasonalityframe.classList.remove("backtesting")
     seasonalityframe.classList.remove("loading-data")
@@ -300,6 +302,7 @@ setChartActive = ->
     return
 
 setChartInactive = ->
+    log "setChartInactive"
     seasonalityframe.classList.remove("chart-active")
     seasonalityframe.classList.remove("analysing")
     seasonalityframe.classList.remove("backtesting")
@@ -309,8 +312,10 @@ setChartInactive = ->
     return
 
 setBacktestingActive = ->
+    log "setBacktestingActive"
     seasonalityframe.classList.remove("analysing")
     seasonalityframe.classList.remove("loading-data")
+    seasonalityframe.classList.add("chart-active")
     seasonalityframe.classList.add("backtesting")
     symbolSelect.unfreeze()
     return
