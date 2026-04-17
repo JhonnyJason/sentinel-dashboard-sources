@@ -405,12 +405,12 @@ renderBacktestingTable = ->
 
         # Start date column
         startDateCell = document.createElement("td")
-        startDateCell.textContent = result.startDate
+        startDateCell.textContent = formatDate(result.startDate)
         row.appendChild(startDateCell)
 
         # End date column
         endDateCell = document.createElement("td")
-        endDateCell.textContent = result.endDate
+        endDateCell.textContent = formatDate(result.endDate)
         row.appendChild(endDateCell)
 
         # Profit column (flip sign for Short)
@@ -503,6 +503,16 @@ formatPercent = (value) ->
 formatAbsolute = (value) ->
     sign = if value >= 0 then "+" else ""
     return "#{sign}#{value.toFixed(2)}"
+
+formatDate = (value) ->
+    date = new Date(value)
+    day = date.getDate()
+    month = date.getMonth() + 1
+    year = date.getFullYear()
+
+    dayStr = if day < 10 then "0#{day}" else "#{day}"
+    monthStr = if month < 10 then "0#{month}" else "#{month}"
+    return "#{dayStr}.#{monthStr}.#{year}"
 
 #endregion
 

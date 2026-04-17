@@ -205,7 +205,14 @@ eventRangeClicked = (evnt) ->
 #region Helper Functions
 addSymbolChoice = (symbol) ->
     log "addSymbolChoice"
-    symbolToData[symbol] = await dCache.getHistoryHLC(symbol, 30)
+    hlc = await dCache.getHistoryHLC(symbol, 31)
+    tDays = await dCache.getHistoricTradingDays(symbol, 31)
+
+    if !symbolToData[symbol]? then symbolToData[symbol] = { hlc, tDays }
+    else
+        symbolToData[symbol].hlc = hlc
+        symbolToData[symbol].tDays = tDays
+
     chosenSymbols.add(symbol) 
     return
 

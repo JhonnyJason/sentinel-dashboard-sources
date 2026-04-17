@@ -174,8 +174,8 @@ export class Day
             return new Day(((@nIndex + (365 + num)) % 365), (@year - ((@nIndex + num) < 0)))
     
     getDateStr: => return dayIndexToDateStr(@year, @rIndex)
-    getYYYYMMDD: => 
-        ddmmyyyy =  dayIndexToDateStr(@year, @rIndex)
+    getYYYYMMDD: =>
+        ddmmyyyy = dayIndexToDateStr(@year, @rIndex)
         tkns = ddmmyyyy.split(".")
         tkns.reverse()
         return tkns.join("-")
@@ -238,3 +238,43 @@ export scanForFreakValues = (dataArray, label) ->
         return false
 
     return true
+
+############################################################
+export effectiveStartDate = (day, tradingDaysPerYear) ->
+    # log "effectiveStartDate"
+    safetyCount = 32
+    startDate = day.getYYYYMMDD()
+    loop
+        if --safetyCount < 0 # prevent infinite loops
+            console.error("effeciveStartDate reached safety Limit!") 
+            return startDate # fallback
+
+        isTradingDay = day.lookupIn(tradingDaysPerYear)
+        if isTradingDay then return day.getYYYYMMDD() # found tradingDay
+        # When we donot find a trading day we have 2 options:
+        #    1.) isTradingDay is false - we need check the earlier day
+        #    2.) isTradingDay is undefined or null - exeeded bounds -> fallback 
+        if isTradingDay != false then return startDate
+        # day = day.getPrevDay()
+        day = day.getNextDay() # search for
+    return
+
+export effectiveEndDate = (day, tradingDaysPerYear) ->
+    # log "effectiveEndDate"
+    safetyCount = 32
+    startDate = day.getYYYYMMDD()
+    loop
+        if --safetyCount < 0 # prevent infinite loops
+            console.error("effeciveEndDate reached safety Limit!")
+            # console.log(tradingDaysPerYear)
+            return startDate # fallback
+
+        isTradingDay = day.lookupIn(tradingDaysPerYear)
+        if isTradingDay then return day.getYYYYMMDD() # found tradingDay
+        # When we donot find a trading day we have 2 options:
+        #    1.) isTradingDay is false - we need check the next later day
+        #    2.) isTradingDay is undefined or null - exeeded bounds -> fallback 
+        if isTradingDay != false then return startDate
+        # day = day.getNextDay()
+        day = day.getPrevDay()
+    return

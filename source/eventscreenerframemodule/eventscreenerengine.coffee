@@ -5,7 +5,7 @@ import { createLogFunctions } from "thingy-debug"
 #endregion
 
 ############################################################
-import { createDayFromDate } from "./utilsmodule.js"
+import * as utl from "./utilsmodule.js"
 
 ############################################################
 export resultStructure = [
@@ -89,9 +89,9 @@ export startScreening = (symbolToData, eventList) ->
 
                 for trade in trades
                     evaluation = evaluateEventTrades(sym, evnt, trade)
-                    if evaluation?
+                    if evaluation? then result = generateResultObject(evaluation, evnt)
+                    if result?
                         allEvals.push(evaluation)
-                        result = generateResultObject(evaluation, evnt)
                         allResults.push(result)
     
                     if performance.now() - start > maxBusyTimeMS
@@ -224,7 +224,7 @@ evaluateEventTrades = (sym, evnt, trade) ->
 ############################################################
 getTradeResult = (sym, trade, date) ->
     # log "getTradeResult #{date}"
-    data = screeningInputs.symbolToData[sym]
+    hlc = screeningInputs.symbolToData[sym].hlc
 
     tkns = trade.split("-")
     entrIdx = parseInt(tkns[0])
@@ -233,13 +233,13 @@ getTradeResult = (sym, trade, date) ->
     relEntry = entrIdx - evntIdx
     relExit = exitIdx - evntIdx
 
-    eventDay = createDayFromDate(date)
+    eventDay = utl.createDayFromDate(date)
     entryDay = eventDay.getRelativeDay(relEntry)
     exitDay = eventDay.getRelativeDay(relExit)
 
 
-    entryDP = entryDay.lookupIn(data)
-    exitDP = exitDay.lookupIn(data)
+    entryDP = entryDay.lookupIn(hlc)
+    exitDP = exitDay.lookupIn(hlc)
     
     # olog { entryDP, exitDP }
     if !entryDP? or !exitDP?
@@ -267,7 +267,7 @@ getTradeResult = (sym, trade, date) ->
     day = entryDay.getNextDay()
     count = exitIdx - entrIdx
     while count--
-        dayDP = day.lookupIn(data)
+        dayDP = day.lookupIn(hlc)
         dayHighAbs = dayDP[0]
         ## either we have 3 values [ H,L,C ] or we only have one [ C=H=L ] (non-trading days)
         if dayDP.length == 3 then dayLowAbs = dayDP[1]
@@ -283,7 +283,7 @@ getTradeResult = (sym, trade, date) ->
     return { deltaF, maxGainF, maxDropF }
 
 ############################################################
-getNextTradeDates = (trade, evnt) ->
+getNextTradeDates = (trade, evnt, tDays) ->
     # log "getNextTradeDates"
     tkns = trade.split("-")
     entrIdx = parseInt(tkns[0])
@@ -295,7 +295,7 @@ getNextTradeDates = (trade, evnt) ->
     try
         dates = evnt.nextDates
         for date in dates
-            eventDay = createDayFromDate(date)
+            eventDay = utl.createDayFromDate(date)
             entryDay = eventDay.getRelativeDay(relEntry)
             exitDay = eventDay.getRelativeDay(relExit)
 
@@ -305,8 +305,14 @@ getNextTradeDates = (trade, evnt) ->
             if entryDate >= todayDate then break
 
         nextDate = eventDay.getYYYYMMDD()
-        nextEntryDate = entryDay.getYYYYMMDD()
-        nextExitDate = exitDay.getYYYYMMDD()
+        # nextEntryDate = entryDay.getYYYYMMDD()
+        nextEntryDate = utl.effectiveStartDate(entryDay, tDays)
+        # nextExitDate = exitDay.getYYYYMMDD()
+        nextExitDate = utl.effectiveEndDate(exitDay, tDays)
+        
+        if nextExitDate < nextEntryDate 
+            log "impossible trading days entry @#{nextEntryDate} exit @#{nextExitDate}"
+            return {}
 
     catch err
         log err
@@ -325,10 +331,11 @@ generateResultObject = (evaluation, evnt) ->
     evntId = tkns[1]
     trade = tkns[2]
 
-    { nextDate, nextEntryDate, nextExitDate } = getNextTradeDates(trade, evnt)
-    if !nextDate? then throw new Error("getNextTradeDates failed to return nextDate!") 
-    #     log 
-    #     olog evaluation
+    tDays = screeningInputs.symbolToData[symbol].tDays 
+
+    { nextDate, nextEntryDate, nextExitDate } = getNextTradeDates(trade, evnt, tDays)
+    # if !nextDate? then throw new Error("getNextTradeDates failed to return nextDate!") 
+    if !nextDate? then return null # we possibly had impossible exit and entry dates... 
 
     result.symbol = symbol 
     # result.marketcap = # donot use for now  

@@ -92,9 +92,9 @@ runOverlappingBacktest = (dataPerYear, metaData, startIdx, endIdx, tradingDaysPe
 
         # Compute effective trading dates (use positive nonLeapNorm index for prev year)
         sDay = new utl.Day(prevYearNormIdx, prevYear)
-        startDate = effectiveStartDate(sDay, tradingDaysPerYear)
+        startDate = utl.effectiveStartDate(sDay, tradingDaysPerYear)
         eDay = new utl.Day(endIdx, currYear)
-        endDate = effectiveEndDate(eDay, tradingDaysPerYear)
+        endDate = utl.effectiveEndDate(eDay, tradingDaysPerYear)
         
         yearlyResults.push({ year: prevYear, startDate, endDate, profitP, maxRiseP, maxDropP, startA: el.startA, warn: el.warn })
 
@@ -150,9 +150,9 @@ runBacktest = (dataPerYear, metaData, startIdx, endIdx, tradingDaysPerYear) ->
 
         # Compute effective trading dates
         sDay = new utl.Day(startIdx, year)
-        startDate = effectiveStartDate(sDay, tradingDaysPerYear)
+        startDate = utl.effectiveStartDate(sDay, tradingDaysPerYear)
         eDay = new utl.Day(endIdx, year)
-        endDate = effectiveEndDate(eDay, tradingDaysPerYear)
+        endDate = utl.effectiveEndDate(eDay, tradingDaysPerYear)
 
 
         yearlyResults.push({ year, startDate, endDate, profitP, maxRiseP, maxDropP, startA: el.startA, warn: el.warn })
@@ -425,45 +425,6 @@ getTradeDaySequences = (dataPerYear, startIdx, endIdx) ->
     return sequences
 
 #endregion
-
-
-############################################################
-effectiveStartDate = (day, tradingDaysPerYear) ->
-    # log "effectiveStartDate"
-    safetyCount = 32
-    startDate = day.getDateStr()
-    loop
-        if --safetyCount < 0 # prevent infinite loops
-            console.error("effeciveStartDate reached safety Limit!") 
-            return startDate # fallback
-
-        isTradingDay = day.lookupIn(tradingDaysPerYear)
-        if isTradingDay then return day.getDateStr() # found tradingDay
-        # When we donot find a trading day we have 2 options:
-        #    1.) isTradingDay is false - we need check the earlier day
-        #    2.) isTradingDay is undefined or null - exeeded bounds -> fallback 
-        if isTradingDay != false then return startDate
-        day = day.getPrevDay()
-    return # for code beauty 
-
-effectiveEndDate = (day, tradingDaysPerYear) ->
-    # log "effectiveEndDate"
-    safetyCount = 32
-    startDate = day.getDateStr()
-    loop
-        if --safetyCount < 0 # prevent infinite loops
-            console.error("effeciveEndDate reached safety Limit!")
-            # console.log(tradingDaysPerYear)
-            return startDate # fallback
-
-        isTradingDay = day.lookupIn(tradingDaysPerYear)
-        if isTradingDay then return day.getDateStr() # found tradingDay
-        # When we donot find a trading day we have 2 options:
-        #    1.) isTradingDay is false - we need check the next later day
-        #    2.) isTradingDay is undefined or null - exeeded bounds -> fallback 
-        if isTradingDay != false then return startDate
-        day = day.getNextDay()
-    return # just for the shape
 
 ############################################################
 # Helper to format nonLeapNorm day index to "DD.MM." string
