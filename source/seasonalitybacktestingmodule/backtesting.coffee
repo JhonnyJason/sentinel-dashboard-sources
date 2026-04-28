@@ -8,175 +8,81 @@ import { createLogFunctions } from "thingy-debug"
 import * as utl from "./utilsmodule.js"
 
 ############################################################
-# Backtesting Module
-#
-# Purpose: Calculate backtesting statistics for a selected date range
-# across all available historic years.
-#
-# Data Structure:
-# - dataPerYear[0] = current year (incomplete), dataPerYear[n-1] = oldest
-# - Each year: [[h,l,c], ...] with 365 or 366 entries (real/denormalized indices)
-# - All indices passed to this module are nonLeapNorm (0-364)
-# - Use utl.nonLeapNormToRealIdx to convert for data access
-#
-# Direction Detection:
-# - Positive average profit → "Long"
-# - Negative average profit → "Short"
-#
-# Profit Calculation:
-# - For each historic year: (closeAtEnd - closeAtStart) / closeAtStart * 100
-#
-#
-# Index Normalization (done in seasonalityframemodule.normalizeSelectionIndices):
-#
-# Chart displays 2 years: [...lastYearData, ...currentYearData]
-# Raw selection indices are converted to normalized 365-day year indices.
-#
-# Three selection cases:
-# 1. Both in last year:    startIdx=0-364, endIdx=0-364 → runBacktest
-# 2. Overlapping:          startIdx=-365..-1, endIdx=0-364 → runOverlappingBacktest
-# 3. Both in current year: startIdx=0-364, endIdx=0-364 → runBacktest
-#
-# Leap year handling: Feb 29 (index 59) maps to Feb 28, subsequent days shift.
-# When accessing actual data, must re-expand indices for leap years.
-#
-
-
-############################################################
 #region Top Level Backtesting Implementations
+
 ############################################################
-# Parameters:
-#   - dataPerYear: array of yearly HLC arrays from datacache
-#     - index 0 = current year (incomplete), index n-1 = oldest (may be incomplete)
-#     - each year has 365 or 366 entries depending on leap year
-#   - startIdx: normalized day-of-year (0-364, or negative for overlapping)
-#   - endIdx: normalized day-of-year (0-364)
-#
-# Returns: BacktestingResult object
-export runBacktesting = (dataPerYear, metaData, startIdx, endIdx, tradingDaysPerYear) ->
+export runBacktesting = (args) ->
     log "runBacktesting"
-    if startIdx < 0 then return runOverlappingBacktest(dataPerYear, metaData, startIdx, endIdx, tradingDaysPerYear)
-    else return runBacktest(dataPerYear, metaData, startIdx, endIdx, tradingDaysPerYear)
+    # {dataPerYear, metaData, startIdx, endIdx, tradingDaysPerYear} = args
+    { dataPerYear, startIdx, endIdx } = args
+    # All indices passed to this module are nonLeapNorm (0-364)
+    # dataPerYear index 0 = current year (incomplete) 
+    # dataPerYear index n-1 = oldest (might be incomplete)
+
+    if startIdx < 0 ## negative startIdx means it was in the previous year 
+        sequences = getTradeDaySequencesOverlapped(dataPerYear, startIdx, endIdx)
+    else ## positive startIdx means startIdx and endIdx are in same year
+        sequences = getTradeDaySequences(dataPerYear, startIdx, endIdx)
+    
+    return evaluate(sequences, args)
 
 ############################################################
-runOverlappingBacktest = (dataPerYear, metaData, startIdx, endIdx, tradingDaysPerYear) ->
-    log "runOverlappingBacktest"
+evaluate = (sequences, opts) ->
+    log "evaluate"
+    results = sequences.map((seq) -> backtestSequence(seq))
+    splits = opts.metaData?.splitFactors
+    correctAbsoluteValues(results, splits, opts.startIdx, opts.endIdx)
+    return evaluateResults(results, opts)
 
-    sequences = getTradeDaySequencesOverlapped(dataPerYear, startIdx, endIdx)
-
-    backtestResults = sequences.map((seq) -> backtestSequence(seq))
-    splitFactors = metaData?.splitFactors
-    correctAbsoluteValues(backtestResults, splitFactors, startIdx, endIdx, true)
-
-    { avgChangeF, medChangeF } = getAverageAndMedianChanges(backtestResults)
-    { maxRiseF, maxDropF, maxRiseA, maxDropA } = getMaxRiseAndMaxDrop(backtestResults)
+############################################################
+evaluateResults = (results, opts) ->
+    log "evaluateResults"
+    { startIdx, endIdx, tradingDaysPerYear } = opts
+    { avgChangeF, medChangeF } = getAverageAndMedianChanges(results)
+    { maxRiseF, maxDropF, maxRiseA, maxDropA } = getMaxRiseAndMaxDrop(results)
 
     isLong = avgChangeF > 1
-    winRate = calculateWinRate(backtestResults, isLong)
-
+    { winTrades, totalTrades } = countTradeResults(results, isLong)
+    
     warn = false
     yearlyResults = []
     currentYear = (new Date()).getFullYear()
-    prevYearNormIdx = startIdx + 365
 
-    for el, i in backtestResults
-        continue unless el?
-        # sequences[i]: currYear=currentYear-i, prevYear=currentYear-i-1
-        currYear = currentYear - i
-        prevYear = currYear - 1
-
+    for el, i in results when el?
+        year = currentYear - i
         warn = warn or el.warn
+
         profitP = (el.changeF - 1) * 100
         maxRiseP = (el.maxRiseF - 1) * 100
         maxDropP = (el.maxDropF - 1) * 100
 
         # Compute effective trading dates (use positive nonLeapNorm index for prev year)
-        sDay = new utl.Day(prevYearNormIdx, prevYear)
-        startDate = utl.effectiveStartDate(sDay, tradingDaysPerYear)
-        eDay = new utl.Day(endIdx, currYear)
-        endDate = utl.effectiveEndDate(eDay, tradingDaysPerYear)
-        
-        yearlyResults.push({ year: prevYear, startDate, endDate, profitP, maxRiseP, maxDropP, startA: el.startA, warn: el.warn })
-
-    directionString = if isLong then "Long" else "Short"
-    timeframeString = "[#{indexToDate(startIdx)} - #{indexToDate(endIdx)}]"
-    daysInTrade = (endIdx - startIdx) % 365
-
-    profitF = 100.0
-    if !isLong then profitF = -100.0
-
-    return {
-        directionString
-        timeframeString
-        winRate
-        maxRise: (maxRiseF - 1) * 100
-        maxRiseA
-        maxDrop: (maxDropF - 1) * 100
-        maxDropA
-        averageProfit: profitF * (avgChangeF - 1)
-        medianProfit: profitF * (medChangeF - 1)
-        daysInTrade
-        warn
-        yearlyResults
-    }
-
-############################################################
-runBacktest = (dataPerYear, metaData, startIdx, endIdx, tradingDaysPerYear) ->
-    log "runBacktest"
-
-    sequences = getTradeDaySequences(dataPerYear, startIdx, endIdx)
-
-    backtestResults = sequences.map((seq) -> backtestSequence(seq))
-    splitFactors = metaData?.splitFactors
-    correctAbsoluteValues(backtestResults, splitFactors, startIdx, endIdx, false)
-
-    { avgChangeF, medChangeF } = getAverageAndMedianChanges(backtestResults)
-    { maxRiseF, maxDropF, maxRiseA, maxDropA } = getMaxRiseAndMaxDrop(backtestResults)
-
-    isLong = avgChangeF > 1
-    winRate = calculateWinRate(backtestResults, isLong)
-
-    warn = false
-    yearlyResults = []
-    currentYear = (new Date()).getFullYear()
-
-    for el, i in backtestResults
-        continue unless el?
-        year = currentYear - i
-        warn = warn or el.warn
-        profitP = (el.changeF - 1) * 100
-        maxRiseP = (el.maxRiseF - 1) * 100
-        maxDropP = (el.maxDropF - 1) * 100
-
-        # Compute effective trading dates
-        sDay = new utl.Day(startIdx, year)
+        sDay = new utl.Day(startIdx, year) # Day class handles potential overlap
         startDate = utl.effectiveStartDate(sDay, tradingDaysPerYear)
         eDay = new utl.Day(endIdx, year)
         endDate = utl.effectiveEndDate(eDay, tradingDaysPerYear)
-
-
+        
         yearlyResults.push({ year, startDate, endDate, profitP, maxRiseP, maxDropP, startA: el.startA, warn: el.warn })
 
-    directionString = if isLong then "Long" else "Short"
-    timeframeString = "[#{indexToDate(startIdx)} - #{indexToDate(endIdx)}]"
-    daysInTrade = endIdx - startIdx
 
     profitF = 100.0
     if !isLong then profitF = -100.0
 
     return {
-        directionString
-        timeframeString
-        winRate
+        startIdx, endIdx,
+        yearlyResults, warn, isLong
+        winTrades, totalTrades
+        
+        entryDate: indexToDate(startIdx)
+        exitDate: indexToDate(endIdx)
+        daysInTrade: (endIdx - startIdx) % 365
+        
+        maxRiseA, maxDropA
         maxRise: (maxRiseF - 1) * 100
-        maxRiseA
         maxDrop: (maxDropF - 1) * 100
-        maxDropA
+        
         averageProfit: profitF * (avgChangeF - 1)
         medianProfit: profitF * (medChangeF - 1)
-        daysInTrade
-        warn
-        yearlyResults
     }
 
 #endregion
@@ -190,24 +96,17 @@ runBacktest = (dataPerYear, metaData, startIdx, endIdx, tradingDaysPerYear) ->
 # A factor f is valid from the previous factor's end date to its own end date.
 # If applied: true, the data has been divided by f — multiply to get real price.
 # Uses the trade start date to determine the applicable factor for the whole sequence.
-correctAbsoluteValues = (backtestResults, splitFactors, startIdx, endIdx, isOverlapping) ->
+correctAbsoluteValues = (results, splitFactors, startIdx, endIdx) ->
     return unless splitFactors?.length
     hasApplied = splitFactors.some((sf) -> sf.applied)
     return unless hasApplied
-    log "correctAbsoluteValues - - - - - - - - --> "
-    olog splitFactors
 
-    if isOverlapping
-        year = (new Date()).getFullYear() - 1
-    else
-        year = (new Date()).getFullYear()
+    year = (new Date()).getFullYear()
 
-    for el in backtestResults when el?
+    for el in results when el?
         dateStr = normalizedIdxToDateStr(year, startIdx)
         corrF = getSplitCorrectionFactor(splitFactors, dateStr)
-        log "startA before correction: " + el.startA
         el.startA = el.startA / corrF
-        log "startA after correction: " + el.startA
 
         year--
     return
@@ -244,24 +143,19 @@ normalizedIdxToDateStr = (year, dayIdx) ->
 ############################################################
 #region Helper Functions
 
+
 ############################################################
 # Actual backtesting for a sequence
 backtestSequence = (seq) ->
     log "backtestSequence"
     return null unless seq?
-
-    warn = false
-    changeA = 0
-    maxRiseA = -Infinity
-    maxDropA = Infinity
-
     # We start at end of day of the first trade and we leave at end of day of the last Tradeday
     startA = seq[0][seq[0].length - 1] # start price is close of day 0
     endA = seq[seq.length - 1][seq[seq.length - 1].length - 1] # end price is close of the last day
 
-    changeA = endA - startA
-    warn = false
-    
+    maxRiseA = startA # day 0 entry as initial maxRise
+    maxDropA = startA # day 0 entry as initial maxDrop
+    warn = false    
     lastClose = startA
 
     for i in [1...seq.length]
@@ -289,6 +183,7 @@ backtestSequence = (seq) ->
         lastClose = close
 
     # Calculate facors to easily get the percentages
+    changeA = endA - startA
     changeF = 1.0 * endA / startA
     maxRiseF = 1.0 * maxRiseA / startA
     maxDropF = 1.0 * maxDropA / startA
@@ -307,6 +202,9 @@ getAverageAndMedianChanges = (results, ignoreWithWarning = true) ->
         changeSum += el.changeF
         factors.push(el.changeF)
         num++
+
+    # default to 1, 1 if we donot have a valid year
+    if num == 0 then return { avgChangeF: 1, medChangeF: 1 } 
 
     avgChangeF = 1.0 * changeSum / num 
 
@@ -340,19 +238,15 @@ getMaxRiseAndMaxDrop = (results, ignoreWithWarning = true) ->
     return { maxDropF, maxRiseF, maxRiseA, maxDropA }
 
 ############################################################
-# Calculate win rate: % of years profitable in detected direction
-# Long wins when changeF > 1, Short wins when changeF < 1
-calculateWinRate = (results, isLong, ignoreWithWarning = true) ->
-    log "calculateWinRate"
-    wins = 0
-    total = 0
+countTradeResults = (results, isLong, ignoreWithWarning = true) ->
+    winTrades = 0
+    totalTrades = 0
     for el in results when el?
         if ignoreWithWarning and el.warn then continue
-        total++
-        if isLong and el.changeF > 1 then wins++
-        else if not isLong and el.changeF < 1 then wins++
-
-    return if total > 0 then Math.round(100 * wins / total) else 0
+        totalTrades++
+        if isLong and el.changeF > 1 then winTrades++
+        else if not isLong and el.changeF < 1 then winTrades++
+    return { winTrades, totalTrades } 
 
 #endregion
 

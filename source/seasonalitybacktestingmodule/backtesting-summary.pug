@@ -1,0 +1,49 @@
+#backtesting-summary-tab
+    #backtesting-connector
+    
+    #backtesting-summary
+        #backtesting-top-grid
+            #trade-details 
+                h3.label Trade
+                .value
+                    #backtesting-direction Long
+                    #backtesting-timeframe 
+                        #backtesting-entry 
+                            .minus.click-button: svg: use(href="#svg-left-icon")
+                            .date 12.01.
+                            .plus.click-button: svg: use(href="#svg-right-icon")
+                        #backtesting-exit 
+                            .minus.click-button: svg: use(href="#svg-left-icon")
+                            .date 24.01.
+                            .plus.click-button: svg: use(href="#svg-right-icon") 
+
+            #win-rate
+                h3.label Trefferquote (Gewinner | Verlierer)
+                .value: #backtesting-winning-rate 
+                    #win-rate-pie: include pie-chart.pug
+                    #win-rate-numbers
+                        #winrate-percent 99%
+                        #win-vs-lose 99 | 1
+
+        #backtesting-summary-grid
+            #average-change 
+                h3.label Durchnittlicher Profit
+                .value 40%
+            #median-change
+                h3.label Medianer Profit
+                .value 30%
+            #max-rise
+                h3.label Max Anstieg %
+                .value 23%
+            #max-drop
+                h3.label Max Rückgang %
+                .value 20%
+            #max-rise-abs
+                h3.label Max Anstieg Abs
+                .value 123
+            #max-drop-abs
+                h3.label Max Rückgang Abs
+                .value 125
+            #days-in-trade
+                h3.label Tage im Trade
+                .value 12 Tage

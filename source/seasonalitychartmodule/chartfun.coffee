@@ -107,6 +107,11 @@ export class SeasonalityChart
             startIndex = u.posToIdx(u.select.left)
             endIndex = u.posToIdx(u.select.left + u.select.width)
             log "Selection range: #{startIndex} - #{endIndex}"
+            ## Seems @selection is null here despite having set int on render - how could it be?
+            if @selection? and @selection.startIndex == startIndex and @selection.endIndex == endIndex
+                log "Range did not change - we skip doing anything :-)"
+                return
+
             return unless @onSelect?
             @onSelect(startIndex, endIndex)
         return false

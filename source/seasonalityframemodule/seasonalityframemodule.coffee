@@ -7,69 +7,25 @@ import { createLogFunctions } from "thingy-debug"
 ############################################################
 import * as mData from "./marketdatamodule.js"
 import * as utl from "./utilsmodule.js"
+
+############################################################
 import { SymbolSelect } from "./symbolselectmodule.js"
 
 ############################################################
-import { SeasonalityChart } from "./chartfun.js"
-import { runBacktesting } from "./backtesting.js"
+import * as backtesting from "./seasonalitybacktestingmodule.js"
+import * as charting from "./seasonalitychartmodule.js"
 
 ############################################################
-# Series config constants
-adrSeriesConfig = { name: "adr", config: { label: "Average Daily Return", stroke: "#ffffff" } }
-frSeriesConfig = { name: "fourier", config: { label: "Fourier Regression", stroke: "#aabbaa" } }
-latestSeriesConfig = { name: "latestData", config: { label: "Neuester Verlauf", stroke: "#faba01" } }
-
-############################################################
-#region DOM cache for the cases where the implicit-dom-connect fails
-chartContainer = document.getElementById("chart-container")
-aggregationYearsIndicator = document.getElementById("aggregation-years-indicator")
-backtestingDirection = document.getElementById("backtesting-direction")
-backtestingTimeframe = document.getElementById("backtesting-timeframe")
-winRateNumber = document.getElementById("win-rate-number")
-lossCircle = document.getElementById("loss-circle")
-
-maxRiseValue = document.querySelector('#max-rise .value')
-maxDropValue = document.querySelector('#max-drop .value')
-maxRiseAbsValue = document.querySelector('#max-rise-abs .value')
-maxDropAbsValue = document.querySelector('#max-drop-abs .value')
-averageChangeValue = document.querySelector('#average-change .value')
-medianChangeValue = document.querySelector('#median-change .value')
-daysInTradeValue = document.querySelector('#days-in-trade .value')
-
-backtestingDetailsTable = document.getElementById("backtesting-details-table")
-backtestingWarning = document.querySelector('#backtesting-details-container .warning')
-
-# Table sorting state
-currentYearlyResults = null
-currentIsShort = false
-sortColumn = "startDate"  # "startDate", "profit", "maxRise", "maxDrop"
-sortAscending = false  # default: newest year first
-#endregion
+symbolSelect = null
 
 ############################################################
 #region State
-currentSelectedStock = null
-currentSelectedTimeframe = null
+selectedSymbol = null
+selectedRangeY = null
 
-xAxisData = null
-adrAggregation = null  # Average Daily Return - prepared for 2-year display
-frAggregation = null   # Fourier Regression - prepared for 2-year display (on-demand)
-latestData = null      # prepared for 2-year display
-maxHistory = null
+backtestingRegion = null
+chartData = null
 
-pickedStartIdx = null
-pickedEndIdx = null
-xAxisDrag = null
-
-# Series visibility configuration (persists until chart closed)
-seriesVisibility = {
-    latestData: true   # default visible
-    adr: true          # default visible
-    fourier: false     # default hidden (experimental)
-}
-
-seasonalityChart = null
-symbolSelect = null
 #endregion
 
 ############################################################
@@ -81,85 +37,68 @@ export initialize = (c) ->
     symbolSelect = new SymbolSelect({ container, optionsLimit })
     symbolSelect.setOnSelectListener(onStockSelected)
     
-    seasonalityChart = new SeasonalityChart(chartContainer)
-    seasonalityChart.setOnSelectListener(onChartRangeSelected)
-    seasonalityChart.setOnTimeDragListener(onChartTimeDrag)
-
-
     timeframeSelect.addEventListener("change", timeframeSelected)
-    currentSelectedTimeframe = timeframeSelect.value
+    selectedRangeY = timeframeSelect.value
 
     closeChartButton.addEventListener("click", onCloseChart)
-
-    # Wire up legend series click handlers
-    wireLegendSeriesHandlers()
 
     # Wire up tab buttons
     componentsButton.addEventListener("click", onComponentsButtonClick)
     backtestingButton.addEventListener("click", onBacktestingButtonClick)
 
-    # Wire up reset time axis button
-    resetTimeAxisButton.addEventListener("click", seasonalityChart.resetTimeAxis)
+    # notice updates in backtestingRegion Selection
+    charting.setOnRangeSelectListener(updateBacktestingRegion)
+    backtesting.setOnRangeChangeListener(updateBacktestingRegion)
     return
 
 ############################################################
-#region event Listeners
+#region Event Listeners
 onStockSelected = (symbol) ->
     log "onStockSelected"
-    currentSelectedStock = symbol
-    pickedStartIdx = null
-    pickedEndIdx = null
-    xAxisDrag = null
-    olog { currentSelectedStock, currentSelectedTimeframe }
-    resetAndRender()
+    backtestingRegion = null
+    charting.reset()
+    selectedSymbol = symbol
+    selectedSymbolDisplay.textContent = ""+selectedSymbol
+    setStateLoading()
+    try
+        await loadDataAndRenderChart()
+        setChartActive()
+    catch err
+        console.error(err)
+        symbolSelect.setError("Fehler in der Datenanfrage für #{selectedSymbol}!")
+        clearSelection()
     return
 
 timeframeSelected = ->
     log "timeframeSelected"
-    currentSelectedTimeframe = timeframeSelect.value
-    olog { currentSelectedStock, currentSelectedTimeframe }
-    resetAndRender()
+    selectedRangeY = timeframeSelect.value
+    # charting.reset()
+    setStateLoading()
+    try
+        if !selectedSymbol? then throw new Error("No Symbol Selected!")
+        await loadDataAndRenderChart()
+
+        if backtestingRegion?
+            await runAndDisplayBacktesting()
+            setBacktestingActive()
+        else setChartActive()
+    catch err
+        console.error(err)
+        symbolSelect.setError("Fehler in der Datenanfrage für #{selectedSymbol}!")
+        clearSelection()
     return
+
 
 onCloseChart = ->
     log "onCloseChart"
-    resetSeasonalityState()
-    currentSelectedStock = null
-    selectedSymbol.textContent = ""
+    clearSelection()
     symbolSelect.resetSearch()
-    resetTimeframeSelect()
-    setChartInactive()
+    chartData = null
+    charting.reset()
+    backtestingRegion = null
+    backtesting.reset()
     return
 
-onChartRangeSelected = (startIdx, endIdx) ->
-    log "onChartRangeSelected"
-    pickedStartIdx = startIdx # the local State
-    pickedEndIdx = endIdx # the local State
-    olog { pickedStartIdx, pickedEndIdx }
-    await runAndDisplayBacktesting()
-    setBacktestingActive()
-    return
-
-runAndDisplayBacktesting = ->
-    log "runAndDisplayBacktesting"
-    { startIdx, endIdx } = normalizeSelectionIndices(pickedStartIdx, pickedEndIdx)
-    olog {startIdx, endIdx}
-
-    symbol = currentSelectedStock
-    years = parseInt(currentSelectedTimeframe)
-
-    backtestingData = await mData.getHistoryHLC(symbol, years)
-    tradingDays = await mData.getHistoricTradingDays(symbol, years)
-    metaData = mData.getCurrentMetaData(symbol)
-    results = runBacktesting(backtestingData, metaData, startIdx, endIdx, tradingDays)
-
-    updateBacktestingUI(results)
-    return
-
-onChartTimeDrag = (xDrag) ->
-    log "onChartTimeDrag"
-    xAxisDrag = xDrag
-    return
 
 onComponentsButtonClick = ->
     log "onComponentsButtonClick"
@@ -168,119 +107,27 @@ onComponentsButtonClick = ->
 
 onBacktestingButtonClick = ->
     log "onBacktestingButtonClick"
-    # Only switch if we have a selection
-    if pickedStartIdx? and pickedEndIdx?
-        setBacktestingActive()
+    if backtestingRegion? then setBacktestingActive()
+    return
+
+
+updateBacktestingRegion = (region) ->
+    log "updateBacktestingRegion"
+    olog region
+
+    if !region? then throw new Error("@updateBacktestingRegion: No new region provided!")
+    if !region.startIdx? or !region.endIdx? then throw new Error("@updateBacktestingRegion:: No valid indices provided!")
+
+    backtestingRegion = region
+    # charting.render()
+    await runAndDisplayBacktesting()
+    setBacktestingActive()
     return
 
 #endregion
 
 ############################################################
-#region Legend Series Wiring
-wireLegendSeriesHandlers = ->
-    log "wireLegendSeriesHandlers"
-    legendSeriesEls = document.querySelectorAll('#chart-components-tab .legend-series')
-    legendSeriesEls.forEach (el) ->
-        el.addEventListener 'click', -> onLegendSeriesClick(el)
-    return
-
-onLegendSeriesClick = (el) ->
-    log "onLegendSeriesClick"
-    isExperimental = el.classList.contains('experimental')
-    isVisible = el.classList.toggle('visible')
-    seriesKey = el.getAttribute('series-key')
-
-    # Persist visibility state
-    if seriesKey and seriesVisibility.hasOwnProperty(seriesKey)
-        seriesVisibility[seriesKey] = isVisible
-
-    if isExperimental and isVisible
-        # Fourier toggled visible - calculate on-demand and redraw
-        await ensureFourierData()
-        redrawChart()
-        updateSeriesIndices()
-    else if isExperimental and !isVisible
-        # Fourier toggled hidden - redraw without it
-        redrawChart()
-        updateSeriesIndices()
-    else
-        # Regular series toggle - just show/hide via uPlot
-        seriesIdx = parseInt(el.getAttribute('series-index'))
-        seasonalityChart.toggleSeriesVisibility(seriesIdx, isVisible)
-    return
-
-ensureFourierData = ->
-    return if frAggregation?  # Already calculated
-    log "ensureFourierData - calculating..."
-    symbol = currentSelectedStock
-    years = parseInt(currentSelectedTimeframe)
-    rawFr = await mData.getSeasonalityComposite(symbol, years, 1)
-    frAggregation = prepareSeasonalityFor2Year(rawFr)
-    log "Fourier data ready, length: " + frAggregation.length
-    return
-
-updateSeriesIndices = ->
-    # latestData is always drawn last; its index depends on whether Fourier is visible
-    latestEl = document.querySelector('#chart-components-tab .legend-series[series-index]')
-    latestIdx = if seriesVisibility.fourier then 3 else 2
-    # Update the first legend-series element (latestData) with correct index
-    document.querySelector('#chart-components-tab .legend-series:first-child')?.setAttribute('series-index', latestIdx)
-    return
-
-syncLegendVisibility = ->
-    # Sync DOM legend classes with seriesVisibility state
-    legendSeriesEls = document.querySelectorAll('#chart-components-tab .legend-series')
-    legendSeriesEls.forEach (el) ->
-        seriesKey = el.getAttribute('series-key')
-        if seriesKey and seriesVisibility.hasOwnProperty(seriesKey)
-            if seriesVisibility[seriesKey]
-                el.classList.add('visible')
-            else
-                el.classList.remove('visible')
-    return
-
-applySeriesVisibility = ->
-    # Apply stored visibility to chart series after redraw
-    log "applySeriesVisibility"
-    frVisible = seriesVisibility.fourier
-
-    # Series indices: 1=ADR, 2=Fourier(if visible)/latestData, 3=latestData(if Fourier visible)
-    adrIdx = 1
-    latestIdx = if frVisible then 3 else 2
-
-    seasonalityChart.toggleSeriesVisibility(adrIdx, seriesVisibility.adr)
-    seasonalityChart.toggleSeriesVisibility(latestIdx, seriesVisibility.latestData)
-    return
-
-redrawChart = ->
-    log "redrawChart"
-    return unless adrAggregation?
-    seasonalityChart.reset()
-
-    seasonalityChart.setTimeSeries(xAxisData)
-    series = []
-    series.push({ adrSeriesConfig..., data: adrAggregation })
-    if seriesVisibility.fourier and frAggregation?
-        series.push({ frSeriesConfig..., data: frAggregation })
-    series.push({ latestSeriesConfig..., data: latestData })
-    seasonalityChart.setDataSeries(series)
-
-    selection = if pickedStartIdx? and pickedEndIdx? then { startIdx: pickedStartIdx, endIdx: pickedEndIdx } else null
-    seasonalityChart.render(selection, xAxisDrag)
-
-    # Restore series visibility after chart is drawn
-    updateSeriesIndices()
-    applySeriesVisibility()
-    return
-
-updateYearsIndicator = ->
-    aggregationYearsIndicator.textContent = currentSelectedTimeframe
-    return
-#endregion
-
-############################################################
-#region Chart State Classes
-
+#region Set UI States
 setStateLoading = ->
     log "setStateLoading"
     seasonalityframe.classList.remove("chart-active")
@@ -322,204 +169,44 @@ setBacktestingActive = ->
 #endregion
 
 ############################################################
-#region Backtesting UI Updates
-updateBacktestingUI = (results) ->
-    log "updateBacktestingUI"
-    # olog results
+runAndDisplayBacktesting = ->
+    log "runAndDisplayBacktesting"
+    { startIdx, endIdx } = getNormalizedSelectionIndices()
+    # olog {startIdx, endIdx}
 
-    # Trade description
-    backtestingDirection.textContent = results.directionString
-    backtestingDirection.className = results.directionString.toLowerCase()
-    backtestingTimeframe.textContent = results.timeframeString
+    symbol = selectedSymbol
+    years = parseInt(selectedRangeY)
 
-    # Win rate
-    winRateNumber.textContent = "#{results.winRate.toFixed(1)}%"
-    lossRate = 100 - results.winRate
-    strokeDashArray = "#{lossRate * 6.294 / 100} #{6.294}"
-    lossCircle.setAttribute("stroke-dasharray", strokeDashArray)
+    hlcData = await mData.getHistoryHLC(symbol, years)
+    tradingDays = await mData.getHistoricTradingDays(symbol, years)
+    metaData = mData.getCurrentMetaData(symbol)
 
-    # Summary stats
-    maxRiseValue.textContent = "#{results.maxRise.toFixed(1)}%"
-    maxDropValue.textContent = "#{results.maxDrop.toFixed(1)}%"
-    maxRiseAbsValue.textContent = "#{results.maxRiseA.toFixed(2)}"
-    maxDropAbsValue.textContent = "#{results.maxDropA.toFixed(2)}"
-    averageChangeValue.textContent = "#{results.averageProfit.toFixed(1)}%"
-    medianChangeValue.textContent = "#{results.medianProfit.toFixed(1)}%"
-    daysInTradeValue.textContent = "#{results.daysInTrade} Tage"
-
-    # Populate details table (reset sort state for new data)
-    currentYearlyResults = results.yearlyResults
-    currentIsShort = results.directionString == "Short"
-    sortColumn = "startDate"
-    sortAscending = false
-    renderBacktestingTable()
-
-    # Show warning if any year had anomalies
-    if results.warn
-        backtestingWarning.style.display = "block"
-    else
-        backtestingWarning.style.display = "none"
+    backtesting.run(hlcData, metaData, startIdx, endIdx, tradingDays)
     return
 
-renderBacktestingTable = ->
-    log "renderBacktestingTable"
-    return unless currentYearlyResults?
+############################################################
+loadDataAndRenderChart = ->
+    log "loadDataAndRenderChart"
+    chartData = await retrieveRelevantData()
+    updateYearsOptions() ## only here this may change
 
-    backtestingDetailsTable.innerHTML = ""
-
-    # Sort data
-    sortedResults = sortYearlyResults(currentYearlyResults)
-
-    # Create header row with sort indicators
-    thead = document.createElement("thead")
-    headerRow = document.createElement("tr")
-    headers = [
-        { label: "Start", key: "startDate" }
-        { label: "Ende" }
-        { label: "Profit", key: "profit" }
-        { label: "Profit Abs", key: "profitA" }
-        { label: "Max Anstieg", key: "maxRise" }
-        { label: "Max Anstieg Abs", key: "maxRiseA" }
-        { label: "Max Rückgang", key: "maxDrop" }
-        { label: "Max Rückgang Abs", key: "maxDropA" }
-    ]
-    for { label, key } in headers
-        th = document.createElement("th")
-        if key?
-            th.dataset.sortKey = key
-            th.classList.add("sortable")
-            if key == sortColumn
-                th.classList.add("sorted")
-                th.classList.add(if sortAscending then "asc" else "desc")
-            th.addEventListener("click", onSortColumnClick)
-        th.textContent = label
-        headerRow.appendChild(th)
-    thead.appendChild(headerRow)
-    backtestingDetailsTable.appendChild(thead)
-
-    # Create body with sorted results
-    tbody = document.createElement("tbody")
-    for result in sortedResults
-        row = document.createElement("tr")
-        if result.warn then row.classList.add("warn")
-
-        # Start date column
-        startDateCell = document.createElement("td")
-        startDateCell.textContent = formatDate(result.startDate)
-        row.appendChild(startDateCell)
-
-        # End date column
-        endDateCell = document.createElement("td")
-        endDateCell.textContent = formatDate(result.endDate)
-        row.appendChild(endDateCell)
-
-        # Profit column (flip sign for Short)
-        profitCell = document.createElement("td")
-        profit = if currentIsShort then -result.profitP else result.profitP
-        profitCell.textContent = formatPercent(profit)
-        profitCell.classList.add(if profit >= 0 then "positive" else "negative")
-        row.appendChild(profitCell)
-
-        # Profit Abs column
-        profitAbsCell = document.createElement("td")
-        profitAbs = result.startA * profit / 100
-        profitAbsCell.textContent = formatAbsolute(profitAbs)
-        profitAbsCell.classList.add(if profitAbs >= 0 then "positive" else "negative")
-        row.appendChild(profitAbsCell)
-
-        # Max Rise column
-        maxRiseCell = document.createElement("td")
-        maxRiseCell.textContent = formatPercent(result.maxRiseP)
-        row.appendChild(maxRiseCell)
-
-        # Max Rise Abs column
-        maxRiseAbsCell = document.createElement("td")
-        maxRiseAbs = result.startA * result.maxRiseP / 100
-        maxRiseAbsCell.textContent = formatAbsolute(maxRiseAbs)
-        row.appendChild(maxRiseAbsCell)
-
-        # Max Drop column
-        maxDropCell = document.createElement("td")
-        maxDropCell.textContent = formatPercent(result.maxDropP)
-        row.appendChild(maxDropCell)
-
-        # Max Drop Abs column
-        maxDropAbsCell = document.createElement("td")
-        maxDropAbs = result.startA * result.maxDropP / 100
-        maxDropAbsCell.textContent = formatAbsolute(maxDropAbs)
-        row.appendChild(maxDropAbsCell)
-
-        tbody.appendChild(row)
-
-    backtestingDetailsTable.appendChild(tbody)
+    charting.prepareData(chartData)
+    charting.render(backtestingRegion)
     return
 
-onSortColumnClick = (evnt) ->
-    key = evnt.target.getAttribute("data-sort-key")
-    log "onSortColumnClick: #{key}"
-    if sortColumn == key
-        sortAscending = !sortAscending  # Toggle direction
-    else
-        sortColumn = key
-        sortAscending = false  # New column: start descending
-    renderBacktestingTable()
+
+############################################################
+clearSelection = ->
+    selectedSymbolDisplay.textContent = ""
+    selectedSymbol = ""
+    setChartInactive()
+    resetTimeframeSelect()
     return
-
-sortYearlyResults = (results) ->
-    sorted = [...results]  # Copy to avoid mutating original
-
-    compareFn = switch sortColumn
-        when "startDate"
-            (a, b) -> a.year - b.year
-        when "profit"
-            if currentIsShort
-                (a, b) -> (-a.profitP) - (-b.profitP)  # Flipped for Short
-            else
-                (a, b) -> a.profitP - b.profitP
-        when "profitA"
-            if currentIsShort
-                (a, b) -> (-a.startA * a.profitP) - (-b.startA * b.profitP)
-            else
-                (a, b) -> (a.startA * a.profitP) - (b.startA * b.profitP)
-        when "maxRise"
-            (a, b) -> a.maxRiseP - b.maxRiseP
-        when "maxRiseA"
-            (a, b) -> (a.startA * a.maxRiseP) - (b.startA * b.maxRiseP)
-        when "maxDrop"
-            (a, b) -> (-a.maxDropP) - (-b.maxDropP) # Flipped for max Drops
-        when "maxDropA"
-            (a, b) -> (-a.startA * a.maxDropP) - (-b.startA * b.maxDropP)
-        else
-            (a, b) -> 0
-
-    sorted.sort(compareFn)
-    unless sortAscending then sorted.reverse()
-    return sorted
-
-formatPercent = (value) ->
-    sign = if value >= 0 then "+" else ""
-    return "#{sign}#{value.toFixed(1)}%"
-
-formatAbsolute = (value) ->
-    sign = if value >= 0 then "+" else ""
-    return "#{sign}#{value.toFixed(2)}"
-
-formatDate = (value) ->
-    date = new Date(value)
-    day = date.getDate()
-    month = date.getMonth() + 1
-    year = date.getFullYear()
-
-    dayStr = if day < 10 then "0#{day}" else "#{day}"
-    monthStr = if month < 10 then "0#{month}" else "#{month}"
-    return "#{dayStr}.#{monthStr}.#{year}"
-
-#endregion
 
 ############################################################
 resetTimeframeSelect = ->
     log "resetTimeframeSelect"
-    currentSelectedTimeframe = "5"
+    selectedRangeY = "5"
     timeframeSelect.innerHTML = ""
     optionEl = document.createElement("option")
     optionEl.value = "5"
@@ -533,10 +220,9 @@ updateYearsOptions = ->
     log "updateYearsOptions"
     allOptions = [ 5, 10, 15, 20, 25, 30 ]
 
-    ## Determine available options based on maxHistory
-    if !maxHistory?
-        actualOptions = allOptions
-    else
+    if !selectedSymbol? then return resetTimeframeSelect()
+    else ## Determine available options based on maxHistory
+        maxHistory = mData.getHistoricDepth(selectedSymbol)
         ## Find first option exceeding available history (+2 buffer)
         cutoffIdx = allOptions.length
         for opt, i in allOptions when maxHistory + 2 < opt
@@ -547,11 +233,11 @@ updateYearsOptions = ->
         if actualOptions.length == 0 then actualOptions = [allOptions[0]]
 
     ## Adjust currentYears if it exceeds available options
-    currentYears = parseInt(currentSelectedTimeframe)
+    currentYears = parseInt(selectedRangeY)
     maxAvailable = actualOptions[actualOptions.length - 1]
     if currentYears > maxAvailable
         currentYears = maxAvailable
-        currentSelectedTimeframe = String(currentYears)
+        selectedRangeY = String(currentYears)
 
     ## Render options to dropdown
     timeframeSelect.innerHTML = ""
@@ -564,185 +250,29 @@ updateYearsOptions = ->
     return
     
 ############################################################
-resetAndRender = ->
-    log "resetAndRender"
-    resetChartData()
-    try
-        setStateLoading()
-        if currentSelectedStock
-            selectedSymbol.textContent = ""+currentSelectedStock
-            await retrieveRelevantData()
-            # Recalculate Fourier data if it was visible (data was reset but visibility preserved)
-            if seriesVisibility.fourier
-                await ensureFourierData()
-        else
-            selectedSymbol.textContent = ""
-
-        updateYearsOptions()
-        updateYearsIndicator()
-       
-        redrawChart()
-        if currentSelectedStock
-            if pickedStartIdx? and pickedEndIdx?
-                await runAndDisplayBacktesting()
-                setBacktestingActive()
-            else
-                setChartActive()
-    catch err
-        console.error(err)
-        symbolSelect.setError("Fehler in der Datenanfrage für #{currentSelectedStock}!")
-        selectedSymbol.textContent = ""
-        currentSelectedStock = ""
-        setChartInactive()
-    return
-
-############################################################
-# Resets chart data but preserves series visibility configuration
-resetChartData = ->
-    log "resetChartData"
-    seasonalityChart.reset()
-
-    xAxisData = null
-    adrAggregation = null
-    frAggregation = null  # data needs recalc, but visibility state preserved
-    latestData = null
-    maxHistory = null
-    return
-
-############################################################
-# Full reset including visibility - called only when chart is closed
-resetSeasonalityState = ->
-    log "resetSeasonalityState"
-    resetChartData()
-
-    pickedStartIdx = null
-    pickedEndIdx = null
-    xAxisDrag = null
-
-    # Reset visibility to defaults
-    seriesVisibility = {
-        latestData: true
-        adr: true
-        fourier: false
-    }
-    syncLegendVisibility()
-    updateSeriesIndices()
-    return
-
-############################################################
 retrieveRelevantData = ->
     log "retrieveRelevantData"
-    symbol = currentSelectedStock
-    years = parseInt(currentSelectedTimeframe)
+    symbol = selectedSymbol
+    years = parseInt(selectedRangeY)
 
     rawLatest = await mData.getLatestData(symbol)
     rawAdr = await mData.getSeasonalityComposite(symbol, years, 0)
-    maxHistory = mData.getHistoricDepth(symbol)
-
     if !rawAdr? then throw new Error("No ADR data returned!")
-    log "ADR data length: " + rawAdr.length
 
-    prepareChartData(rawAdr, rawLatest)
-    return
+    # log "ADR data length: " + rawAdr.length
+    return { rawLatest, rawAdr, years }
 
-############################################################
-#region Leap Year Config (computed once per year)
-leapYearConfig = null
-
-getLeapYearConfig = ->
-    return leapYearConfig if leapYearConfig?
-    today = new Date()
-    currentYear = today.getFullYear()
-    lastYear = currentYear - 1
-    currentYearIsLeap = utl.isLeapYear(currentYear)
-    lastYearIsLeap = utl.isLeapYear(lastYear)
-    leapYearConfig = {
-        currentYearIsLeap
-        lastYearIsLeap
-        lastYearDays: if lastYearIsLeap then 366 else 365
-        currentYearDays: if currentYearIsLeap then 366 else 365
-    }
-    return leapYearConfig
-#endregion
 
 ############################################################
-# Prepare raw 366-day seasonality data for 2-year chart display
-prepareSeasonalityFor2Year = (rawData) ->
-    cfg = getLeapYearConfig()
-    factors = utl.toFactorsArray(rawData)
-    frontData = utl.fromFactorsBackward(factors)
-    backData = utl.fromFactorsForward(factors)
-
-    if !cfg.lastYearIsLeap then frontData = removeFeb29(frontData)
-    if !cfg.currentYearIsLeap then backData = removeFeb29(backData)
-
-    return [...frontData, ...backData]
-
-############################################################
-prepareChartData = (rawAdr, rawLatest) ->
-    log "prepareChartData"
-    cfg = getLeapYearConfig()
-
-    ## Prepare ADR aggregation for 2-year display
-    adrAggregation = prepareSeasonalityFor2Year(rawAdr)
-
-    ## Prepare latestData for 2-year display
-    thisYearsData = rawLatest[0]
-    lastYearsData = rawLatest[1]
-
-    factors = utl.toFactorsArray(lastYearsData)
-    lastYearsData = utl.fromFactorsBackward(factors)
-
-    factors = utl.toFactorsArray(thisYearsData)
-    thisYearsData = utl.fromFactorsForward(factors)
-
-    missingDays = cfg.currentYearDays - thisYearsData.length
-    missingData = new Array(missingDays).fill(null)
-
-    latestData = [...lastYearsData, ...thisYearsData, ...missingData]
-
-    ## Create time axis
-    jan1 = utl.getJan1Date()
-    axisTime = jan1.getTime() / 1000
-
-    currentYearTimeAxis = []
-    for i in [0...cfg.currentYearDays]
-        currentYearTimeAxis[i] = axisTime
-        axisTime += 86_400
-
-    axisTime = jan1.getTime() / 1000 - 86_400
-    lastYearTimeAxis = new Array(cfg.lastYearDays)
-    i = cfg.lastYearDays
-    while i--
-        lastYearTimeAxis[i] = axisTime
-        axisTime -= 86_400
-
-    xAxisData = [...lastYearTimeAxis, ...currentYearTimeAxis]
-    return
-
-############################################################
-removeFeb29 = (arr) ->
-    result = []
-    for val,i in arr when i != utl.FEB29
-        result.push(val)
-    return result
-
-############################################################
-#region Selection Index Normalization
-# Converts raw chart indices (real indices in 2-year display) to nonLeapNorm
-# indices (0-364). Uses utl.realToNonLeapNormIdx for the conversion.
-#
+# Converts raw chart indices to nonLeapNorm indices (0-364)
 # Chart layout: [...lastYearData, ...currentYearData]
 #
-# Three selection cases after normalization:
-# 1. Both in last year: startIdx=0-364, endIdx=0-364 (both positive)
-# 2. Overlapping: startIdx=negative, endIdx=0-364 (spans year boundary)
-# 3. Both in current year: startIdx=0-364, endIdx=0-364 (both positive)
-############################################################
-
-normalizeSelectionIndices = (startIdx, endIdx) ->
-    cfg = getLeapYearConfig()
+# startIdx will be negative on year overlap
+getNormalizedSelectionIndices = ->
+    return unless backtestingRegion? # no selection, nothing to do
+    cfg = utl.getLeapYearConfig()
     lastYearDays = cfg.lastYearDays
+    { startIdx, endIdx } = backtestingRegion
 
     startInLastYear = startIdx < lastYearDays
     endInLastYear = endIdx < lastYearDays
@@ -762,4 +292,3 @@ normalizeSelectionIndices = (startIdx, endIdx) ->
         startIdx = startIdx - 365
 
     return { startIdx, endIdx }
-#endregion

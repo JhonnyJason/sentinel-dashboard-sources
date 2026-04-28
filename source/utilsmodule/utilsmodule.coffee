@@ -18,6 +18,17 @@ export isLeapYear = (year) ->
 export getDaysOfYear = (year) ->
     if isLeapYear(year) then 366 else 365
 
+export getLeapYearConfig = ->
+    today = new Date()
+    currentYear = today.getFullYear()
+    lastYear = currentYear - 1
+    return {
+        currentYearIsLeap: isLeapYear(currentYear)
+        lastYearIsLeap: isLeapYear(lastYear)
+        currentYearDays: getDaysOfYear(currentYear)
+        lastYearDays: getDaysOfYear(lastYear)
+    }
+
 ############################################################
 # Index Conventions:
 #   nonLeapNorm (0-364): Jan1=0, Feb28=58, Mar1=59. No Feb29.
@@ -150,13 +161,16 @@ dayIndexToDateStr = (year, dayIdx) ->
 
 ############################################################
 # Convenience class to handle day of year with associated index values.
-# @nIndex: nonLeapNorm index (0-364)
-# @rIndex: real day-of-year index (accounts for leap year)
+# @nIndex: nonLeapNorm index (0-364) 
+# Notice! Legal overflows of -729 to +729 change @year parameter accordingly
 # Whenever we have a specific day as (year + nonLeapNorm index) use this class.
 export class Day
     constructor: (@nIndex, @year) ->
-        @nIndex = (@nIndex + 2 * 365) % 365 # deal with some overflows
+        if @nIndex <= -730 or @nIndex >= 730 then throw Error("Invalid nIndex! (#{@nIndex})")
+        @year += Math.floor(@nIndex / 365) # apply overflow to change @year
+        @nIndex = (@nIndex + 2 * 365) % 365 # push overflows to 0-364 range
         @isLeap = isLeapYear(@year)
+        # @rIndex: real day-of-year index (accounts for leap year)
         @rIndex = nonLeapNormToRealIdx(@nIndex, @isLeap)
         @yearIdx = (new Date()).getFullYear() - @year
         @daysOfYear = getDaysOfYear(@year)

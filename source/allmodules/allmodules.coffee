@@ -13,6 +13,8 @@ import * as fuzzyscoremodule from "./fuzzyscoremodule.js"
 import * as marketdatamodule from "./marketdatamodule.js"
 import * as noaccountmodule from "./noaccountmodule.js"
 import * as scimodule from "./scimodule.js"
+import * as seasonalitybacktestingmodule from "./seasonalitybacktestingmodule.js"
+import * as seasonalitychartmodule from "./seasonalitychartmodule.js"
 import * as seasonalityframemodule from "./seasonalityframemodule.js"
 import * as sidenavmodule from "./sidenavmodule.js"
 import * as summaryframemodule from "./summaryframemodule.js"
@@ -38,6 +40,8 @@ Modules = {
     marketdatamodule,
     noaccountmodule,
     scimodule,
+    seasonalitybacktestingmodule,
+    seasonalitychartmodule,
     seasonalityframemodule,
     sidenavmodule,
     summaryframemodule,

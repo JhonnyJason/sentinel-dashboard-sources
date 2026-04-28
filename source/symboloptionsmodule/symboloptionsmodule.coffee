@@ -38,8 +38,8 @@ symbolsUpdated = (newURL) ->
 ############################################################
 export getAllSymbols = -> allSymbols || defaultTop100
 
-############################################################
-export defaultTop100 = [
+## TODO implement some automtatic update of this list############################################################
+export defaultTop100 = [ 
     [ "NVDA", "Nvidia" ],
     [ "AAPL","Apple Inc."],
     [ "MSFT", "Microsoft" ],

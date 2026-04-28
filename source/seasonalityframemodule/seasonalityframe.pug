@@ -7,13 +7,13 @@ include ../preloader/preloader-mixins.pug
         .select-wrapper: select#timeframe-select
             option(value="5" selected) 5 Jahre
             
-        #selected-symbol
+        #selected-symbol-display
         button#close-chart-button.click-button: svg: use(href="#svg-cross-icon")
 
     #chart-row
         #chart-container
             +preloader("circles", "circles")
-            include chart-instructions.pug
+            include instructions.pug
             #seasonality-chart
             #cursor-indicator
                 svg: use(href="#svg-cursor-icon")
@@ -24,10 +24,10 @@ include ../preloader/preloader-mixins.pug
                 button#backtesting-button.click-button Backtesting         
                 button#components-button.click-button Chart
             #tab-content-container 
-                include chart-components.pug
-                include backtesting-summary.pug
+                include ../seasonalitychartmodule/chart-components.pug
+                include ../seasonalitybacktestingmodule/backtesting-summary.pug
 
     #backtesting-details-row
-        include backtesting-details.pug
+        include ../seasonalitybacktestingmodule/backtesting-details.pug
 
     

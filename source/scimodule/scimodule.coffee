@@ -14,7 +14,6 @@ import {
 ############################################################
 import { urlAccessManager, urlDatahub } from "./configmodule.js"
 import { getAuthCode, assertAuthorization } from "./accountmodule.js"
-import { defaultSymbols } from "./defaultsymbols.js"
 
 ############################################################
 #region Requet URLs
@@ -144,6 +143,7 @@ export logout = (authCode) ->
     if err then throw new Error("Invalid authCode!")
     return await request(urlLogout, authCode)
 
+
 ############################################################
 export requestPasswordReset = (email) ->
     log "requestPasswordReset"    
@@ -185,17 +185,3 @@ export getEodData = (dataKey, yearsBack) ->
     #     },
     #     data: ARRAY
     # }
-
-# ############################################################
-# export getSymbolOptions = (query, limit) ->
-#     log "getSymbolOptions"   
-#     authCode = getAuthCode()
-#     args = { authCode, query, limit }
-#     err = validateGetSymbolOptionsArgs(args)
-#     # if err then log getErrorMessage(err)
-#     if err then throw new Error("Invalid getData args!")
-#     # return await request(urlGetSymbolOptions, args)
-    
-#     ## Sample return
-#     return await new Promise (rslv) ->
-#         setTimeout((() -> rslv(defaultSymbols)), 500)
