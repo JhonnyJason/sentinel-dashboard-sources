@@ -160,6 +160,17 @@ dayIndexToDateStr = (year, dayIdx) ->
     return "#{dayStr}.#{monthStr}.#{year}"
 
 ############################################################
+# Convert year + nonLeapNorm day index (0-364 or negative) to "YYYY-MM-DD"
+normalizedIdxToYYYYMMDD = (year, dayIdx) ->
+    if dayIdx < 0
+        year = year - 1
+        dayIdx = 365 + dayIdx
+    realIdx = nonLeapNormToRealIdx(dayIdx, isLeapYear(year))
+    jan1 = new Date(year, 0, 1, 12)
+    target = new Date(jan1.getTime() + realIdx * 86_400_000)
+    return target.toISOString().slice(0, 10)
+
+############################################################
 # Convenience class to handle day of year with associated index values.
 # @nIndex: nonLeapNorm index (0-364) 
 # Notice! Legal overflows of -729 to +729 change @year parameter accordingly

@@ -6,7 +6,7 @@ export modulesToDebug = {
     # accountmodule: true
     # appcoremodule: true
     # backtesting: true
-    chartfun: true
+    # chartfun: true
     # comboboxfun: true
     # datamodule: true
     # datacache: true
@@ -25,9 +25,9 @@ export modulesToDebug = {
     # scimodule: true
     # scorehelper: true
     # seasonality: true
-    seasonalityframemodule: true
-    seasonalitychartmodule: true
-    seasonalitybacktestingmodule: true
+    # seasonalityframemodule: true
+    # seasonalitychartmodule: true
+    # seasonalitybacktestingmodule: true
     # summaryframemodule: true
     # symboloptionsmodule: true
     # symbolselectmodule: true

@@ -17,12 +17,10 @@ currentIsShort = false
 sortColumn = "startDate"  # "startDate", "profit", "maxRise", "maxDrop"
 sortAscending = false  # default: newest year first
 
-
 ############################################################
 renderBacktestingTable = ->
     log "renderBacktestingTable"
     return unless currentYearlyResults?
-
     backtestingDetailsTable.innerHTML = ""
 
     # Sort data
@@ -33,6 +31,8 @@ renderBacktestingTable = ->
     headerRow = document.createElement("tr")
     headers = [
         { label: "Start", key: "startDate" }
+        { label: "Startkurs"}
+        { label: "Endkurs"}
         { label: "Ende" }
         { label: "Profit", key: "profit" }
         { label: "Profit Abs", key: "profitA" }
@@ -41,6 +41,7 @@ renderBacktestingTable = ->
         { label: "Max Rückgang", key: "maxDrop" }
         { label: "Max Rückgang Abs", key: "maxDropA" }
     ]
+
     for { label, key } in headers
         th = document.createElement("th")
         if key?
@@ -62,50 +63,62 @@ renderBacktestingTable = ->
         if result.warn then row.classList.add("warn")
 
         # Start date column
-        startDateCell = document.createElement("td")
-        startDateCell.textContent = formatDate(result.startDate)
-        row.appendChild(startDateCell)
+        td = document.createElement("td")
+        td.textContent = formatDate(result.entryDate)
+        row.appendChild(td)
+
+        # Start price column
+        td = document.createElement("td")
+        td.innerHTML = formatAbsolutePrice(result.startAba, result.missingF)
+        row.appendChild(td)
+
+        # End price column
+        td = document.createElement("td")
+        endPriceAba = result.startAba * result.changeF
+        td.innerHTML = formatAbsolutePrice(endPriceAba, result.missingF)
+        row.appendChild(td)
 
         # End date column
-        endDateCell = document.createElement("td")
-        endDateCell.textContent = formatDate(result.endDate)
-        row.appendChild(endDateCell)
+        td = document.createElement("td")
+        td.textContent = formatDate(result.exitDate)
+        row.appendChild(td)
+
 
         # Profit column (flip sign for Short)
-        profitCell = document.createElement("td")
-        profit = if currentIsShort then -result.profitP else result.profitP
-        profitCell.textContent = formatPercent(profit)
-        profitCell.classList.add(if profit >= 0 then "positive" else "negative")
-        row.appendChild(profitCell)
+        td = document.createElement("td")
+        profit = if currentIsShort then -result.changeP else result.changeP
+        td.textContent = formatPercent(profit)
+        td.classList.add(if profit >= 0 then "positive" else "negative")
+        row.appendChild(td)
 
         # Profit Abs column
-        profitAbsCell = document.createElement("td")
-        profitAbs = result.startA * profit / 100
-        profitAbsCell.textContent = formatAbsolute(profitAbs)
-        profitAbsCell.classList.add(if profitAbs >= 0 then "positive" else "negative")
-        row.appendChild(profitAbsCell)
+        td = document.createElement("td")
+        profitAbs = result.startAba * profit / 100
+        td.innerHTML = formatAbsoluteDelta(profitAbs, result.missingF)
+        td.classList.add(if profitAbs >= 0 then "positive" else "negative")
+        row.appendChild(td)
 
         # Max Rise column
-        maxRiseCell = document.createElement("td")
-        maxRiseCell.textContent = formatPercent(result.maxRiseP)
-        row.appendChild(maxRiseCell)
+        td = document.createElement("td")
+        td.textContent = formatPercent(result.maxRiseP)
+        row.appendChild(td)
 
         # Max Rise Abs column
-        maxRiseAbsCell = document.createElement("td")
-        maxRiseAbs = result.startA * result.maxRiseP / 100
-        maxRiseAbsCell.textContent = formatAbsolute(maxRiseAbs)
-        row.appendChild(maxRiseAbsCell)
+        td = document.createElement("td")
+        maxRiseAbs = result.startAba * result.maxRiseP / 100
+        td.innerHTML = formatAbsoluteDelta(maxRiseAbs, result.missingF)
+        row.appendChild(td)
 
         # Max Drop column
-        maxDropCell = document.createElement("td")
-        maxDropCell.textContent = formatPercent(result.maxDropP)
-        row.appendChild(maxDropCell)
+        td = document.createElement("td")
+        td.textContent = formatPercent(result.maxDropP)
+        row.appendChild(td)
 
         # Max Drop Abs column
-        maxDropAbsCell = document.createElement("td")
-        maxDropAbs = result.startA * result.maxDropP / 100
-        maxDropAbsCell.textContent = formatAbsolute(maxDropAbs)
-        row.appendChild(maxDropAbsCell)
+        td = document.createElement("td")
+        maxDropAbs = result.startAba * result.maxDropP / 100
+        td.innerHTML = formatAbsoluteDelta(maxDropAbs, result.missingF)
+        row.appendChild(td)
 
         tbody.appendChild(row)
 
@@ -132,22 +145,22 @@ sortYearlyResults = (results) ->
             (a, b) -> a.year - b.year
         when "profit"
             if currentIsShort
-                (a, b) -> (-a.profitP) - (-b.profitP)  # Flipped for Short
+                (a, b) -> (-a.changeP) - (-b.changeP)  # Flipped for Short
             else
-                (a, b) -> a.profitP - b.profitP
+                (a, b) -> a.changeP - b.changeP
         when "profitA"
             if currentIsShort
-                (a, b) -> (-a.startA * a.profitP) - (-b.startA * b.profitP)
+                (a, b) -> (-a.startAr * a.changeP) - (-b.startAr * b.changeP)
             else
-                (a, b) -> (a.startA * a.profitP) - (b.startA * b.profitP)
+                (a, b) -> (a.startAr * a.changeP) - (b.startAr * b.changeP)
         when "maxRise"
             (a, b) -> a.maxRiseP - b.maxRiseP
         when "maxRiseA"
-            (a, b) -> (a.startA * a.maxRiseP) - (b.startA * b.maxRiseP)
+            (a, b) -> (a.startAr * a.maxRiseP) - (b.startAr * b.maxRiseP)
         when "maxDrop"
             (a, b) -> (-a.maxDropP) - (-b.maxDropP) # Flipped for max Drops
         when "maxDropA"
-            (a, b) -> (-a.startA * a.maxDropP) - (-b.startA * b.maxDropP)
+            (a, b) -> (-a.startAr * a.maxDropP) - (-b.startAr * b.maxDropP)
         else
             (a, b) -> 0
 
@@ -160,9 +173,14 @@ formatPercent = (value) ->
     sign = if value >= 0 then "+" else ""
     return "#{sign}#{value.toFixed(1)}%"
 
-formatAbsolute = (value) ->
+formatAbsoluteDelta = (value, missingF) ->
     sign = if value >= 0 then "+" else ""
-    return "#{sign}#{value.toFixed(2)}"
+    html = formatAbsolutePrice(value, missingF)
+    return "#{sign}#{html}"
+
+formatAbsolutePrice = (value, missingF) ->
+    if missingF > 1 then return "#{value.toFixed(2)}<span class='missing-factor' title='Fehlender Faktor zum exakten historischen Wert.'>#{missingF.toFixed(2)}</span>"
+    else return "#{value.toFixed(2)}"
 
 formatDate = (value) ->
     date = new Date(value)

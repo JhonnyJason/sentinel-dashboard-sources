@@ -92,10 +92,12 @@ onExitPlusClicked = ->
 renderSummary = (results) ->
     log "renderSummary"
 
+    olog results
+
     if results.isLong
         backtestingDirection.textContent = "LONG"
         backtestingDirection.className = "long"
-    else 
+    else
         backtestingDirection.textContent = "SHORT"
         backtestingDirection.className = "short"
 
@@ -122,14 +124,22 @@ renderSummary = (results) ->
     winVsLose.textContent = "#{wins} | #{losers}"
 
     # Summary stats
-    maxRiseValue.textContent = "#{results.maxRise.toFixed(1)}%"
-    maxDropValue.textContent = "#{results.maxDrop.toFixed(1)}%"
-    maxRiseAbsValue.textContent = "#{results.maxRiseA.toFixed(2)}"
-    maxDropAbsValue.textContent = "#{results.maxDropA.toFixed(2)}"
+    maxRiseValue.textContent = "#{results.maxRiseP.toFixed(1)}%"
+    maxDropValue.textContent = "#{results.maxDropP.toFixed(1)}%"
     averageChangeValue.textContent = "#{results.averageProfit.toFixed(1)}%"
     medianChangeValue.textContent = "#{results.medianProfit.toFixed(1)}%"
     daysInTradeValue.textContent = "#{results.daysInTrade} Tage"
 
+    if results.maxDropMissingF > 1
+        maxDropAbsValue.innerHTML = "#{results.maxDropAba.toFixed(2)}<span class='missing-factor' title='Fehlender Faktor zum exakten historischen Wert.'>#{results.maxDropMissingF.toFixed(2)}</span>"
+    else
+        maxDropAbsValue.textContent = "#{results.maxDropAba.toFixed(2)}"
+
+    if results.maxRiseMissingF > 1
+        maxRiseAbsValue.innerHTML = "#{results.maxRiseAba.toFixed(2)}<span class='missing-factor' title='Fehlender Faktor zum exakten historischen Wert.'>#{results.maxRiseMissingF.toFixed(2)}</span>"
+    else
+        maxRiseAbsValue.textContent = "#{results.maxRiseAba.toFixed(2)}"
+        
     return
 
 ############################################################

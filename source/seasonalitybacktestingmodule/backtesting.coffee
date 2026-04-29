@@ -8,7 +8,7 @@ import { createLogFunctions } from "thingy-debug"
 import * as utl from "./utilsmodule.js"
 
 ############################################################
-#region Top Level Backtesting Implementations
+#region Backtesting + Evaluations
 
 ############################################################
 export runBacktesting = (args) ->
@@ -19,10 +19,10 @@ export runBacktesting = (args) ->
     # dataPerYear index 0 = current year (incomplete) 
     # dataPerYear index n-1 = oldest (might be incomplete)
 
-    if startIdx < 0 ## negative startIdx means it was in the previous year 
-        sequences = getTradeDaySequencesOverlapped(dataPerYear, startIdx, endIdx)
+    if startIdx < 0 ## negative startIdx means it was in the previous year
+        sequences = getAllOverappedSequences(dataPerYear, startIdx, endIdx)
     else ## positive startIdx means startIdx and endIdx are in same year
-        sequences = getTradeDaySequences(dataPerYear, startIdx, endIdx)
+        sequences = getAllNonOverlapSequences(dataPerYear, startIdx, endIdx)
     
     return evaluate(sequences, args)
 
@@ -31,7 +31,7 @@ evaluate = (sequences, opts) ->
     log "evaluate"
     results = sequences.map((seq) -> backtestSequence(seq))
     splits = opts.metaData?.splitFactors
-    correctAbsoluteValues(results, splits, opts.startIdx, opts.endIdx)
+    addSplitsInfo(results, splits, opts.startIdx, opts.endIdx)
     return evaluateResults(results, opts)
 
 ############################################################
@@ -39,7 +39,7 @@ evaluateResults = (results, opts) ->
     log "evaluateResults"
     { startIdx, endIdx, tradingDaysPerYear } = opts
     { avgChangeF, medChangeF } = getAverageAndMedianChanges(results)
-    { maxRiseF, maxDropF, maxRiseA, maxDropA } = getMaxRiseAndMaxDrop(results)
+    { maxDropF, maxDropP, maxDropA, maxDropAba, maxDropMissingF, maxRiseF, maxRiseP, maxRiseA, maxRiseAba, maxRiseMissingF } = getMaxRiseAndMaxDrop(results)
 
     isLong = avgChangeF > 1
     { winTrades, totalTrades } = countTradeResults(results, isLong)
@@ -48,21 +48,20 @@ evaluateResults = (results, opts) ->
     yearlyResults = []
     currentYear = (new Date()).getFullYear()
 
-    for el, i in results when el?
+    for el, i in results
         year = currentYear - i
+        continue unless el?
+
         warn = warn or el.warn
 
-        profitP = (el.changeF - 1) * 100
-        maxRiseP = (el.maxRiseF - 1) * 100
-        maxDropP = (el.maxDropF - 1) * 100
-
+        result = evaluateYearsResult(el, year)
         # Compute effective trading dates (use positive nonLeapNorm index for prev year)
         sDay = new utl.Day(startIdx, year) # Day class handles potential overlap
-        startDate = utl.effectiveStartDate(sDay, tradingDaysPerYear)
+        result.entryDate = utl.effectiveStartDate(sDay, tradingDaysPerYear)
         eDay = new utl.Day(endIdx, year)
-        endDate = utl.effectiveEndDate(eDay, tradingDaysPerYear)
-        
-        yearlyResults.push({ year, startDate, endDate, profitP, maxRiseP, maxDropP, startA: el.startA, warn: el.warn })
+        result.exitDate = utl.effectiveEndDate(eDay, tradingDaysPerYear)
+    
+        yearlyResults.push(result)
 
 
     profitF = 100.0
@@ -77,72 +76,78 @@ evaluateResults = (results, opts) ->
         exitDate: indexToDate(endIdx)
         daysInTrade: (endIdx - startIdx) % 365
         
-        maxRiseA, maxDropA
-        maxRise: (maxRiseF - 1) * 100
-        maxDrop: (maxDropF - 1) * 100
-        
+        maxDropF, maxDropP, maxDropA, maxDropAba, maxDropMissingF
+        maxRiseF, maxRiseP, maxRiseA, maxRiseAba, maxRiseMissingF 
+
         averageProfit: profitF * (avgChangeF - 1)
         medianProfit: profitF * (medChangeF - 1)
     }
 
+
+############################################################
+evaluateYearsResult = (result, year) ->
+    log "evaluateYearsResult"
+    { 
+        startA, startAr, startAba, changeF, maxRiseF, maxRiseIdx, 
+        maxDropF, maxDropIdx, corrF, missingF, lastF, warn 
+    } = result
+
+    changeP = (changeF - 1) * 100
+    maxRiseP = (maxRiseF - 1) * 100
+    maxDropP = (maxDropF - 1) * 100
+    ## TODO other necessary transformations
+    
+    return { 
+        year, changeF, changeP, maxRiseF, maxRiseP, maxDropF, maxDropP, 
+        startA, startAr, startAba, corrF, missingF, lastF, warn 
+    }
+
 #endregion
+
 
 ############################################################
 #region Split Factor Correction
 
 ############################################################
-# Correct absolute values (startA) on each backtestResult using split factors.
-# splitFactors: [{f, end, applied}, ...] from metaData, sorted by end date
-# A factor f is valid from the previous factor's end date to its own end date.
-# If applied: true, the data has been divided by f — multiply to get real price.
-# Uses the trade start date to determine the applicable factor for the whole sequence.
-correctAbsoluteValues = (results, splitFactors, startIdx, endIdx) ->
+addSplitsInfo = (results, splitFactors, startIdx, endIdx) ->
     return unless splitFactors?.length
     hasApplied = splitFactors.some((sf) -> sf.applied)
     return unless hasApplied
 
-    year = (new Date()).getFullYear()
+    # results[0] is always element for this year and might be null
+    day = new utl.Day(startIdx, (new Date()).getFullYear())
+    # lastF = splitFactors[splitFactors.length - 1].f
+
+    if splitFactors[splitFactors.length - 1].applied
+        lastF = splitFactors[splitFactors.length - 1].f
+    else 
+        lastF = 1.0
 
     for el in results when el?
-        dateStr = normalizedIdxToDateStr(year, startIdx)
-        corrF = getSplitCorrectionFactor(splitFactors, dateStr)
-        el.startA = el.startA / corrF
-
-        year--
+        el.lastF = lastF ## kind if redundant but handy later
+        corrF = getSplitCorrectionFactor(splitFactors, day.getYYYYMMDD())
+        el.corrF = corrF
+        el.startAr = el.startA / corrF
+        el.startAba = el.startA / lastF
+        el.missingF = 1.0 * lastF / corrF
+        day = day.getDayPrevYear() # for further iteration
     return
 
 ############################################################
-# Get the correction multiplier for a given date.
-# Returns f if the date falls within an applied split range, 1 otherwise.
-getSplitCorrectionFactor = (splitFactors, dateStr) ->
+getSplitCorrectionFactor = (splitFactors, dateYYYYMMDD) ->
     return 1 unless splitFactors?.length
-    # lastEl = splitFactors[splitFactors.length - 1]
-    # if lastEl.end? then console.error("Unexpected! Last entry of SplitFactors did also have an end date!")
+    # splitFactors = [{f, applied, end: "YYYY-MM-DD"}, ...]
 
-    # lastEl.end = (new Date()).toISOString().slice(0, 10) # set fictional End date of today.
-
-    for sf,i in splitFactors
-        if dateStr <= sf.end or !sf.end?
-            if sf.applied then return sf.f 
-            else return 1
+    for sf in splitFactors when dateYYYYMMDD <= sf.end or !sf.end?
+        # our date is within range of this splitFactor
+        if sf.applied then return sf.f 
+        else return 1
     return 1
-
-############################################################
-# Convert year + nonLeapNorm day index (0-364 or negative) to "YYYY-MM-DD"
-normalizedIdxToDateStr = (year, dayIdx) ->
-    if dayIdx < 0
-        year = year - 1
-        dayIdx = 365 + dayIdx
-    realIdx = utl.nonLeapNormToRealIdx(dayIdx, utl.isLeapYear(year))
-    jan1 = new Date(year, 0, 1, 12)
-    target = new Date(jan1.getTime() + realIdx * 86_400_000)
-    return target.toISOString().slice(0, 10)
 
 #endregion
 
 ############################################################
 #region Helper Functions
-
 
 ############################################################
 # Actual backtesting for a sequence
@@ -159,7 +164,6 @@ backtestSequence = (seq) ->
     lastClose = startA
 
     for i in [1...seq.length]
-        
         if seq[i].length == 3
             high = seq[i][0]
             low = seq[i][1]
@@ -171,10 +175,10 @@ backtestSequence = (seq) ->
         
         if high > maxRiseA
             maxRiseA = high
-            riseEndedIndex = i
+            maxRiseIdx = i
         if low < maxDropA
             maxDropA = low
-            dropEndedIndex = i
+            maxDropIdx = i
 
         # add a warning if any day to day difference is too much (+42.9% or -30%)
         closeDelta = close - lastClose
@@ -183,12 +187,11 @@ backtestSequence = (seq) ->
         lastClose = close
 
     # Calculate facors to easily get the percentages
-    changeA = endA - startA
     changeF = 1.0 * endA / startA
     maxRiseF = 1.0 * maxRiseA / startA
     maxDropF = 1.0 * maxDropA / startA
 
-    return { startA, changeF, maxRiseF, maxDropF, warn, dropEndedIndex, riseEndedIndex }
+    return { startA, changeF, maxRiseF, maxRiseIdx, maxDropF, maxDropIdx, warn }
 
 ############################################################
 #region summarizing results
@@ -220,22 +223,32 @@ getAverageAndMedianChanges = (results, ignoreWithWarning = true) ->
 
 getMaxRiseAndMaxDrop = (results, ignoreWithWarning = true) ->
     log "getMaxRiseAndMaxDrop"
-    maxDropF = Infinity
-    maxRiseF = -Infinity
-    maxRiseStartA = 0
-    maxDropStartA = 0
-    for el in results when el?
-        if ignoreWithWarning and el.warn then continue
-        if el.maxRiseF > maxRiseF
-            maxRiseF = el.maxRiseF
-            maxRiseStartA = el.startA
-        if el.maxDropF < maxDropF
-            maxDropF = el.maxDropF
-            maxDropStartA = el.startA
+    maxRiseEl = { maxRiseF: -Infinity }
+    maxDropEl = { maxDropF: Infinity }
 
-    maxRiseA = maxRiseStartA * (maxRiseF - 1)
-    maxDropA = maxDropStartA * (maxDropF - 1)
-    return { maxDropF, maxRiseF, maxRiseA, maxDropA }
+    for el in results when el?
+        if ignoreWithWarning and el.warn then continue        
+        if el.maxRiseF > maxRiseEl.maxRiseF then maxRiseEl = el
+        if el.maxDropF < maxDropEl.maxDropF then maxDropEl = el
+
+    ## get relevant props from maxDropEl
+    maxDropF = maxDropEl.maxDropF
+    maxDropP = (maxDropF - 1) * 100
+    maxDropA = maxDropEl.startA * (maxDropEl.maxDropF - 1)
+    maxDropAba = maxDropEl.startAba * (maxDropEl.maxDropF - 1)
+    maxDropMissingF = maxDropEl.missingF
+    
+    ## get relevant props from maxRiseEl
+    maxRiseF = maxRiseEl.maxRiseF
+    maxRiseP = (maxRiseF - 1) * 100
+    maxRiseA = maxRiseEl.startA * (maxRiseEl.maxRiseF - 1)
+    maxRiseAba = maxRiseEl.startAba * (maxRiseEl.maxRiseF - 1)
+    maxRiseMissingF = maxRiseEl.missingF
+
+    return { 
+        maxDropF, maxDropP, maxDropA, maxDropAba, maxDropMissingF,
+        maxRiseF, maxRiseP, maxRiseA, maxRiseAba, maxRiseMissingF 
+    }
 
 ############################################################
 countTradeResults = (results, isLong, ignoreWithWarning = true) ->
@@ -292,10 +305,11 @@ extractOverlappingSequence = (prevYearData, currYearData, startIdx, endIdx, year
 
 ############################################################
 #region Extract the sequence of relevant DataPoint
-getTradeDaySequencesOverlapped = (dataPerYear, startIdx, endIdx) ->
-    log "getTradeDaySequencesOverlapped"
+getAllOverappedSequences = (dataPerYear, startIdx, endIdx) ->
+    log "getAllOverappedSequences"
     year = (new Date()).getFullYear()
-    sequences = []
+    sequences = [null] # sequence thisYear - nextYear cannot be checked -> null
+
     # 0 is current year - higher index is older
     # CoffeeScript: .. is inclusive, ... is exclusive (0..3 = [0,1,2,3], 0...3 = [0,1,2])
     for i in [0..dataPerYear.length - 2] # stop at length-2: need i+1 for prevYear
@@ -308,8 +322,8 @@ getTradeDaySequencesOverlapped = (dataPerYear, startIdx, endIdx) ->
 
 
 ############################################################
-getTradeDaySequences = (dataPerYear, startIdx, endIdx) ->
-    log "getTradeDaySequences"
+getAllNonOverlapSequences = (dataPerYear, startIdx, endIdx) ->
+    log "getAllNonOverlapSequences"
     year = (new Date()).getFullYear()
     sequences = []
     for yearD, i in dataPerYear
