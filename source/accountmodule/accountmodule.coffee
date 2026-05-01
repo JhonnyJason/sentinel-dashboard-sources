@@ -161,7 +161,6 @@ reLogin = ->
     heartbeat()
     return
 
-
 ############################################################
 logoutClicked = ->
     log "logoutClicked"

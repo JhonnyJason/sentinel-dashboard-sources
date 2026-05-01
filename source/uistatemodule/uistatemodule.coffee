@@ -34,7 +34,7 @@ applyBaseState["summary"] = ->
     noAccount.hide()
     header.className = "logged-in"
     eventscreener.activate()
-    trafficlight.fetchData()
+    trafficlight.activate()
     return
 
 applyBaseState["currencytrend"] = ->

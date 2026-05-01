@@ -35,7 +35,7 @@ export initialize = ->
 
     currentVersion.textContent = appVersion
     
-    ## Do we nbeed a serviceworker?
+    ## Do we need a serviceworker?
     if serviceWorker?
         serviceWorker.register("serviceworker.js", {scope: "/"})
         if serviceWorker.controller?

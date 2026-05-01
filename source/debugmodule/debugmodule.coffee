@@ -7,6 +7,7 @@ export modulesToDebug = {
     # appcoremodule: true
     # backtesting: true
     # chartfun: true
+    colorstates: true
     # comboboxfun: true
     # datamodule: true
     # datacache: true
@@ -21,6 +22,7 @@ export modulesToDebug = {
     # marketdatamodule: true
     # sampledata: true
     # scimodule: true
+    livedata: true
     # navtriggers: true
     # scimodule: true
     # scorehelper: true
@@ -31,6 +33,9 @@ export modulesToDebug = {
     # summaryframemodule: true
     # symboloptionsmodule: true
     # symbolselectmodule: true
+    trafficlightframemodule:true
+    trafficlightdata: true
+
     # uistatemodule: true
 }
 

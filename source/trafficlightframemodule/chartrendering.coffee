@@ -7,7 +7,12 @@ import { createLogFunctions } from "thingy-debug"
 ############################################################
 import uPlot from "uplot"
 
+
 ############################################################
+MONTH_NAMES = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"]
+TWO_YEARS = 2 * 365.25 * 86400
+############################################################
+
 SPY = "SPY"
 
 # Semi-transparent state colors for chart background bands
@@ -35,12 +40,15 @@ export initZoomControl = ->
     zoomLevelSelect.addEventListener("change", onZoomLevelChanged)
     return
 
-export isRendered = -> chartHandle?
-
 ############################################################
-export renderChart = (timestamps, spyCloses, states) ->
+export renderChart = (renderData) ->
     log "renderChart"
-    return unless timestamps?
+    timestamps = renderData.cachedTimestamps
+    spyCloses =  renderData.cachedSpyCloses
+    states = renderData.cachedStates
+    return unless timestamps? # nothing to render
+    # we already rendered the same states history (no new day added since last render)
+    return if chartHandle? and states.length == storedStates.length
 
     container = document.getElementById("trafficlight-chart")
     return unless container?
@@ -65,9 +73,6 @@ export renderChart = (timestamps, spyCloses, states) ->
             max = dataMax
             min = dataMax - range
         [min, max]
-
-    MONTH_NAMES = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"]
-    TWO_YEARS = 2 * 365.25 * 86400
 
     options = {
         # width: w - 15
@@ -203,7 +208,6 @@ xAxisMouseDown = (evnt, u) ->
 
 ############################################################
 #region uPlot state background plugin
-
 createStatePlugin = (states, timestamps) ->
     drawFn = (u) ->
         ctx = u.ctx
