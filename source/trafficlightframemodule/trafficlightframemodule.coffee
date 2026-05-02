@@ -42,14 +42,14 @@ updateSidePanel = (state) ->
     el = document.getElementById("tl-side-container")
     return unless el?
     el.classList.remove("state-green", "state-yellow", "state-red", "state-blue")
-    el.classList.add("state-#{state}") if state?
+    el.classList.add("state-#{state}") if state
     return
 
 updateNavIndicator = (state) ->
     el = document.getElementById("tl-nav-indicator")
     return unless el?
     el.classList.remove("state-green", "state-yellow", "state-red", "state-blue")
-    el.classList.add("state-#{state}") if state?
+    el.classList.add("state-#{state}") if state
     return
 
 #endregion

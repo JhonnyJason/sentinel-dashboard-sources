@@ -86,6 +86,10 @@ export getCurrentPriceState = (price) ->
     return "" unless ema?
     lastEMA = ema[ema.length - 1]
     lastState = states[states.length - 1]
+    lastClose = closes[closes.length - 1]
+    olog { lastEMA, lastState, lastClose, price }
+    # if price is exactly the same, then it most probably is the last close
+    if lastClose == price then return lastState
 
     # check how the current price adds to the situation and return resulting state
     if price > lastEMA
@@ -93,11 +97,10 @@ export getCurrentPriceState = (price) ->
         if lastState == "blue" then return "green"
         if lastState == "yellow" then return "blue"
         if lastState == "red" then return "blue"        
-    else if price < lastEMA
+    else
         if lastState == "red" then return "red"        
         if lastState == "yellow" then return "red"
         if lastState == "blue" then return "yellow"
         if lastState == "green" then return "yellow"
 
-    # if price is exactly the same, then it most probably is the last close
-    return lastState
+    return

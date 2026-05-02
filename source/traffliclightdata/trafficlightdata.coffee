@@ -23,6 +23,7 @@ START_YEAR = 2019
 cachedTimestamps = null
 cachedSpyCloses = null
 cachedStates = null
+currentState = null
 
 ############################################################
 lastFetch = null
@@ -69,8 +70,8 @@ dataIsRecent = ->
 ############################################################
 onLiveDataUpdate = (price) ->
     log "onLiveDataUpdate"
-    newState = colorS.getCurrentPriceState(price)
-    onStateChange(newState)
+    currentState = colorS.getCurrentPriceState(price)
+    onStateChange(currentState)
     return
 
 ############################################################
