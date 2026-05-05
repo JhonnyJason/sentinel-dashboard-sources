@@ -5,17 +5,15 @@ import { createLogFunctions } from "thingy-debug"
 #endregion
 
 ############################################################
-import * as data from "./datamodule.js"
 import * as dCache from "./datacache.js"
 import * as utl from "./utilsmodule.js"
 
 ############################################################
 import { SymbolSelect } from "./symbolselectmodule.js"
-import * as screener from "./eventscreenerengine.js"
-
 ############################################################
-setEventDataReady = null
-readyEventData = new Promise((rslv) -> setEventDataReady = rslv)
+import * as eventsChoice from "./eventschoicetable.js"
+import * as resultTable from "./eventscreenerresults.js"
+import * as filterState from "./resultfilterstate.js"
 
 ############################################################
 symbolSelect = null
@@ -25,25 +23,21 @@ chosenSymbols = new Set()
 symbolToData = Object.create(null)
 
 ############################################################
-eventList = null
-idToEvent = Object.create(null)
+chosenEvents = []
 
 ############################################################
-#symbol-choice-row-template
 symbolChoiceRowTemplate = document.getElementById("symbol-choice-row-template")
-eventChoiceRowTemplate = document.getElementById("event-choice-row-template")
-
 
 ############################################################
-defaultEventNr = 12
-
-############################################################
-sortColumn = "profitAvg"
-sortAscending = false
+isProcessing = false
+processOnceMore = false
 
 ############################################################
 export initialize = ->
     log "initialize"
+    filterState.initialize()
+    filterState.setOnChangeListener(onFilterUpdate)
+
     container = symbolSelectEventscreener # symbolSelectEventscreener.
     optionsLimit = 70
 
@@ -52,99 +46,27 @@ export initialize = ->
     return
 
 ############################################################
-export activate = ->
-    retrieveEventData()
+export activate = -> 
+    # required only once on startup, but after logged in
+    # maybe more to be done here?
+    eventsChoice.initialize(generateScreeningResult)
     return
-
-############################################################
-retrieveEventData = -> # only once on startup
-    log "retrieveEventData"
-    if eventList? then return
-    try
-        eventList = await data.getEventList()
-        # olog eventList
-        for evnt in eventList
-            idToEvent[evnt.id] = evnt
-            evnt.isChosen = true
-            if !evnt.numScreendEvents? then evnt.numScreendEvents = defaultEventNr
-            if !evnt.isWeekly?
-                isWeekly = (evnt.id == "e009") #Jobless Claims is weekly
-                evnt.isWeekly = isWeekly
-
-        retrieveAllEventDates()
-        updateEventOptions()
-    catch err then log err
-    return
-
-retrieveAllEventDates = -> # only once on startup
-    log "retrieveAllEventDates"
-    try
-        proms = eventList.map((evnt) -> data.getEventDates(evnt.id))
-        datesList = await Promise.all(proms)
-        
-        for evnt,i in eventList
-
-            dates = datesList[i]
-            if !Array.isArray(dates) then throw new Error("Event #{evnt.id} had invalid response!")
-            
-            evnt.dates = dates.sort()
-            isWeekly = evnt.isWeekly
-            num = evnt.numScreendEvents
-
-            { datesToScreen, nextDates } = extractRelevantDates(num, dates, isWeekly)
-            
-            evnt.datesToScreen = datesToScreen
-            evnt.nextDates = nextDates
-
-        setEventDataReady()
-    catch err then log err
-    return
-    
-############################################################
-extractRelevantDates = (num, dates, isWeekly = false) ->
-    if dates.length == 0 then return {}
-
-    today = (new Date()).toISOString().slice(0, 10)
-    if isWeekly then halfTimeFrameD = 4
-    else halfTimeFrameD = 14
-
-
-    d = new Date()
-    d.setDate(d.getDate() - halfTimeFrameD)
-    lastRelevantDate = d.toISOString().slice(0, 10) 
-
-    i = 0
-    d = dates[i]
-    while d < lastRelevantDate
-        d = dates[++i]
-        if i == dates.length - 1 
-            console.error("We donot have newer dates 0!")
-            return {}
-            
-    ## last num relevant dates are screened for
-    j = i - num
-    if j < 0 then j = 0    
-    datesToScreen = dates.slice(j, i)
-
-    while d < today
-        d = dates[++i]
-        if i == dates.length - 1 
-            console.error("We donot have newer dates 1!")
-            return {}
-
-    nextDates = dates.slice(i)
-    return { datesToScreen, nextDates }
 
 ############################################################
 #region Events leading to reScreen
 
 ############################################################
-onSymbolSelected = (symbol) ->
-    log "onSymbolSelected #{symbol}"
+#region FilterRowEvents
+
+#endregion
+
+############################################################
+onSymbolSelected = (symbol, company) ->
+    log "onSymbolSelected #{symbol} #{company}"
     if chosenSymbols.has(symbol) then return symbolSelect.resetSearch()
 
     symbolSelect.freeze()
-    try await addSymbolChoice(symbol)
+    try await addSymbolChoice(symbol, company)
     catch err
         console.error(err)
         symbolSelect.setError("Fehler in der Datenanfrage für #{symbol}!")
@@ -154,7 +76,7 @@ onSymbolSelected = (symbol) ->
     symbolSelect.resetSearch()
     updateSymbolOptions()
 
-    generateScreeningResult()
+    generateScreeningResult(chosenEvents)
     return
 
 ############################################################
@@ -168,50 +90,29 @@ deleteSymbolChoiceClicked = (evnt) ->
     delete symbolToData[symbol]
     updateSymbolOptions()
 
-    generateScreeningResult()
+    generateScreeningResult(chosenEvents)
     return
 
 ############################################################
-eventChoiceChanged = (evnt) ->
-    log "eventChoiceChanged"
-    isChecked = evnt.target.checked
-    log "isChecked: #{isChecked}"
-
-    if evnt.target.dataset.id?
-        evntId = evnt.target.dataset.id
-    else if evnt.target.parentNode.dataset.id?
-        evntId = evnt.target.parentNode.dataset.id
-    else if evnt.target.parentNode.parentNode.dataset.id?
-        evntId = evnt.target.parentNode.parentNode.dataset.id
-    else console.error("There was no data-id attribute available!")
-
-    log "evntId: #{evntId}"
-    if !idToEvent[evntId]? then console.error("Event with id: #{evntId} did not exist!")
-    idToEvent[evntId].isChosen = isChecked
-
-    generateScreeningResult()
-    return
-
-############################################################
-eventRangeClicked = (evnt) ->
-    log "eventRangeClicked"
-    ## TODO implement
-    generateScreeningResult()
+onFilterUpdate = ->
+    log "onFilterUpdate"
+    generateScreeningResult(chosenEvents)
     return
 
 #endregion
 
 ############################################################
 #region Helper Functions
-addSymbolChoice = (symbol) ->
+addSymbolChoice = (symbol, company) ->
     log "addSymbolChoice"
     hlc = await dCache.getHistoryHLC(symbol, 31)
     tDays = await dCache.getHistoricTradingDays(symbol, 31)
 
-    if !symbolToData[symbol]? then symbolToData[symbol] = { hlc, tDays }
+    if !symbolToData[symbol]? then symbolToData[symbol] = { hlc, tDays, company }
     else
         symbolToData[symbol].hlc = hlc
         symbolToData[symbol].tDays = tDays
+        symbolToData[symbol].company = company
 
     chosenSymbols.add(symbol) 
     return
@@ -224,194 +125,38 @@ updateSymbolOptions = ->
     chosen = Array.from(chosenSymbols)
     for val in chosen
         log "val: #{val}"
+        company = symbolToData[val].company
         el = document.importNode(symbolChoiceRowTemplate.content, true)
         el.querySelector('[data-symbol="c"]').textContent = val
+        el.querySelector('[data-name="c"]').textContent = company
         el.querySelector('[data-symbol="i"]').dataset.symbol = val
         el.querySelector('.delete').addEventListener("click", deleteSymbolChoiceClicked)
         symbolChoiceList.appendChild(el)
     return
 
-
-############################################################
-updateEventOptions = ->
-    log "updateSymbolOptions"
-    updateEventOptions.innerHTML = ""
-
-    for evnt in eventList
-        num = evnt.numScreendEvents || defaultEventNr
-        evnt.rangeText = "Letzte #{num} Ereignisse"
-        el = document.importNode(eventChoiceRowTemplate.content, true)
-        el.querySelector('[data-name="c"]').textContent = evnt.label
-        el.querySelector('[data-range="c"]').textContent = evnt.rangeText
-        el.querySelector('.range').addEventListener("click", eventRangeClicked)
-        
-        el.querySelector('[data-id="i"]').dataset.id = evnt.id
-
-        el.querySelector('.choose').addEventListener("change", eventChoiceChanged)
-        eventChoiceContent.appendChild(el)
-    return
-
 #endregion
 
 ############################################################
-generateScreeningResult = ->
+updateFilterRow = ->
+    log "updateFilterRow"
+    return
+
+############################################################
+generateScreeningResult = (events) ->
     log "generateScreeningResult"
-    chosenEvents = eventList.filter((el) -> el.isChosen)
+    if !events? then chosenEvents = []
+    else chosenEvents = events
 
-    if chosenSymbols.size  > 0 and chosenEvents.length > 0
-        eventscreenerframe.className = "processing"
-        try await screener.startScreening(symbolToData, chosenEvents)
-        catch err then log err
-        renderResults()
-    else eventscreenerframe.className = "no-result"
-
-
-############################################################
-getSpan = (cls, txt) ->
-    span = document.createElement("SPAN")
-    span.className = cls
-    span.textContent = txt
-    return span
-
-############################################################
-renderResults = ->
-    log "renderResults"
-    results = screener.getResults(50, sortColumn, sortAscending)
-    ## TODO properly deal with result error
-    # else eventscreenerframe.className = "error"
-
-    if !results? 
-        eventscreenerframe.className = "no-result"
-        return
-
-    eventscreenerResult.innerHTML = ""
-    dataStructure = screener.resultStructure
-
-    ########################################################
-    #region render table head
-    thead = document.createElement("thead")
-    headerRow = document.createElement("tr")    
-    for { label, key, sort } in dataStructure
-        th = document.createElement("th")
-        if key?
-            th.dataset.key = key
-            th.classList.add("sortable") if sort != "none"
-            if key == sortColumn
-                th.classList.add("sorted")
-                th.classList.add(if sortAscending then "asc" else "desc")
-            th.addEventListener("click", onSortColumnClick)
-        th.textContent = label
-        headerRow.appendChild(th)
-    thead.appendChild(headerRow)
-    eventscreenerResult.appendChild(thead)
-    #endregion
-
-    ########################################################
-    #region render table body
-    tbody = document.createElement("tbody")
-    for result in results
-        row = document.createElement("tr")
-
-        for { label, key, sort } in dataStructure
-            td = document.createElement("td")
-
-            d = result[key]
-            switch key
-                when "symbol" then td.appendChild(getSpan("symbol", d))
-                when "eventLabel" then td.appendChild(getSpan("", d))
-                when "direction" then td.appendChild(getSpan(d.toLowerCase(), d))
-                when "winrate" then td.appendChild(getSpan("winrate", d.toFixed(1)))
-                when "profitAvg" then td.appendChild(getSpan("profit", d.toFixed(1)))
-                when "profitMed" then td.appendChild(getSpan("profit", d.toFixed(1)))
-                when "maxGain" then td.appendChild(getSpan("up", d.toFixed(1)))
-                when "maxDrop" then td.appendChild(getSpan("down", d.toFixed(1)))
-                when "nextDate" then td.appendChild(getSpan("", formatDate(d)))
-                when "entryDate" then td.appendChild(getSpan("", formatDate(d)))
-                when "exitDate" then td.appendChild(getSpan("", formatDate(d)))
-                else console.error("Rendering TableBody: Unexpected key #{key}!")
-
-            row.appendChild(td)
-            
-        tbody.appendChild(row)
-            
-    eventscreenerResult.appendChild(tbody)
-    eventscreenerframe.className = "result"
-    return
-
-    # # Start date column
-    # startDateCell = document.createElement("td")
+    # guarding from multiple simultaneous runs 
+    if isProcessing and processOnceMore then return
+    if isProcessing then return processOnceMore = true
     
-
-    # # End date column
-    # endDateCell = document.createElement("td")
-    # endDateCell.textContent = result.endDate
-    # row.appendChild(endDateCell)
-
-    # # Profit column (flip sign for Short)
-    # profitCell = document.createElement("td")
-    # profit = if currentIsShort then -result.profitP else result.profitP
-    # profitCell.textContent = formatPercent(profit)
-    # profitCell.classList.add(if profit >= 0 then "positive" else "negative")
-    # row.appendChild(profitCell)
-
-    # # Profit Abs column
-    # profitAbsCell = document.createElement("td")
-    # profitAbs = result.startA * profit / 100
-    # profitAbsCell.textContent = formatAbsolute(profitAbs)
-    # profitAbsCell.classList.add(if profitAbs >= 0 then "positive" else "negative")
-    # row.appendChild(profitAbsCell)
-
-    # # Max Rise column
-    # maxRiseCell = document.createElement("td")
-    # maxRiseCell.textContent = formatPercent(result.maxRiseP)
-    # row.appendChild(maxRiseCell)
-
-    # # Max Rise Abs column
-    # maxRiseAbsCell = document.createElement("td")
-    # maxRiseAbs = result.startA * result.maxRiseP / 100
-    # maxRiseAbsCell.textContent = formatAbsolute(maxRiseAbs)
-    # row.appendChild(maxRiseAbsCell)
-
-    # # Max Drop column
-    # maxDropCell = document.createElement("td")
-    # maxDropCell.textContent = formatPercent(result.maxDropP)
-    # row.appendChild(maxDropCell)
-
-    # # Max Drop Abs column
-    # maxDropAbsCell = document.createElement("td")
-    # maxDropAbs = result.startA * result.maxDropP / 100
-    # maxDropAbsCell.textContent = formatAbsolute(maxDropAbs)
-    # row.appendChild(maxDropAbsCell)
-
-
-############################################################
-#region helper functions for table rendering
-onSortColumnClick = (evnt) ->
-    key = evnt.target.getAttribute("data-key")
-    log "onSortColumnClick: #{key}"
-
-    if sortColumn == key
-        sortAscending = !sortAscending  # Toggle direction
-
-    else # switch sort column
-        sortColumn = key
-        sortAscending = false  # New column: start descending
-        
-    renderResults()
+    isProcessing  = true
+    try await resultTable.screenAndRender(chosenEvents, symbolToData)
+    catch err then log err
+    isProcessing = false
+    
+    if processOnceMore
+        processOnceMore = false
+        generateScreeningResult(chosenEvents)
     return
-
-formatPercent = (value) ->
-    sign = if value >= 0 then "+" else ""
-    return "#{sign}#{value.toFixed(1)}%"
-
-formatDate = (value) ->
-    date = new Date(value)
-    day = date.getDate()
-    month = date.getMonth() + 1
-    year = date.getFullYear()
-
-    dayStr = if day < 10 then "0#{day}" else "#{day}"
-    monthStr = if month < 10 then "0#{month}" else "#{month}"
-    return "#{dayStr}.#{monthStr}.#{year}"
-
-#endregion

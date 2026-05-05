@@ -1,14 +1,11 @@
 //- eventscreenerframe structure
-include ../preloader/preloader-mixins.pug
-
 #eventscreenerframe.no-result
     #eventscreener-filter-row
-        include filtersymbolchoice.pug
-        include filtereventchoice.pug
+        include filtersection.pug
 
     #eventscreener-result-row
         #eventscreener-result-hint
-            p Bitte wählen Sie die Symbole, die Sie untersuchen wollen.
+            p Mit diesen Einstellungen sind keine Resultate verfügbar.<br>Bitte wählen Sie die Symbole und Ereignisse, die Sie untersuchen wollen, oder ändern Sie die Filtereinstellungen.
         #eventscreener-result-preloader
             +preloader("spinner.1", "spinner-1")
         table#eventscreener-result

@@ -4,40 +4,124 @@
 #eventscreenerframe
     padding 25px
     h2
-        margin-bottom 40px
-        text-align: right
-        padding 0 20px
         font-weight: bold
+    input[type="checkbox"]
+        accent-color: cd-dark-blue
+    input[type="checkbox"]:focus
+        box-shadow: 0 0 2px #666
+        overflow: visible
 
-
-#eventscreener-filter-row
+#filter-head-row
+#filter-content-row
+#filter-properties-row
     display flex
-    justify-content: flex-start
-    gap: 36px
+    justify-content: space-between
+    align-items: center
 
-#symbol-select-eventscreener
-    position relative
+#filter-head-row
+    margin-bottom 20px
+    .click-button
+        pointer-events none
+        opacity 0.3
+        filter: grayscale(100%)
+        color white
+        background-color cd-dark-blue
+        border-radius: 5px
+        border solid 2px
+        box-shadow: 0 0 5px #000
 
-    .preloader
-        z-index 5
-        display none
-        width 25px
-        height 25px
-        position absolute
-        top 50%
-        right 10px
-        transform: translateY(-50%)
-        color #888
 
-// table#symbol-choice-table
-//     tbody#symbol-choice-content
-//         template#symbol-choice-row-template: tr
-//             td: .label(data-symbol="c")
-//             td: .delete.click-button(data-symbol="i"): svg: use(href="#svg-cross-icon")
+    #filter-symbol-choice-head 
+    #filter-event-choice-head
+        display flex
+        justify-content: space-between
+        align-items: center
+        padding 0 20px
+        box-sizing: border-box
+        // width 180px
+        width 50%
+
+    #choose-all-symbols-button
+    #add-event-button
+        display flex
+        align-items: center
+        line-height 25px
+        padding 5px 12px
+        svg
+            width 25px
+            height 25px
+            margin-right 8px
+
+    #symbol-select-eventscreener
+        position relative
+
+        .preloader
+            z-index 5
+            display none
+            width 25px
+            height 25px
+            position absolute
+            top 50%
+            right 10px
+            transform: translateY(-50%)
+            color #888
+
+
+#filter-content-row
+    align-items: flex-start
+    gap 4px
+    padding 4px
+    border-radius: 3px
+    // background-color cd-dark-blue
+    background-color #eee
+
+#eventchoice
+#filtersymbolchoice
+    width 50%
+    height 320px
+    overflow-y auto
+
+#event-choice-table
+    width 100%
+    min-height 100%
+    background-color #fff
+    font-size 11pt
+
+    thead
+        position sticky
+        top 0
+        background-color #fff
+        outline: 2px solid;
+        // border-bottom solid 2px #eee
+        // box-sizing: border-box
+    .range
+        cursor pointer
+    tr.inactive
+        filter grayscale(100%)
+        opacity: 0.3
+        pointer-events: none
+
+    tr.separator
+        height 30px
+    tr:nth-child(2n)
+        background-color alpha(#666, 0.05)
+    td
+        padding 10px 20px
+        box-sizing: border-box
+
+    .label
+    .range
+        text-align left
+    
+    .choose
+        text-align right
+
 
 #symbol-choice-list
     width 100%
-    margin-top 19px
+    min-height 100%
+    background-color #fff
+    font-size 11pt
     .row
         display flex
         justify-content: space-between
@@ -45,7 +129,7 @@
         padding 8px 20px
         height 40px
         box-sizing: border-box
-
+        
     .row:nth-child(2n+1)
         background-color alpha(#666, 0.05)
 
@@ -59,29 +143,47 @@
         height 23px                
 
 
-// table#event-choice-table
-//     tbody#event-choice-content
-//         template#event-choice-row-template: tr 
-//             td: .label(data-name="c")
-//             td: .range(data-range="c")
-//             td: .choose(data-id="i"): input(type="checkbox" checked)
 
-#event-choice-table
-    
-    tr:nth-child(2n)
-        background-color alpha(#666, 0.05)
-    td
-        padding 8px 20px
-        height 40px
-        box-sizing: border-box
+#filter-properties-row
+    margin-top 20px
+    padding 0 24px
+    font-size 11pt
+    justify-content: flex-start
+    align-items: flex-start
+    gap 50px
 
-    .label
-    .range
-        text-align left
-    
-    .choose
-        text-align right
-    
+.filter-element
+    display flex
+    padding 3px 0
+    opacity: 0.5
+    .prop-title
+        margin-right auto
+    input.prop-value
+        width 32px
+        border none
+        margin-left 5px    
+        padding 0
+        font-size: 11pt
+        text-align: right
+
+    input:focus
+        padding 0
+
+.filter-element.active
+    opacity: 1.0
+
+.filter-element.for-short
+    display none
+.filter-element.for-long
+    display none
+
+#filter-properties-row.long-only
+    .filter-element.for-long
+        display flex
+
+#filter-properties-row.short-only
+    .filter-element.for-short
+        display flex
 
 #eventscreener-result-row
     width 100%
@@ -91,6 +193,7 @@
     background-color cd-dark-blue
     border-radius: 3px
     margin-top 36px
+    font-size 11pt
 
 #eventscreener-result
     display: none

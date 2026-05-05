@@ -1,0 +1,40 @@
+include ../preloader/preloader-mixins.pug
+
+#filter-head-row 
+    #filter-event-choice-head 
+        h2 Ereignisse
+        #add-event-button.click-button
+            svg: use(href="#svg-plus-icon")
+            label hinzufügen
+
+    #filter-symbol-choice-head
+        #symbol-select-eventscreener
+            +preloader("circles", "circles")
+
+        #choose-all-symbols-button.click-button Alle Symbole
+
+#filter-content-row 
+    #eventchoice
+        table#event-choice-table
+            thead
+                td: input#choose-event-head.choose(type="checkbox" checked)    
+                td
+                td: #range-nr-head.range Letzte X Ereignisse
+                td: #range-date-head.range Ereignisse ab dd.mm.yyyy
+
+            tbody#event-choice-content
+                template#event-choice-row-template: tr(data-id="i")
+                    td: input.choose(type="checkbox" checked)    
+                    td: .label(data-name="c")
+                    td: .range(data-range-nr="c")
+                    td: .range(data-range-date="c")
+
+    #filtersymbolchoice
+        #symbol-choice-list
+            template#symbol-choice-row-template: .row
+                .label(data-symbol="c")
+                .company(data-name="c")
+                .delete.click-button(data-symbol="i"): svg: use(href="#svg-cross-icon")
+
+#filter-properties-row 
+    include resultfilters.pug

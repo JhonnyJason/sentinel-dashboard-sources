@@ -1,0 +1,457 @@
+############################################################
+#region debug
+import { createLogFunctions } from "thingy-debug"
+{log, olog} = createLogFunctions("resultfilterstate")
+#endregion
+
+############################################################
+navKeys = new Set(['Backspace', 'Delete', 'Tab', 'ArrowLeft', 
+'ArrowRight', 'End', 'Home'])
+numKeys = new Set(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'])
+
+############################################################
+filters = {
+    winrate: { active: true, value: 60.0 },
+    profitAvg: { active: true, value: 1.0 },
+    profitMed: { active: false, value: 1.0 },
+    longOnly: {active: false },
+    shortOnly: {active: false },
+    minMaxRise: { active: false, value: 5.0 },
+    maxMaxRise: { active: false, value: 5.0 },
+    minMaxDrop: { active: false, value: 5.0 },
+    maxMaxDrop: { active: false, value: 5.0 },
+}
+
+############################################################
+onChange = null
+
+############################################################
+export initialize = ->
+    log "initialize"
+
+    el = winrateFilter.querySelector("input.prop-active")
+    el.addEventListener("change", winrateActiveChanged)
+    el = winrateFilter.querySelector("input.prop-value")
+    el.addEventListener("change", winrateValueChanged)
+
+    el = profitAvgFilter.querySelector("input.prop-active")
+    el.addEventListener("change", profitAvgActiveChanged)
+    el = profitAvgFilter.querySelector("input.prop-value")
+    el.addEventListener("change", profitAvgValueChanged)
+
+    el = profitMedFilter.querySelector("input.prop-active")
+    el.addEventListener("change", profitMedActiveChanged)
+    el = profitMedFilter.querySelector("input.prop-value")
+    el.addEventListener("change", profitMedValueChanged)
+
+
+    el = longOnlyFilter.querySelector("input.prop-active")
+    el.addEventListener("change", longOnlyActiveChanged)
+
+    el = shortOnlyFilter.querySelector("input.prop-active")
+    el.addEventListener("click", shortOnlyActiveChanged)
+
+
+    el = minMaxRiseFilter.querySelector("input.prop-active")
+    el.addEventListener("change", minMaxRiseActiveChanged)
+    el = minMaxRiseFilter.querySelector("input.prop-value")
+    el.addEventListener("change", minMaxRiseValueChanged)
+
+    el = maxMaxRiseFilter.querySelector("input.prop-active")
+    el.addEventListener("change", maxMaxRiseActiveChanged)
+    el = maxMaxRiseFilter.querySelector("input.prop-value")
+    el.addEventListener("change", maxMaxRiseValueChanged)
+
+    el = minMaxDropFilter.querySelector("input.prop-active")
+    el.addEventListener("change", minMaxDropActiveChanged)
+    el = minMaxDropFilter.querySelector("input.prop-value")
+    el.addEventListener("change", minMaxDropValueChanged)
+
+    el = maxMaxDropFilter.querySelector("input.prop-active")
+    el.addEventListener("change", maxMaxDropActiveChanged)
+    el = maxMaxDropFilter.querySelector("input.prop-value")
+    el.addEventListener("change", maxMaxDropValueChanged)
+
+    inputs = filterPropertiesRow.querySelectorAll("input.prop-value")
+    el.addEventListener("keydown", inputKeyDowned) for el in inputs
+
+    updateFilterUI()
+    return
+
+############################################################
+export setOnChangeListener = (listener) -> onChange = listener
+
+############################################################
+export filterResult = (result) ->
+    # log "filterResult"
+
+    if filters.winrate.active and result.winrate < filters.winrate.value
+        return false
+    if filters.profitAvg.active and result.profitAvg < filters.profitAvg.value
+        return false
+    if filters.profitMed.active and result.profitMed < filters.profitMed.value
+        return false
+
+    if filters.longOnly.active and result.direction == "Short" then return false
+    if filters.shortOnly.active and result.direction == "Long" then return false
+
+    if filters.minMaxRise.active and result.maxGain < filters.minMaxRise.value
+        return false
+    if filters.maxMaxRise.active and result.maxGain > filters.maxMaxRise.value
+        return false
+    if filters.minMaxDrop.active and -result.maxDrop < filters.minMaxDrop.value
+        return false
+    if filters.maxMaxDrop.active and -result.maxDrop > filters.maxMaxDrop.value
+        return false 
+
+    return true
+
+############################################################
+updateFilterUI = ->
+    log "updateFilterUI"
+
+    # winrate: { active: true, value: 60.0 },
+    if filters.winrate.active then winrateFilter.classList.add("active")
+    else winrateFilter.classList.remove("active")
+    activeEl = winrateFilter.querySelector("input.prop-active")
+    activeEl.checked = filters.winrate.active
+    valueEl = winrateFilter.querySelector("input.prop-value")
+    valueEl.value = parseFloat(filters.winrate.value.toFixed(1))
+
+    # profitAvg: { active: true, value: 1.0 },
+    if filters.profitAvg.active then profitAvgFilter.classList.add("active")
+    else profitAvgFilter.classList.remove("active")
+    activeEl = profitAvgFilter.querySelector("input.prop-active")
+    activeEl.checked = filters.profitAvg.active
+    valueEl = profitAvgFilter.querySelector("input.prop-value")
+    valueEl.value = parseFloat(filters.profitAvg.value.toFixed(1))
+
+    # profitMed: { active: true, value: 1.0 },
+    if filters.profitMed.active then profitMedFilter.classList.add("active")
+    else profitMedFilter.classList.remove("active")
+    activeEl = profitMedFilter.querySelector("input.prop-active")
+    activeEl.checked =  filters.profitMed.active
+    valueEl = profitMedFilter.querySelector("input.prop-value")
+    valueEl.value = parseFloat(filters.profitMed.value.toFixed(1))
+
+
+    # longOnly: {active: false },
+    if filters.longOnly.active 
+        longOnlyFilter.classList.add("active")
+        filterPropertiesRow.classList.add("long-only")
+    else
+        longOnlyFilter.classList.remove("active")
+        filterPropertiesRow.classList.remove("long-only")
+    activeEl = longOnlyFilter.querySelector("input.prop-active")
+    activeEl.checked =  filters.longOnly.active
+
+    # shortOnly: {active: false },
+    if filters.shortOnly.active
+        shortOnlyFilter.classList.add("active")
+        filterPropertiesRow.classList.add("short-only")
+    else 
+        shortOnlyFilter.classList.remove("active")
+        filterPropertiesRow.classList.remove("short-only")
+    activeEl = shortOnlyFilter.querySelector("input.prop-active")
+    activeEl.checked =  filters.shortOnly.active
+
+
+    # minMaxRise: { active: false, value: 5.0 },
+    if filters.minMaxRise.active then minMaxRiseFilter.classList.add("active")
+    else minMaxRiseFilter.classList.remove("active")
+    activeEl = minMaxRiseFilter.querySelector("input.prop-active")
+    activeEl.checked =  filters.minMaxRise.active
+    valueEl = minMaxRiseFilter.querySelector("input.prop-value")
+    valueEl.value = parseFloat(filters.minMaxRise.value.toFixed(1))
+
+    # maxMaxRise: { active: false, value: 5.0 },
+    if filters.maxMaxRise.active then maxMaxRiseFilter.classList.add("active")
+    else maxMaxRiseFilter.classList.remove("active")
+    activeEl = maxMaxRiseFilter.querySelector("input.prop-active")
+    activeEl.checked =  filters.maxMaxRise.active
+    valueEl = maxMaxRiseFilter.querySelector("input.prop-value")
+    valueEl.value = parseFloat(filters.maxMaxRise.value.toFixed(1))
+
+    # minMaxDrop: { active: false, value: 5.0 },
+    if filters.minMaxDrop.active then minMaxDropFilter.classList.add("active")
+    else minMaxDropFilter.classList.remove("active")
+    activeEl = minMaxDropFilter.querySelector("input.prop-active")
+    activeEl.checked =  filters.minMaxDrop.active
+    valueEl = minMaxDropFilter.querySelector("input.prop-value")
+    valueEl.value = parseFloat(filters.minMaxDrop.value.toFixed(1))
+
+    # maxMaxDrop: { active: false, value: 5.0 },
+    if filters.maxMaxDrop.active then maxMaxDropFilter.classList.add("active")
+    else maxMaxDropFilter.classList.remove("active")
+    activeEl = maxMaxDropFilter.querySelector("input.prop-active")
+    activeEl.checked =  filters.maxMaxDrop.active
+    valueEl = maxMaxDropFilter.querySelector("input.prop-value")
+    valueEl.value = parseFloat(filters.maxMaxDrop.value.toFixed(1))
+
+    return
+
+############################################################
+getNextFocusableValueInput = (input) ->
+    log "getNextFocusableValueInput"
+    return null unless input.matches("input.prop-value")
+    inputs = filterPropertiesRow.querySelectorAll("input.prop-value")
+    for el, index in inputs
+        if el == input
+            return inputs[index + 1] if index < inputs.length - 1
+    return null
+
+getPreviousValueForInput = (input) ->
+    log "getPreviousValueForInput"
+    return null unless input.matches("input.prop-value")
+
+    parent = input.closest(".filter-element")
+    return null unless parent?
+
+    switch parent.id
+        when "winrate-filter" then return parseFloat(parseFloat(filters.winrate.value).toFixed(1))
+        when "profit-avg-filter" then return parseFloat(parseFloat(filters.profitAvg.value).toFixed(1))
+        when "profit-med-filter" then return parseFloat(parseFloat(filters.profitMed.value).toFixed(1))
+        when "min-max-rise-filter" then return parseFloat(parseFloat(filters.minMaxRise.value).toFixed(1))
+        when "max-max-rise-filter" then return parseFloat(parseFloat(filters.maxMaxRise.value).toFixed(1))
+        when "min-max-drop-filter" then return parseFloat(parseFloat(filters.minMaxDrop.value).toFixed(1))
+        when "max-max-drop-filter" then return parseFloat(parseFloat(filters.maxMaxDrop.value).toFixed(1))
+        else return null
+
+normalizeFloat = (value) ->
+    log "normalizeFloat"
+    value = value.replace(',', '.')
+    value = value.replace(/[^0-9.\-]/g, '') # remove non-numerics ('.' and '-' allowed)
+    value = value.replace(/(?!^)-/g, '') # remove misplaced '-''
+    value = value.replace(/(\.\d*)\.+/g, '$1') # remove duplicate dots
+    
+    value = parseFloat(parseFloat(value).toFixed(1))
+    if value > 100 then return 100
+    else return value
+
+############################################################
+#region Event Listeners
+inputKeyDowned = (evnt) ->
+    log "inputKeyDowned"
+    { key, ctrlKey, metaKey } = evnt
+    # value = evnt.target.value
+    input = evnt.target
+
+    ## allow numbers, nav and editing
+    if ctrlKey || metaKey || navKeys.has(key) || numKeys.has(key) then return
+
+    if key == 'Enter'
+        evnt.preventDefault()
+        input.blur()
+        # next = getNextFocusableValueInput(input)
+        # if next? then next.focus()
+        # else input.blur()
+        return
+        
+    if key == 'Escape'
+        evnt.preventDefault()
+        input.value = getPreviousValueForInput(input)
+        input.blur()
+        return
+
+    if key == ','
+        evnt.preventDefault()
+        if !input.value.includes('.') then insertAtCursor('.')
+        return
+
+    if key == '-'
+        evnt.preventDefault();
+        if input.selectionStart == 0 && !input.value.startsWith('-') then insertAtCursor('-')
+        return
+
+    if key == '.'
+        if input.value.includes('.') then evnt.preventDefault()
+        return
+
+    evnt.preventDefault()
+    return
+
+############################################################
+winrateActiveChanged = (evnt) ->
+    log "winrateActiveChanged"
+    isActive = evnt.target.checked
+    olog { isActive }
+    filters.winrate.active = isActive
+    updateFilterUI()
+
+    if onChange? then onChange()
+    return
+
+winrateValueChanged = (evnt) ->
+    log "winrateValueChanged"
+    oldValue = filters.winrate.value
+    newValue = normalizeFloat(evnt.target.value)
+    olog { newValue }
+    if isNaN(newValue) then newValue = oldValue 
+    else filters.winrate.value = newValue
+    evnt.target.value = newValue
+
+    if oldValue != newValue and onChange? then onChange()
+    return
+
+############################################################
+profitAvgActiveChanged = (evnt) ->
+    log "profitAvgActiveChanged"
+    isActive = evnt.target.checked
+    olog { isActive }
+    filters.profitAvg.active = isActive
+    updateFilterUI()
+    
+    if onChange? then onChange()
+    return
+
+profitAvgValueChanged = (evnt) ->
+    log "profitAvgValueChanged"
+    oldValue = filters.profitAvg.value
+    newValue = normalizeFloat(evnt.target.value)
+    olog { newValue }
+    if isNaN(newValue) then newValue = oldValue 
+    else filters.profitAvg.value = newValue
+    evnt.target.value = newValue
+
+    if oldValue != newValue and onChange? then onChange()
+    return
+
+############################################################
+profitMedActiveChanged = (evnt) ->
+    log "profitMedActiveChanged"
+    isActive = evnt.target.checked
+    olog { isActive }
+    filters.profitMed.active = isActive
+    updateFilterUI()
+
+    if onChange? then onChange()
+    return
+
+profitMedValueChanged = (evnt) ->
+    log "profitMedValueChanged"
+    oldValue = filters.profitMed.value
+    newValue = normalizeFloat(evnt.target.value)
+    olog { newValue }
+    if isNaN(newValue) then newValue = oldValue
+    else filters.profitMed.value = newValue
+    evnt.target.value = newValue
+
+    if oldValue != newValue and onChange? then onChange()
+    return
+
+
+############################################################
+longOnlyActiveChanged = (evnt) ->
+    log "longOnlyActiveChanged"
+    isActive = evnt.target.checked
+    olog { isActive }
+    filters.longOnly.active = isActive
+    if isActive then filters.shortOnly.active = false 
+    updateFilterUI()
+    if onChange? then onChange()
+    return
+
+shortOnlyActiveChanged = (evnt) ->
+    log "shortOnlyActiveChanged"
+    isActive = evnt.target.checked
+    olog { isActive }
+    filters.shortOnly.active = isActive
+    if isActive then filters.longOnly.active = false
+    updateFilterUI()
+    if onChange? then onChange()
+    return
+
+
+############################################################
+minMaxRiseActiveChanged = (evnt) ->
+    log "minMaxRiseActiveChanged"
+    isActive = evnt.target.checked
+    olog { isActive }
+    filters.minMaxRise.active = isActive
+    updateFilterUI()
+
+    if onChange? then onChange()
+    return
+
+minMaxRiseValueChanged = (evnt) ->
+    log "minMaxRiseValueChanged"
+    oldValue = filters.minMaxRise.value
+    newValue = normalizeFloat(evnt.target.value)
+    olog { newValue }
+    if isNaN(newValue) then newValue = oldValue
+    else filters.minMaxRise.value = newValue
+    evnt.target.value = newValue
+    
+    if oldValue != newValue and onChange? then onChange()
+    return
+
+############################################################
+maxMaxRiseActiveChanged = (evnt) ->
+    log "maxMaxRiseActiveChanged"
+    isActive = evnt.target.checked
+    olog { isActive }
+    filters.maxMaxRise.active = isActive
+    updateFilterUI()
+
+    if onChange? then onChange()
+    return
+
+maxMaxRiseValueChanged = (evnt) ->
+    log "maxMaxRiseValueChanged"
+    oldValue = filters.maxMaxRise.value
+    newValue = normalizeFloat(evnt.target.value)
+    olog { newValue }
+    if isNaN(newValue) then newValue = oldValue
+    else filters.maxMaxRise.value = newValue
+    evnt.target.value = newValue
+    
+    if oldValue != newValue and onChange? then onChange()
+    return
+
+############################################################
+minMaxDropActiveChanged = (evnt) ->
+    log "minMaxDropActiveChanged"
+    isActive = evnt.target.checked
+    olog { isActive }
+    filters.minMaxDrop.active = isActive
+    updateFilterUI()
+
+    if onChange? then onChange()
+    return
+
+minMaxDropValueChanged = (evnt) ->
+    log "minMaxDropValueChanged"
+    oldValue = filters.minMaxDrop.value
+    newValue = normalizeFloat(evnt.target.value)
+    olog { newValue }
+    if isNaN(newValue) then newValue = oldValue
+    else filters.minMaxDrop.value = newValue
+    evnt.target.value = newValue
+    
+    if oldValue != newValue and onChange? then onChange()
+    return
+
+############################################################
+maxMaxDropActiveChanged = (evnt) ->
+    log "maxMaxDropActiveChanged"
+    isActive = evnt.target.checked
+    olog { isActive }
+    filters.maxMaxDrop.active = isActive
+    updateFilterUI()
+
+    if onChange? then onChange()
+    return
+
+maxMaxDropValueChanged = (evnt) ->
+    log "maxMaxDropValueChanged"
+    oldValue = filters.maxMaxDrop.value
+    newValue = normalizeFloat(evnt.target.value)
+    olog { newValue }
+    if isNaN(newValue) then newValue = oldValue
+    else filters.maxMaxDrop.value = newValue
+    evnt.target.value = newValue
+    
+    if oldValue != newValue and onChange? then onChange()
+    return
+
+#endregion

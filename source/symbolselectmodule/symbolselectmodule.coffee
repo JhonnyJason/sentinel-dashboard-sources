@@ -308,7 +308,7 @@ export class SymbolSelect
         olog opt
         @inputEl.value = "#{opt[0]} #{opt[1]}"
         @hideDropdown()
-        @selectionCallback(opt[0]) unless typeof @selectionCallback != "function"
+        @selectionCallback(opt[0], opt[1]) unless typeof @selectionCallback != "function"
         return
     #endregion
 

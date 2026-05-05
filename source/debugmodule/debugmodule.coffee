@@ -7,13 +7,15 @@ export modulesToDebug = {
     # appcoremodule: true
     # backtesting: true
     # chartfun: true
-    colorstates: true
+    # colorstates: true
     # comboboxfun: true
     # datamodule: true
     # datacache: true
     # economicareasmodule: true
     # EconomicArea: true
-    # eventscreenerframemodule: true
+    eventscreenerframemodule: true
+    eventschoicetable: true
+    eventscreenerresults: true
     # eventscreeningengine: true
     # fouriermodule: true
     # summaryframemodule: true
@@ -22,8 +24,9 @@ export modulesToDebug = {
     # marketdatamodule: true
     # sampledata: true
     # scimodule: true
-    livedata: true
+    # livedata: true
     # navtriggers: true
+    resultfilterstate: true
     # scimodule: true
     # scorehelper: true
     # seasonality: true
@@ -33,8 +36,8 @@ export modulesToDebug = {
     # summaryframemodule: true
     # symboloptionsmodule: true
     # symbolselectmodule: true
-    trafficlightframemodule:true
-    trafficlightdata: true
+    # trafficlightframemodule:true
+    # trafficlightdata: true
 
     # uistatemodule: true
 }

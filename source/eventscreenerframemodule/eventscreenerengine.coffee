@@ -6,6 +6,7 @@ import { createLogFunctions } from "thingy-debug"
 
 ############################################################
 import * as utl from "./utilsmodule.js"
+import { filterResult } from "./resultfilterstate.js"
 
 ############################################################
 export resultStructure = [
@@ -120,11 +121,10 @@ export getResults = (limit, sortKey, isAscending) ->
     log "getResults"
     sortFunction = getSortFunction(sortKey, isAscending)
     allResults.sort(sortFunction)
-    if limit > allResults.length then return [...allResults]
-
-    results = []
-    results.push(allResults[i]) for i in [0...limit]
-    return results
+    filtered = allResults.filter(filterResult)
+    
+    if limit > filtered.length then return filtered
+    return filtered.slice(0, limit)    
 
 ############################################################
 # Compare Functions
@@ -206,7 +206,7 @@ evaluateEventTrades = (sym, evnt, trade) ->
         maxGainP = 100.0 * (maxGainF - 1.0)
         maxDropP = 100.0 * (maxDropF - 1.0)
         winrate = 100.0 * longSuccessCount / tradeResults.length
-    else 
+    else
         direction = "Short"
         profitAvgP = 100.0 * (1.0 - avgDeltaF)
         profitMedP = 100.0 * (1.0 - medDeltaF)
