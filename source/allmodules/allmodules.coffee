@@ -17,6 +17,7 @@ import * as seasonalitybacktestingmodule from "./seasonalitybacktestingmodule.js
 import * as seasonalitychartmodule from "./seasonalitychartmodule.js"
 import * as seasonalityframemodule from "./seasonalityframemodule.js"
 import * as sidenavmodule from "./sidenavmodule.js"
+import * as statemodule from "./statemodule.js"
 import * as summaryframemodule from "./summaryframemodule.js"
 import * as symboloptionsmodule from "./symboloptionsmodule.js"
 import * as symbolselectmodule from "./symbolselectmodule.js"
@@ -44,6 +45,7 @@ Modules = {
     seasonalitychartmodule,
     seasonalityframemodule,
     sidenavmodule,
+    statemodule,
     summaryframemodule,
     symboloptionsmodule,
     symbolselectmodule,

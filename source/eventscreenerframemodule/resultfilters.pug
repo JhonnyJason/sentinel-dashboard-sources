@@ -3,18 +3,24 @@
         input.prop-active(type="checkbox")
         .prop-title Trefferquote ab:
         //- input.prop-value(type="text")
-        input.prop-value(type="text" maxLength="4")
-        .prop-unit %
+        .edit-group
+            input.prop-value(type="text" maxLength="4")
+            .prop-unit %
+            svg: use(href="#svg-edit-icon")
     #profit-avg-filter.filter-element 
         input.prop-active(type="checkbox")
         .prop-title Profit (Dur.) ab:
-        input.prop-value(type="text")
-        .prop-unit %
+        .edit-group
+            input.prop-value(type="text")
+            .prop-unit %
+            svg: use(href="#svg-edit-icon")
     #profit-med-filter.filter-element 
         input.prop-active(type="checkbox")
         .prop-title Profit (Med.) ab:
-        input.prop-value(type="text")
-        .prop-unit %
+        .edit-group
+            input.prop-value(type="text")
+            .prop-unit %
+            svg: use(href="#svg-edit-icon")
 
 #center-properties 
     #long-only-filter.filter-element 
@@ -28,20 +34,28 @@
     #min-max-rise-filter.filter-element.for-long
         input.prop-active(type="checkbox")
         .prop-title Max Anstieg ab:
-        input.prop-value(type="text")
-        .prop-unit %
+        .edit-group
+            input.prop-value(type="text")
+            .prop-unit %
+            svg: use(href="#svg-edit-icon")
     #max-max-drop-filter.filter-element.for-long
         input.prop-active(type="checkbox")
         .prop-title Max Rückgang bis:
-        input.prop-value(type="text")
-        .prop-unit %
+        .edit-group
+            input.prop-value(type="text")
+            .prop-unit %
+            svg: use(href="#svg-edit-icon")
     #min-max-drop-filter.filter-element.for-short
         input.prop-active(type="checkbox")
         .prop-title Max Rückgang ab:
-        input.prop-value(type="text")
-        .prop-unit %
+        .edit-group
+            input.prop-value(type="text")
+            .prop-unit %
+            svg: use(href="#svg-edit-icon")
     #max-max-rise-filter.filter-element.for-short
         input.prop-active(type="checkbox")
         .prop-title Max Anstieg bis:
-        input.prop-value(type="text")
-        .prop-unit %
+        .edit-group
+            input.prop-value(type="text")
+            .prop-unit %
+            svg: use(href="#svg-edit-icon")

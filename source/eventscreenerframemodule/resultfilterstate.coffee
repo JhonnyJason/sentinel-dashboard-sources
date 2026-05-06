@@ -28,6 +28,8 @@ onChange = null
 ############################################################
 export initialize = ->
     log "initialize"
+    editGroups = filterPropertiesRow.getElementsByClassName("edit-group")
+    group.addEventListener("click", editGroupClicked) for group in editGroups
 
     el = winrateFilter.querySelector("input.prop-active")
     el.addEventListener("change", winrateActiveChanged)
@@ -229,9 +231,9 @@ normalizeFloat = (value) ->
     else return value
 
 ############################################################
-#region Event Listeners
+#region Event Listenersadd edit icons for editable elements
 inputKeyDowned = (evnt) ->
-    log "inputKeyDowned"
+    # log "inputKeyDowned"
     { key, ctrlKey, metaKey } = evnt
     # value = evnt.target.value
     input = evnt.target
@@ -268,6 +270,12 @@ inputKeyDowned = (evnt) ->
         return
 
     evnt.preventDefault()
+    return
+
+editGroupClicked = (evnt) ->
+    # log "editGroupClicked"
+    inputEl = this.querySelector("input")
+    if inputEl? then inputEl.focus()
     return
 
 ############################################################

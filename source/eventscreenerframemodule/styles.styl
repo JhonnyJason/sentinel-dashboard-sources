@@ -81,6 +81,26 @@
     height 320px
     overflow-y auto
 
+.edit-group
+    display flex
+    cursor pointer
+
+    input[type="text"]
+        width 32px
+
+    input
+        border none
+        padding 0
+        font-size: 11pt
+        text-align: right
+        background-color: transparent
+    input:focus
+        padding 0
+
+    svg
+        height 15px
+        width 15px
+
 #event-choice-table
     width 100%
     min-height 100%
@@ -91,11 +111,25 @@
         position sticky
         top 0
         background-color #fff
-        outline: 2px solid;
-        // border-bottom solid 2px #eee
-        // box-sizing: border-box
-    .range
-        cursor pointer
+        outline: 2px solid #ddd
+        line-height: 25px
+        label
+            display block
+            white-space nowrap
+        input[type="checkbox"]
+            position: relative
+            top 25px
+    input[type="date"]
+    input[type="date"]:focus
+        padding 2px 5px
+        border solid 1px cd-dark-blue
+        outline: none
+        border-radius: 2px
+        width fit-content
+    th
+        padding 10px 20px
+
+    
     tr.inactive
         filter grayscale(100%)
         opacity: 0.3
@@ -108,14 +142,6 @@
     td
         padding 10px 20px
         box-sizing: border-box
-
-    .label
-    .range
-        text-align left
-    
-    .choose
-        text-align right
-
 
 #symbol-choice-list
     width 100%
@@ -168,6 +194,8 @@
 
     input:focus
         padding 0
+    .prop-unit
+        margin 0 3px
 
 .filter-element.active
     opacity: 1.0

@@ -17,17 +17,26 @@ include ../preloader/preloader-mixins.pug
     #eventchoice
         table#event-choice-table
             thead
-                td: input#choose-event-head.choose(type="checkbox" checked)    
-                td
-                td: #range-nr-head.range Letzte X Ereignisse
-                td: #range-date-head.range Ereignisse ab dd.mm.yyyy
+                th: input#choose-event-input(type="checkbox" checked)    
+                th
+                th: #range-nr-head 
+                    label(for="range-nr-input") # Ereignisse
+                    .edit-group
+                        input#range-nr-input.nr-range(type="text" placesholder="X")
+                        svg: use(href="#svg-edit-icon")
+                
+                th: #range-date-head 
+                    label(for="range-date-input") Ereignisse ab
+                    input#range-date-input(type="date") 
 
             tbody#event-choice-content
                 template#event-choice-row-template: tr(data-id="i")
                     td: input.choose(type="checkbox" checked)    
                     td: .label(data-name="c")
-                    td: .range(data-range-nr="c")
-                    td: .range(data-range-date="c")
+                    td: .edit-group
+                        input.nr-range(data-range-nr="c" type="text")
+                        svg: use(href="#svg-edit-icon")
+                    td: input.date-range(data-range-date="c" type="date")
 
     #filtersymbolchoice
         #symbol-choice-list

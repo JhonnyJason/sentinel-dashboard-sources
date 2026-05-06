@@ -18,6 +18,9 @@ eventChoiceRowTemplate = document.getElementById("event-choice-row-template")
 defaultEventNr = 12
 
 ############################################################
+eventChoiState = null
+
+############################################################
 onEventChoiceChange = null
 
 ############################################################
@@ -26,9 +29,11 @@ export initialize = (onChangeListener) ->
     if !onEventChoiceChange?
         # only do this on first initialization
         onEventChoiceChange = onChangeListener
-        chooseEventHead.addEventListener("change", globalChoiceChanged)
-        rangeNrHead.addEventListener("click", rangeNrHeadClicked)
-        rangeDateHead.addEventListener("click", rangeDateHeadClicked)
+        chooseEventInput.addEventListener("change", globalChoiceChanged)
+        rangeNrInput.addEventListener("change", globalRangeNrChanged)
+        rangeDateInput.addEventListener("change", globalRangeDateChanged)
+
+    # TODO reflect current choiceState in UI 
 
     if eventList? then return onEventChoiceChange(eventList.filter((el) -> el.isChosen))
     try
@@ -37,7 +42,7 @@ export initialize = (onChangeListener) ->
         for evnt in eventList
             idToEvent[evnt.id] = evnt
             evnt.isChosen = true
-            if !evnt.numScreendEvents? then evnt.numScreendEvents = defaultEventNr
+            if !evnt.numScreenedEvents? then evnt.numScreenedEvents = defaultEventNr
             if !evnt.isWeekly?
                 isWeekly = (evnt.id == "e009") #Jobless Claims is weekly
                 evnt.isWeekly = isWeekly
@@ -58,12 +63,14 @@ globalChoiceChanged = (evnt) ->
     onEventChoiceChange(eventList.filter((el) -> el.isChosen))
     return
 
-rangeNrHeadClicked = (evnt) ->
-    log "rangeNrHeadClicked"
+globalRangeNrChanged = (evnt) ->
+    log "globalRangeNrChanged"
+    
     return
 
-rangeDateHeadClicked = (evnt) ->
-    log "rangeDateHeadClicked"
+globalRangeDateChanged = (evnt) ->
+    log "globalRangeDateChanged"
+
     return
 
 
@@ -81,7 +88,7 @@ retrieveAllEventDates = ->
             
             evnt.dates = dates.sort()
             isWeekly = evnt.isWeekly
-            num = evnt.numScreendEvents
+            num = evnt.numScreenedEvents
 
             { datesToScreen, nextDates } = extractRelevantDates(num, dates, isWeekly)
             
@@ -203,7 +210,7 @@ updateEventOptions = ->
     # Add Global known Events
 
     for evnt in eventList
-        num = evnt.numScreendEvents || defaultEventNr
+        num = evnt.numScreenedEvents || defaultEventNr
         evnt.rangeNrText = "#{num}"
         date = evnt.rangeDate || dateFromNumEvents(num, evnt)
         evnt.rangeDateText = formatDate(date)
