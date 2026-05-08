@@ -7,6 +7,8 @@ import { createLogFunctions } from "thingy-debug"
 ############################################################
 import * as dCache from "./datacache.js"
 import * as utl from "./utilsmodule.js"
+import * as S from "./statemodule.js"
+
 
 ############################################################
 import { SymbolSelect } from "./symbolselectmodule.js"
@@ -18,6 +20,9 @@ import * as filterState from "./resultfilterstate.js"
 ############################################################
 symbolSelect = null
 
+############################################################
+storedChoices = null
+CHOICES_KEY = "eventscreener-symbol-choices"
 ############################################################
 chosenSymbols = new Set()
 symbolToData = Object.create(null)
@@ -43,10 +48,13 @@ export initialize = ->
 
     symbolSelect = new SymbolSelect({ container, optionsLimit })
     symbolSelect.setOnSelectListener(onSymbolSelected)
+    
+    storedChoices = S.get(CHOICES_KEY) # retrieve from regular state
+    if !Array.isArray(storedChoices) then storedChoices = []
     return
 
 ############################################################
-export activate = -> 
+export activate = ->
     # required only once on startup, but after logged in
     # maybe more to be done here?
     eventsChoice.initialize(generateScreeningResult)
@@ -86,10 +94,15 @@ deleteSymbolChoiceClicked = (evnt) ->
     log "removing #{symbol}"
     return unless symbol?
 
-    chosenSymbols.delete(evnt.target.dataset.symbol)
+    chosenSymbols.delete(symbol)
     delete symbolToData[symbol]
-    updateSymbolOptions()
 
+    newChoices = []
+    newChoices.push(ch) for ch in storedChoices when ch.symbol != symbol
+    storedChoices = newChoices
+    S.save(CHOICES_KEY, storedChoices)
+
+    updateSymbolOptions()
     generateScreeningResult(chosenEvents)
     return
 
@@ -105,6 +118,9 @@ onFilterUpdate = ->
 #region Helper Functions
 addSymbolChoice = (symbol, company) ->
     log "addSymbolChoice"
+    storedChoices.push[{symbol, company}]
+    S.save(CHOICES_KEY, storedChoices)
+
     hlc = await dCache.getHistoryHLC(symbol, 31)
     tDays = await dCache.getHistoricTradingDays(symbol, 31)
 
@@ -137,6 +153,30 @@ updateSymbolOptions = ->
 #endregion
 
 ############################################################
+retrieveMissingSymbolData = ->
+    log "retrieveMissingSymbolData"
+    
+    retrieveMissingData = (choice) ->
+        { symbol, company } = choice
+        if symbolToData[symbol]? then return choice
+        
+        try
+            hlc = await dCache.getHistoryHLC(symbol, 31)
+            tDays = await dCache.getHistoricTradingDays(symbol, 31)
+            symbolToData[symbol] = { hlc, tDays, company }
+            return choice
+        catch err then console.error err
+        return null
+
+
+    proms = storedChoices.map(retrieveMissingData)
+    validChoices = await Promise.all(proms)
+
+    storedChoices = validChoices.filter((el) -> el?)
+    S.save(CHOICES_KEY, storedChoices)
+    return
+
+############################################################
 updateFilterRow = ->
     log "updateFilterRow"
     return
@@ -152,6 +192,8 @@ generateScreeningResult = (events) ->
     if isProcessing then return processOnceMore = true
     
     isProcessing  = true
+    try await retrieveMissingSymbolData()
+    catch err then log err
     try await resultTable.screenAndRender(chosenEvents, symbolToData)
     catch err then log err
     isProcessing = false

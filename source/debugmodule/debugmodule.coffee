@@ -16,7 +16,7 @@ export modulesToDebug = {
     eventscreenerframemodule: true
     eventschoicetable: true
     eventscreenerresults: true
-    # eventscreeningengine: true
+    eventscreeningengine: true
     # fouriermodule: true
     # summaryframemodule: true
     # currencytrendframemodule: true
@@ -38,7 +38,6 @@ export modulesToDebug = {
     # symbolselectmodule: true
     # trafficlightframemodule:true
     # trafficlightdata: true
-
     # uistatemodule: true
 }
 

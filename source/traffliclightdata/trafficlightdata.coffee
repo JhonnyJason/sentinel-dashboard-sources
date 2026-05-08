@@ -50,8 +50,8 @@ export initialize = ->
 export heartbeat = ->
     log "heartbeat"
     try 
-        await liveD.connectAndSubscribe()
         await fetchData()
+        await liveD.connectAndSubscribe()
     catch err then console.error(err) # should not throw actually
     return
 

@@ -84,9 +84,15 @@
 .edit-group
     display flex
     cursor pointer
-
+    border-bottom solid 1px alpha(cd-dark-blue, 0.3) 
+    // border: solid 1px alpha(cd-dark-blue, 0.3)
+    // border-radius: 2px
+    padding 2px 0
+    // padding 2px 5px
+    
+    margin-left 3px
     input[type="text"]
-        width 32px
+        max-width 32px
 
     input
         border none
@@ -94,6 +100,7 @@
         font-size: 11pt
         text-align: right
         background-color: transparent
+
     input:focus
         padding 0
 
@@ -122,7 +129,8 @@
     input[type="date"]
     input[type="date"]:focus
         padding 2px 5px
-        border solid 1px cd-dark-blue
+        background-color transparent
+        border solid 1px alpha(cd-dark-blue, 0.3)
         outline: none
         border-radius: 2px
         width fit-content
@@ -142,6 +150,11 @@
     td
         padding 10px 20px
         box-sizing: border-box
+
+    .edit-group
+        justify-content: flex-end
+        gap 3px
+
 
 #symbol-choice-list
     width 100%

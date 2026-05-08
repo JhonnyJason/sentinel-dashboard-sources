@@ -11,6 +11,7 @@ indexdomconnect.initialize = () ->
     global.eventscreenerResult = document.getElementById("eventscreener-result")
     global.symbolSelectEventscreener = document.getElementById("symbol-select-eventscreener")
     global.chooseEventInput = document.getElementById("choose-event-input")
+    global.rangeNrHead = document.getElementById("range-nr-head")
     global.rangeNrInput = document.getElementById("range-nr-input")
     global.rangeDateInput = document.getElementById("range-date-input")
     global.eventChoiceContent = document.getElementById("event-choice-content")
