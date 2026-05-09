@@ -135,7 +135,10 @@
         border-radius: 2px
         width fit-content
     th
+    td
         padding 10px 20px
+        box-sizing: border-box
+
 
     
     tr.inactive
@@ -148,8 +151,28 @@
     tr:nth-child(2n)
         background-color alpha(#666, 0.05)
     td
-        padding 10px 20px
-        box-sizing: border-box
+        .label
+            text-align: left
+
+    td:nth-child(1)
+    th:nth-child(1)
+        width 60px
+        max-width 60px
+        min-width 60px
+    td:nth-child(2)
+    th:nth-child(2)
+        text-align: left
+        width 80%
+    td:nth-child(3)
+    th:nth-child(3)
+        width: 120px
+        min-width 120px
+        max-width 120px
+    td:nth-child(4)
+    th:nth-child(4)
+        width 170px
+        min-width 170px
+        max-width 170px
 
     .edit-group
         justify-content: flex-end
@@ -247,6 +270,7 @@
 
     th, td
         padding 8px 20px
+        box-sizing: border-box
         overflow hidden
         text-overflow: ellipsis
 
@@ -332,8 +356,72 @@
     span.down
         color cd-down-red
 
-
-
+    // symbol
+    td:nth-child(1)
+    th:nth-child(1)
+        width 81px
+        min-width 81px
+        max-width: 81px
+    // event label
+    td:nth-child(2)
+    th:nth-child(2)
+        text-align: left
+        width 80%
+        // max-width 30%
+    // direction
+    td:nth-child(3)
+    th:nth-child(3)
+        width 75px
+        min-width 75px
+        max-width: 75px
+    // winrate
+    td:nth-child(4)
+    th:nth-child(4)
+        width 105px
+        min-width 105px
+        max-width 105px
+    // profitAvg
+    td:nth-child(5)
+    th:nth-child(5)
+        width 95px
+        min-width 95px
+        max-width 95px
+    // profitMed
+    td:nth-child(6)
+    th:nth-child(6)
+        width 95px
+        min-width 95px
+        max-width 95px
+    // maxRise
+    td:nth-child(7)
+    th:nth-child(7)
+        width 95px
+        min-width 95px
+        max-width 95px
+    // maxDrop
+    td:nth-child(8)
+    th:nth-child(8)
+        width 95px
+        min-width 95px
+        max-width 95px
+    // next event
+    td:nth-child(9)
+    th:nth-child(9)
+        width 105px
+        min-width 105px
+        max-width 105px
+    // next entry
+    td:nth-child(10)
+    th:nth-child(10)
+        width 105px
+        min-width 105px
+        max-width 105px
+    // next exit
+    td:nth-child(11)
+    th:nth-child(11)
+        width 105px
+        min-width 105px
+        max-width 105px
         
 #eventscreener-result-hint
     display none

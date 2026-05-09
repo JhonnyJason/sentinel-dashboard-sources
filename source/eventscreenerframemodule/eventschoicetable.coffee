@@ -72,11 +72,17 @@ export initialize = (onChangeListener) ->
                 log "created new EventState"
                 olog eventState
 
-        retrieveAllEventDates()
-        updateEventOptions()
+        await retrieveAllEventDates()
+        onUpdate()
     catch err then log err
     return
 
+############################################################
+onUpdate = ->
+    S.save(STATE_KEY)
+    updateEventOptions()
+    onEventChoiceChange(getChosenEvents())
+    return
 
 ############################################################
 globalChoiceChanged = ->
@@ -84,10 +90,7 @@ globalChoiceChanged = ->
     isChosen = this.checked
     # olog { isChosen }
     localState[evnt.id].isChosen = isChosen for evnt in eventList
-
-    updateEventOptions()
-    onEventChoiceChange(getChosenEvents())
-    return
+    return onUpdate()
 
 globalRangeNrChanged = (evnt) ->
     log "globalRangeNrChanged"
@@ -105,10 +108,7 @@ globalRangeNrChanged = (evnt) ->
         eventState.dateRange = dateFromNumEvents(num, evnt)
         updateEventDatesToScreen(evnt)
 
-    S.save(STATE_KEY)
-    updateEventOptions()
-    onEventChoiceChange(getChosenEvents())
-    return
+    return onUpdate()
 
 globalRangeDateChanged = (evnt) ->
     log "globalRangeDateChanged"
@@ -144,13 +144,7 @@ globalRangeDateChanged = (evnt) ->
         eventState.dateRange = thisDate
         updateEventDatesToScreen(evnt)
 
-    S.save(STATE_KEY)
-    updateEventOptions()
-    onEventChoiceChange(getChosenEvents())
-    return
-
-    ## TODO implement
-    return
+    return onUpdate()
 
 
 ############################################################
@@ -170,8 +164,6 @@ retrieveAllEventDates = ->
             updateEventDatesToScreen(evnt)
 
         catch err then console.error(err)
-
-    onEventChoiceChange(getChosenEvents())
     return
 
 ############################################################
@@ -325,6 +317,7 @@ formatDate = (dateYYYYMMDD) ->
     tkns = tkns.reverse()
     return tkns.join(".")
 
+
 ############################################################
 eventChoiceChanged = (evnt) ->
     log "eventChoiceChanged"
@@ -344,7 +337,7 @@ eventChoiceChanged = (evnt) ->
     if !localState[evntId]? then console.error("Event with id: #{evntId} did not have a localState!")
     
     localState[evntId].isChosen = isChecked
-    onEventChoiceChange(getChosenEvents())
+    onUpdate()
     return
 
 ############################################################
@@ -381,8 +374,7 @@ eventDateRangeChanged = (evnt) ->
     eventState.numRange = num
     updateEventDatesToScreen(idToEvent[evntId])
 
-    S.save(STATE_KEY)
-    onEventChoiceChange(getChosenEvents())
+    onUpdate()
     return
 
 ############################################################
@@ -408,8 +400,7 @@ eventNumRangeChanged = (evnt) ->
     eventState.dateRange = date
     updateEventDatesToScreen(idToEvent[evntId])
 
-    S.save(STATE_KEY)
-    onEventChoiceChange(getChosenEvents())
+    onUpdate()
     return
 
 ############################################################
