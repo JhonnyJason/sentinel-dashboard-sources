@@ -5,12 +5,18 @@ import { createLogFunctions } from "thingy-debug"
 #endregion
 
 ############################################################
+import * as S from "./statemodule.js"
+
+############################################################
 navKeys = new Set(['Backspace', 'Delete', 'Tab', 'ArrowLeft', 
 'ArrowRight', 'End', 'Home'])
 numKeys = new Set(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'])
 
 ############################################################
-filters = {
+filters = null
+FILTERS_KEY = "eventscreener-result-filter"
+############################################################
+defaultFilters = {
     winrate: { active: true, value: 60.0 },
     profitAvg: { active: true, value: 1.0 },
     profitMed: { active: false, value: 1.0 },
@@ -23,11 +29,17 @@ filters = {
 }
 
 ############################################################
-onChange = null
+externalonChangeListener = null
 
 ############################################################
 export initialize = ->
     log "initialize"
+    filters = S.load(FILTERS_KEY)
+    if !filters?
+        filters = defaultFilters
+        S.save(FILTERS_KEY, filters)
+    S.setChangeDetectionFunction(FILTERS_KEY, () -> true)
+
     editGroups = filterPropertiesRow.getElementsByClassName("edit-group")
     group.addEventListener("click", editGroupClicked) for group in editGroups
 
@@ -81,7 +93,7 @@ export initialize = ->
     return
 
 ############################################################
-export setOnChangeListener = (listener) -> onChange = listener
+export setOnChangeListener = (listener) -> externalonChangeListener = listener
 
 ############################################################
 export filterResult = (result) ->
@@ -193,6 +205,13 @@ updateFilterUI = ->
     return
 
 ############################################################
+onChange = ->
+    S.save(FILTERS_KEY)
+    updateFilterUI()
+    if externalonChangeListener? then externalonChangeListener()
+    return
+
+############################################################
 getNextFocusableValueInput = (input) ->
     log "getNextFocusableValueInput"
     return null unless input.matches("input.prop-value")
@@ -284,9 +303,7 @@ winrateActiveChanged = (evnt) ->
     isActive = evnt.target.checked
     olog { isActive }
     filters.winrate.active = isActive
-    updateFilterUI()
-
-    if onChange? then onChange()
+    onChange()
     return
 
 winrateValueChanged = (evnt) ->
@@ -298,7 +315,7 @@ winrateValueChanged = (evnt) ->
     else filters.winrate.value = newValue
     evnt.target.value = newValue
 
-    if oldValue != newValue and onChange? then onChange()
+    if oldValue != newValue then onChange()
     return
 
 ############################################################
@@ -307,9 +324,8 @@ profitAvgActiveChanged = (evnt) ->
     isActive = evnt.target.checked
     olog { isActive }
     filters.profitAvg.active = isActive
-    updateFilterUI()
     
-    if onChange? then onChange()
+    onChange()
     return
 
 profitAvgValueChanged = (evnt) ->
@@ -321,7 +337,7 @@ profitAvgValueChanged = (evnt) ->
     else filters.profitAvg.value = newValue
     evnt.target.value = newValue
 
-    if oldValue != newValue and onChange? then onChange()
+    if oldValue != newValue then onChange()
     return
 
 ############################################################
@@ -330,9 +346,8 @@ profitMedActiveChanged = (evnt) ->
     isActive = evnt.target.checked
     olog { isActive }
     filters.profitMed.active = isActive
-    updateFilterUI()
-
-    if onChange? then onChange()
+    
+    onChange()
     return
 
 profitMedValueChanged = (evnt) ->
@@ -344,7 +359,7 @@ profitMedValueChanged = (evnt) ->
     else filters.profitMed.value = newValue
     evnt.target.value = newValue
 
-    if oldValue != newValue and onChange? then onChange()
+    if oldValue != newValue then onChange()
     return
 
 
@@ -355,8 +370,8 @@ longOnlyActiveChanged = (evnt) ->
     olog { isActive }
     filters.longOnly.active = isActive
     if isActive then filters.shortOnly.active = false 
-    updateFilterUI()
-    if onChange? then onChange()
+    
+    onChange()
     return
 
 shortOnlyActiveChanged = (evnt) ->
@@ -365,8 +380,8 @@ shortOnlyActiveChanged = (evnt) ->
     olog { isActive }
     filters.shortOnly.active = isActive
     if isActive then filters.longOnly.active = false
-    updateFilterUI()
-    if onChange? then onChange()
+    
+    onChange()
     return
 
 
@@ -376,9 +391,8 @@ minMaxRiseActiveChanged = (evnt) ->
     isActive = evnt.target.checked
     olog { isActive }
     filters.minMaxRise.active = isActive
-    updateFilterUI()
-
-    if onChange? then onChange()
+    
+    onChange()
     return
 
 minMaxRiseValueChanged = (evnt) ->
@@ -390,7 +404,7 @@ minMaxRiseValueChanged = (evnt) ->
     else filters.minMaxRise.value = newValue
     evnt.target.value = newValue
     
-    if oldValue != newValue and onChange? then onChange()
+    if oldValue != newValue then onChange()
     return
 
 ############################################################
@@ -399,9 +413,8 @@ maxMaxRiseActiveChanged = (evnt) ->
     isActive = evnt.target.checked
     olog { isActive }
     filters.maxMaxRise.active = isActive
-    updateFilterUI()
-
-    if onChange? then onChange()
+    
+    onChange()
     return
 
 maxMaxRiseValueChanged = (evnt) ->
@@ -413,7 +426,7 @@ maxMaxRiseValueChanged = (evnt) ->
     else filters.maxMaxRise.value = newValue
     evnt.target.value = newValue
     
-    if oldValue != newValue and onChange? then onChange()
+    if oldValue != newValue then onChange()
     return
 
 ############################################################
@@ -422,9 +435,8 @@ minMaxDropActiveChanged = (evnt) ->
     isActive = evnt.target.checked
     olog { isActive }
     filters.minMaxDrop.active = isActive
-    updateFilterUI()
-
-    if onChange? then onChange()
+    
+    onChange()
     return
 
 minMaxDropValueChanged = (evnt) ->
@@ -436,7 +448,7 @@ minMaxDropValueChanged = (evnt) ->
     else filters.minMaxDrop.value = newValue
     evnt.target.value = newValue
     
-    if oldValue != newValue and onChange? then onChange()
+    if oldValue != newValue then onChange()
     return
 
 ############################################################
@@ -445,9 +457,8 @@ maxMaxDropActiveChanged = (evnt) ->
     isActive = evnt.target.checked
     olog { isActive }
     filters.maxMaxDrop.active = isActive
-    updateFilterUI()
-
-    if onChange? then onChange()
+    
+    onChange()
     return
 
 maxMaxDropValueChanged = (evnt) ->
@@ -459,7 +470,7 @@ maxMaxDropValueChanged = (evnt) ->
     else filters.maxMaxDrop.value = newValue
     evnt.target.value = newValue
     
-    if oldValue != newValue and onChange? then onChange()
+    if oldValue != newValue then onChange()
     return
 
 #endregion

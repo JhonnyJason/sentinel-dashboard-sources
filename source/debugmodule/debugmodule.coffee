@@ -14,9 +14,9 @@ export modulesToDebug = {
     # economicareasmodule: true
     # EconomicArea: true
     eventscreenerframemodule: true
-    eventschoicetable: true
+    # eventschoicetable: true
     eventscreenerresults: true
-    eventscreeningengine: true
+    # eventscreeningengine: true
     # fouriermodule: true
     # summaryframemodule: true
     # currencytrendframemodule: true
@@ -26,7 +26,7 @@ export modulesToDebug = {
     # scimodule: true
     # livedata: true
     # navtriggers: true
-    resultfilterstate: true
+    # resultfilterstate: true
     # scimodule: true
     # scorehelper: true
     # seasonality: true

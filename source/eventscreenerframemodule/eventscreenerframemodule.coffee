@@ -50,7 +50,9 @@ export initialize = ->
     symbolSelect.setOnSelectListener(onSymbolSelected)
     
     storedChoices = S.get(CHOICES_KEY) # retrieve from regular state
+    olog storedChoices
     if !Array.isArray(storedChoices) then storedChoices = []
+    S.setChangeDetectionFunction(CHOICES_KEY, () -> true)
     return
 
 ############################################################
@@ -58,6 +60,7 @@ export activate = ->
     # required only once on startup, but after logged in
     # maybe more to be done here?
     eventsChoice.initialize(generateScreeningResult)
+    generateScreeningResult(chosenEvents)
     return
 
 ############################################################
@@ -118,8 +121,9 @@ onFilterUpdate = ->
 #region Helper Functions
 addSymbolChoice = (symbol, company) ->
     log "addSymbolChoice"
-    storedChoices.push[{symbol, company}]
+    storedChoices.push({symbol, company})
     S.save(CHOICES_KEY, storedChoices)
+    olog storedChoices
 
     hlc = await dCache.getHistoryHLC(symbol, 31)
     tDays = await dCache.getHistoricTradingDays(symbol, 31)
@@ -164,6 +168,7 @@ retrieveMissingSymbolData = ->
             hlc = await dCache.getHistoryHLC(symbol, 31)
             tDays = await dCache.getHistoricTradingDays(symbol, 31)
             symbolToData[symbol] = { hlc, tDays, company }
+            chosenSymbols.add(symbol)
             return choice
         catch err then console.error err
         return null
@@ -173,12 +178,10 @@ retrieveMissingSymbolData = ->
     validChoices = await Promise.all(proms)
 
     storedChoices = validChoices.filter((el) -> el?)
+    olog storedChoices
+    olog Array.from(chosenSymbols)
     S.save(CHOICES_KEY, storedChoices)
-    return
-
-############################################################
-updateFilterRow = ->
-    log "updateFilterRow"
+    updateSymbolOptions()
     return
 
 ############################################################

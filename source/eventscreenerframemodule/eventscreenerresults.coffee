@@ -15,6 +15,8 @@ numRows = 50
 ############################################################
 export screenAndRender = (chosenEvents, symbolToData) ->
     log "screenAndRender"
+    log "chosenEvents.length: "+chosenEvents.length
+    log "Object.keys(symbolToData).length: "+Object.keys(symbolToData).length
     if chosenEvents.length > 0 and Object.keys(symbolToData).length > 0
         eventscreenerframe.className = "processing"
         try
