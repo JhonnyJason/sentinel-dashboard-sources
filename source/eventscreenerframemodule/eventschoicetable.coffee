@@ -403,6 +403,7 @@ eventNumRangeChanged = (evnt) ->
     onUpdate()
     return
 
+
 ############################################################
 getPreviousValueForNumRangeInput = (input) ->
     log "getPreviousValueForNumRangeInput"
