@@ -2,7 +2,13 @@
 @import 'visibility.styl'
 
 #eventscreenerframe
-    padding 25px
+    width 100%
+    height "calc(100vh - %s)" % header-height
+    overflow-y auto
+    scrollbar-gutter stable
+    padding 20px 10px 20px 20px
+    box-sizing: border-box
+
     h2
         font-weight: bold
     input[type="checkbox"]
@@ -322,6 +328,9 @@
 
     tbody tr:hover
         background-color alpha(#fff, 0.2)
+
+    tbody tr.chosen
+        background-color alpha(#abf, 0.2)
 
     tbody tr.warn
         background-color rgba(255, 100, 100, 0.2)

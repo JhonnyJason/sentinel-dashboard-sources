@@ -6,6 +6,8 @@ import { createLogFunctions } from "thingy-debug"
 
 ############################################################
 import * as screener from "./eventscreenerengine.js"
+import { setUIState } from "./eventscreenerframemodule.js"
+import { displayDetails } from "./eventtradedetailsmodule.js"
 
 ############################################################
 sortColumn = "profitAvg"
@@ -13,22 +15,26 @@ sortAscending = false
 numRows = 50
 
 ############################################################
+selectedEl = null
+selectedResult = null
+
+############################################################
 export screenAndRender = (chosenEvents, symbolToData) ->
     log "screenAndRender"
     log "chosenEvents.length: "+chosenEvents.length
     log "Object.keys(symbolToData).length: "+Object.keys(symbolToData).length
     if chosenEvents.length > 0 and Object.keys(symbolToData).length > 0
-        eventscreenerframe.className = "processing"
+        setUIState("processing")
         try
             await screener.startScreening(symbolToData, chosenEvents)
             results = screener.getResults(numRows, sortColumn, sortAscending)
             render(results)
-            eventscreenerframe.className = "result"
+            setUIState("result")
             return
         catch err
-            eventscreenerframe.className = "no-result"
+            setUIState("no-result")
             console.error err
-    else eventscreenerframe.className = "no-result"
+    else setUIState("no-result")
     return
 
 ############################################################
@@ -63,13 +69,22 @@ render = (results) ->
     tbody = document.createElement("tbody")
     for result in results
         row = document.createElement("tr")
+        
+        if selectedResult? and selectedResult.groupKey? and result.groupKey == selectedResult.groupKey 
+            log "selecting row with groupKey: #{result.groupKey} as selectedGroupKey is: #{selectedResult.groupKey}"
+            selectedEl = row
+            selectedResult = result
+            selectedEl.classList.add("chosen")
 
+        `let lettedResult = result`
+        row.addEventListener("click", () -> selectForDetailsView(this, lettedResult))
         for { label, key, sort } in dataStructure
             td = document.createElement("td")
 
             d = result[key]
             switch key
                 when "symbol" then td.appendChild(getSpan("symbol", d))
+                # when "eventLabel" then td.appendChild(getSpan("", d+"\n"+result.tradeKey))
                 when "eventLabel" then td.appendChild(getSpan("", d))
                 when "direction" then td.appendChild(getSpan(d.toLowerCase(), d))
                 when "winrate" then td.appendChild(getSpan("winrate", d.toFixed(1)))
@@ -87,6 +102,18 @@ render = (results) ->
         tbody.appendChild(row)
             
     eventscreenerResult.appendChild(tbody)
+    return
+
+############################################################
+selectForDetailsView = (el, result) ->
+    log "selectForDetailsView"
+    if selectedEl? then selectedEl.classList.remove("chosen")
+    selectedEl = el
+    selectedResult = result
+    el.classList.add("chosen")
+    displayDetails(result)
+    setUIState("details")
+    eventscreenerframe.scrollTo({top:0, behavior:'smooth'})
     return
 
 ############################################################

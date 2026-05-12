@@ -43,6 +43,8 @@ export initialize = ->
     filterState.initialize()
     filterState.setOnChangeListener(onFilterUpdate)
 
+    closeDetailsButton.addEventListener("click", () -> setUIState("nodetails"))
+
     container = symbolSelectEventscreener # symbolSelectEventscreener.
     optionsLimit = 70
 
@@ -60,7 +62,34 @@ export activate = ->
     # required only once on startup, but after logged in
     # maybe more to be done here?
     eventsChoice.initialize(generateScreeningResult)
+    setUIState("nodetails")
     generateScreeningResult(chosenEvents)
+    return
+
+############################################################
+export setUIState = (state) ->
+    log "setUIState"
+    switch state
+        when "processing"
+            eventscreenerframe.classList.remove("no-result")
+            eventscreenerframe.classList.remove("result")
+            eventscreenerframe.classList.add("processing")
+        when "result"
+            eventscreenerframe.classList.remove("processing")
+            eventscreenerframe.classList.remove("no-result")
+            eventscreenerframe.classList.add("result")
+        when "no-result"
+            eventscreenerframe.classList.remove("processing")
+            eventscreenerframe.classList.remove("result")
+            eventscreenerframe.classList.add("no-result")
+        when "details"
+            eventscreenerframe.classList.add("details")
+        when "nodetails"
+            eventscreenerframe.classList.remove("details")
+            els = eventscreenerframe.querySelectorAll("tr.chosen")
+            el.classList.remove("chosen") for el in els
+        else 
+            console.error("#{state} is not a know UI state for the eventscreenerframe!")
     return
 
 ############################################################

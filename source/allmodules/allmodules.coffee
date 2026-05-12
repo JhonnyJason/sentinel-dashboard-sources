@@ -7,6 +7,8 @@ import * as currencytrendframemodule from "./currencytrendframemodule.js"
 import * as datamodule from "./datamodule.js"
 import * as debugmodule from "./debugmodule.js"
 import * as eventscreenerframemodule from "./eventscreenerframemodule.js"
+import * as eventtradechartmodule from "./eventtradechartmodule.js"
+import * as eventtradedetailsmodule from "./eventtradedetailsmodule.js"
 import * as forexscreenerframemodule from "./forexscreenerframemodule.js"
 import * as fouriermodule from "./fouriermodule.js"
 import * as fuzzyscoremodule from "./fuzzyscoremodule.js"
@@ -35,6 +37,8 @@ Modules = {
     datamodule,
     debugmodule,
     eventscreenerframemodule,
+    eventtradechartmodule,
+    eventtradedetailsmodule,
     forexscreenerframemodule,
     fouriermodule,
     fuzzyscoremodule,

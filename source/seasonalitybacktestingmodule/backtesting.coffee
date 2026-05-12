@@ -88,8 +88,8 @@ evaluateResults = (results, opts) ->
 evaluateYearsResult = (result, year) ->
     log "evaluateYearsResult"
     { 
-        startA, startAr, startAba, changeF, maxRiseF, maxRiseIdx, 
-        maxDropF, maxDropIdx, corrF, missingF, lastF, warn 
+        startA, startAr, startAba, changeF, maxRiseF, 
+        maxDropF, corrF, missingF, lastF, warn 
     } = result
 
     changeP = (changeF - 1) * 100
@@ -173,12 +173,8 @@ backtestSequence = (seq) ->
             low = close
             high = close
         
-        if high > maxRiseA
-            maxRiseA = high
-            maxRiseIdx = i
-        if low < maxDropA
-            maxDropA = low
-            maxDropIdx = i
+        if high > maxRiseA then maxRiseA = high
+        if low < maxDropA then maxDropA = low
 
         # add a warning if any day to day difference is too much (+42.9% or -30%)
         closeDelta = close - lastClose
@@ -191,7 +187,7 @@ backtestSequence = (seq) ->
     maxRiseF = 1.0 * maxRiseA / startA
     maxDropF = 1.0 * maxDropA / startA
 
-    return { startA, changeF, maxRiseF, maxRiseIdx, maxDropF, maxDropIdx, warn }
+    return { startA, changeF, maxRiseF, maxDropF, warn }
 
 ############################################################
 #region summarizing results

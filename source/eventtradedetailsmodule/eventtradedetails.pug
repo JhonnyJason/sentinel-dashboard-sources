@@ -1,0 +1,72 @@
+//- eventtradedetails structure
+#eventtradedetails
+    h2#tradedetails-header-row
+        span#tradedetails-symbol SYMBOL
+        span#tradedetails-event-label Event Label
+        button#close-details-button.click-button: svg: use(href="#svg-cross-icon")
+
+    #tradedetails-content-row
+        #tradedetails-main-block
+            table#tradedetails-table
+
+        #tradedetails-side-block
+            #tradedetails-direction.long Long
+            #tradedetails-next-date 
+                h3.label Nächstes Ereignis
+                .value 12.12.12
+            #tradedetails-next-entry
+                h3.label Nächster Einstieg
+                .value 12.12.12
+            #tradedetails-next-exit
+                h3.label Nächster Austieg
+                .value 12.12.12
+            #tradedetails-chart-container
+                #tradedetails-chart
+                #tradedetails-chart-centerline
+
+            #tradedetails-range-selection 
+                #tradedetails-entry-idx
+                    h3.label Einstieg
+                    .value
+                        .minus.click-button: svg: use(href="#svg-left-icon")
+                        .date -14
+                        .plus.click-button: svg: use(href="#svg-right-icon")
+                #tradedetails-exit-idx
+                    h3.label Ausstieg
+                    .value
+                        .minus.click-button: svg: use(href="#svg-left-icon")
+                        .date +14
+                        .plus.click-button: svg: use(href="#svg-right-icon")
+
+            #tradedetails-win-rate
+                h3.label Trefferquote (Gewinner | Verlierer)
+                .value: #tradedetails-winning-rate 
+                    #tradedetails-win-rate-pie: include pie-chart.pug
+                    #tradedetails-win-rate-numbers
+                        #tradedetails-winrate-percent 99%
+                        #tradedetails-win-vs-lose 99 | 1
+
+            #tradedetails-summary-grid
+                #tradedetails-average-change 
+                    h3.label Durchnittlicher Profit
+                    .value 40%
+                #tradedetails-median-change
+                    h3.label Medianer Profit
+                    .value 30%
+                #tradedetails-max-rise
+                    h3.label Max Anstieg %
+                    .value 23%
+                #tradedetails-max-drop
+                    h3.label Max Rückgang %
+                    .value 20%
+                #tradedetails-max-rise-abs
+                    h3.label Max Anstieg Abs
+                    .value 123
+                #tradedetails-max-drop-abs
+                    h3.label Max Rückgang Abs
+                    .value 125
+                #tradedetails-days-in-trade
+                    h3.label Tage im Trade
+                    .value 12 Tage
+
+            
