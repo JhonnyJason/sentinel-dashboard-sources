@@ -12,6 +12,7 @@ import * as noAccount from "./noaccountmodule.js"
 import * as dataModule from "./datamodule.js"
 import * as trafficlight from "./trafficlightframemodule.js"
 import * as eventscreener from "./eventscreenerframemodule.js"
+import * as forexscreener from "./forexscreenerframemodule.js"
 
 #endregion
 
@@ -69,6 +70,7 @@ applyBaseState["forexscreener"] = ->
     noAccount.hide()
     header.className = "logged-in"
     eventscreener.activate()
+    forexscreener.activate()
     return
 
 applyBaseState["trafficlight"] = ->

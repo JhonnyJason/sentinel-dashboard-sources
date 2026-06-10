@@ -14,7 +14,7 @@ export calculateSeasonalityComposite = (data, method) ->
     oldestYear = data[data.length - 1]
     if oldestYear.includes(undefined)
         data = data.slice(1, -1) # Exclude current and last year (both incomplete)
-    else 
+    else
         data = data.slice(1) # Exclude current year (only current year is incomplete)
     
     if method == 0 # Average Daily Return

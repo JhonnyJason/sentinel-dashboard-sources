@@ -17,8 +17,11 @@ export modulesToDebug = {
     # eventtradedetailsmodule: true
     # eventscreenerframemodule: true
     # eventschoicetable: true
-    eventscreenerresults: true
+    # eventscreenerresults: true
     # eventscreeningengine: true
+    forexscreeningengine: true
+    forexscreenerframemodule: true
+    forexscreenerresults: true
     # fouriermodule: true
     # summaryframemodule: true
     # currencytrendframemodule: true

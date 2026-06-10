@@ -216,6 +216,7 @@ retrieveMissingSymbolData = ->
 ############################################################
 generateScreeningResult = (events) ->
     log "generateScreeningResult"
+    # olog events.map((el) -> el.id)
     if !events? then chosenEvents = []
     else chosenEvents = events
 

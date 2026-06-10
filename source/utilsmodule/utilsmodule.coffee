@@ -57,6 +57,50 @@ export realToNonLeapNormIdx = (real, isLeap) ->
     return FEB28 if real == FEB29          # Feb29 → Feb28
     return real - 1                        # 60+ shift down
 
+export leapNormToYYYYMMDD = (idx, year) ->
+    ## idx is a "normed" idx in the range 0 - 365
+    ## leapNorm means that the idx assumes the 366 days of a leap year
+    ## this means non-leap years still have an index for February 29 (idx = 59) Which would become February 28 and all later would be idx - 1
+    ## isLeapYear(year) tells us if the year is a leap Year
+    if idx <= -732 or idx  >= 732 then throw new Error("idx out of bounds!")
+    ## apply overflow to switch the year appropriately
+    year += Math.floor(idx / 366)
+    # if idx < 0 then year += Math.ceil(idx / 366)
+    # else year += Math.floor(idx / 366)
+    
+    isLeap = isLeapYear(year)
+    idx = (idx + 732) % 366 # ensure idx is within range
+    if !isLeap and idx >= 59 then idx--
+
+    ## create the date according to the Index
+    date = new Date(year, 0, 1)
+    date.setDate(date.getDate() + idx)
+    ## return the YYYY-MM-DD formated date string
+    return date.toISOString().slice(0, 10)
+
+export nonLeapNormToYYYYMMDD = (idx, year) ->
+    ## idx is a "normed" idx in the range 0-364
+    ## nonLeapNorm means that the idx assumes the 365 days of a non-leap year
+    ## this means leap years have no index for February 29 which should be considered
+    ## isLeapYear(year) tells us if the year is a leap Year
+    if idx <= -730 or idx  >= 730 then throw new Error("idx out of bounds!")
+
+    ## apply overflow to switch the year appropriately
+    year += Math.floor(idx / 365)
+    # if idx < 0 then year += Math.ceil(idx / 365)
+    # else year += Math.floor(idx / 365)
+
+    isLeap = isLeapYear(year)
+    idx = (idx + 730) % 365 # ensure idx is within range
+    if isLeap and idx >= 59 then idx++
+
+    ## create the date according to the Index
+    date = new Date(year, 0, 1)
+    date.setDate(date.getDate() + idx)
+
+    ## return the YYYY-MM-DD formated date string
+    return date.toISOString().slice(0, 10)
+
 #endregion
 
 ############################################################
@@ -150,7 +194,7 @@ export getDec31Date = (date) ->
 
 ############################################################
 # Convert year + real day-of-year index to "DD.MM.YYYY" display string
-dayIndexToDateStr = (year, dayIdx) ->
+export dayIndexToDateStr = (year, dayIdx) ->
     jan1 = new Date(year, 0, 1, 12)
     target = new Date(jan1.getTime() + dayIdx * 86_400_000)
     day = target.getDate()
@@ -161,11 +205,18 @@ dayIndexToDateStr = (year, dayIdx) ->
 
 ############################################################
 # Convert year + nonLeapNorm day index (0-364 or negative) to "YYYY-MM-DD"
-normalizedIdxToYYYYMMDD = (year, dayIdx) ->
+export normalizedIdxToYYYYMMDD = (year, dayIdx) ->
     if dayIdx < 0
         year = year - 1
         dayIdx = 365 + dayIdx
     realIdx = nonLeapNormToRealIdx(dayIdx, isLeapYear(year))
+    jan1 = new Date(year, 0, 1, 12)
+    target = new Date(jan1.getTime() + realIdx * 86_400_000)
+    return target.toISOString().slice(0, 10)
+
+############################################################
+# Convert year + real day index (0-364/365) to "YYYY-MM-DD"
+export realIdxToYYYYMMDD = (year, dayIdx) ->
     jan1 = new Date(year, 0, 1, 12)
     target = new Date(jan1.getTime() + realIdx * 86_400_000)
     return target.toISOString().slice(0, 10)
@@ -265,6 +316,29 @@ export scanForFreakValues = (dataArray, label) ->
     return true
 
 ############################################################
+export lastWeekdayBefore = (startDate) ->
+    thisDate = new Date(startDate)
+    
+    dayOfWeek = thisDate.getDay()
+    ## 0 is Sunday
+    if dayOfWeek == 0 then thisDate.setDate(thisDate.getDate() - 2)
+    ## 6 is Saturday
+    if dayOfWeek == 6 then thisDate.setDate(thisDate.getDate() - 1) 
+    
+    return thisDate.toISOString().slice(0, 10)
+
+export nextWeekdayAfter = (startDate) ->
+    thisDate = new Date(startDate)
+    
+    dayOfWeek = thisDate.getDay()
+    ## 0 is Sunday
+    if dayOfWeek == 0 then thisDate.setDate(thisDate.getDate() + 1)
+    ## 6 is Saturday
+    if dayOfWeek == 6 then thisDate.setDate(thisDate.getDate() + 2) 
+    
+    return thisDate.toISOString().slice(0, 10)
+
+############################################################
 export effectiveStartDate = (day, tradingDaysPerYear) ->
     # log "effectiveStartDate"
     safetyCount = 32
@@ -279,7 +353,7 @@ export effectiveStartDate = (day, tradingDaysPerYear) ->
         # When we donot find a trading day we have 2 options:
         #    1.) isTradingDay is false - we need check the earlier day
         #    2.) isTradingDay is undefined or null - exeeded bounds -> fallback 
-        if isTradingDay != false then return startDate
+        if isTradingDay != false then return lastWeekdayBefore(startDate)
         # day = day.getPrevDay()
         day = day.getNextDay() # search for
     return
@@ -299,7 +373,7 @@ export effectiveEndDate = (day, tradingDaysPerYear) ->
         # When we donot find a trading day we have 2 options:
         #    1.) isTradingDay is false - we need check the next later day
         #    2.) isTradingDay is undefined or null - exeeded bounds -> fallback 
-        if isTradingDay != false then return startDate
+        if isTradingDay != false then return nextWeekdayAfter(startDate)
         # day = day.getNextDay()
         day = day.getPrevDay()
     return

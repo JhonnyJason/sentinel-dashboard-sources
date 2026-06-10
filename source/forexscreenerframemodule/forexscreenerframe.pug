@@ -1,3 +1,14 @@
 //- forexscreenerframe structure
+
 #forexscreenerframe
-    include ../placeholderframemodule/placeholderframe.pug
+    #forexscreener-result-row
+        
+        #forexscreener-result-hint
+            p.error Beim ForexScreening sind Fehler aufgetreten, die eine Berechnung von Resultaten umöglich gemacht hat.<br> Bitte versuchen Sie es später erneut und lassen sie uns wissen, wenn das Problem weiterhin besteht.
+    
+        #forexscreener-result-preloader
+            +preloader("spinner.2", "spinner-1")
+
+        table#forexscreener-result
+
+    //- include ../placeholderframemodule/placeholderframe.pug

@@ -30,9 +30,8 @@ export  getLatestCloseData = (dataKey) ->
         result.push(yearResult)
     
     # checking the data
-    endExcert = result[0].slice(-30)
-    console.log(endExcert)
-
+    # endExcert = result[0].slice(-30)
+    # console.log(endExcert)
     return result
 
 ############################################################

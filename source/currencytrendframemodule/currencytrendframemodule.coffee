@@ -9,6 +9,9 @@ import { allAreas as aA } from "./economicareasmodule.js"
 import { CurrencyPair } from "./CurrencyPair.js"
 
 ############################################################
+import { startScreening } from "./forexscreenerengine.js"
+
+############################################################
 allCurrencyPairs = {}
 shownCurrencyPairs = []
 
@@ -126,8 +129,10 @@ renderFrame = ->
 ############################################################
 updateRanking = ->
     log "updateRanking"
+    ## TODO check if anything actually changed...
     pair.updateScore() for pair in shownCurrencyPairs
     renderFrame()
+    startScreening(shownCurrencyPairs.map(((el) -> [el.short, el.stScore])))
     return
 
 

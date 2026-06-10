@@ -1,41 +1,33 @@
 ############################################################
 #region debug
 import { createLogFunctions } from "thingy-debug"
-{log, olog} = createLogFunctions("eventscreenerresults")
+{log, olog} = createLogFunctions("forexscreenerresults")
 #endregion
 
 ############################################################
-import * as screener from "./eventscreenerengine.js"
-import { setUIState } from "./eventscreenerframemodule.js"
-import { displayDetails } from "./eventtradedetailsmodule.js"
+import { getTrendForScore } from "./scorehelper.js"
 
 ############################################################
-sortColumn = "profitAvg"
+import * as screener from "./forexscreenerengine.js"
+import { setUIState } from "./forexscreenerframemodule.js"
+
+############################################################
+sortColumn = "symbol"
 sortAscending = false
-numRows = 50
 
 ############################################################
-selectedEl = null
-selectedResult = null
-
-############################################################
-export screenAndRender = (chosenEvents, symbolToData) ->
+export screenAndRender =  ->
     log "screenAndRender"
-    log "chosenEvents.length: "+chosenEvents.length
-    olog chosenEvents.map((el) -> el.id)
-    log "Object.keys(symbolToData).length: "+Object.keys(symbolToData).length
-    if chosenEvents.length > 0 and Object.keys(symbolToData).length > 0
-        setUIState("processing")
-        try
-            await screener.startScreening(symbolToData, chosenEvents)
-            results = screener.getResults(numRows, sortColumn, sortAscending)
-            render(results)
-            setUIState("result")
-            return
-        catch err
-            setUIState("no-result")
-            console.error err
-    else setUIState("no-result")
+    setUIState("processing")
+    try
+        results = await screener.getResults(sortColumn, sortAscending)
+        olog results
+        render(results)
+        setUIState("result")
+        return
+    catch err
+        # setUIState("no-result")
+        console.error err
     return
 
 ############################################################
@@ -44,7 +36,7 @@ render = (results) ->
     if !Array.isArray(results) then throw new Error("Results is not an Array!")
     if results.length == 0 then throw new Error("Results is empty Array!")
 
-    eventscreenerResult.innerHTML = ""
+    forexscreenerResult.innerHTML = ""
     dataStructure = screener.resultStructure
 
     ########################################################
@@ -55,15 +47,15 @@ render = (results) ->
         th = document.createElement("th")
         if key?
             th.dataset.key = key
-            th.classList.add("sortable") if sort != "none"
+            th.classList.add("sortable") if sort 
             if key == sortColumn
                 th.classList.add("sorted")
                 th.classList.add(if sortAscending then "asc" else "desc")
-            th.addEventListener("click", onSortColumnClick)
+            th.addEventListener("click", onSortColumnClick) if sort
         th.textContent = label
         headerRow.appendChild(th)
     thead.appendChild(headerRow)
-    eventscreenerResult.appendChild(thead)
+    forexscreenerResult.appendChild(thead)
     
     ########################################################
     # render table body
@@ -82,27 +74,37 @@ render = (results) ->
         for { label, key, sort } in dataStructure
             td = document.createElement("td")
 
-            d = result[key]
-            switch key
-                when "symbol" then td.appendChild(getSpan("symbol", d))
-                # when "eventLabel" then td.appendChild(getSpan("", d+"\n"+result.tradeKey))
-                when "eventLabel" then td.appendChild(getSpan("", d))
-                when "direction" then td.appendChild(getSpan(d.toLowerCase(), d))
-                when "winrate" then td.appendChild(getSpan("winrate", d.toFixed(1)))
-                when "profitAvg" then td.appendChild(getSpan("profit", d.toFixed(1)))
-                when "profitMed" then td.appendChild(getSpan("profit", d.toFixed(1)))
-                when "maxGain" then td.appendChild(getSpan("up", d.toFixed(1)))
-                when "maxDrop" then td.appendChild(getSpan("down", d.toFixed(1)))
-                when "nextDate" then td.appendChild(getSpan("", formatDate(d)))
-                when "entryDate" then td.appendChild(getSpan("", formatDate(d)))
-                when "exitDate" then td.appendChild(getSpan("", formatDate(d)))
-                else console.error("Rendering TableBody: Unexpected key #{key}!")
+            try
+                d = result[key]
+                if !d? then td.appendChild(getSpan("empty", "-"))
+                else switch key
+                    when "symbol" then addSymbolSpan(td, result)
+                    when "signal" then td.appendChild(getSpan(d.toLowerCase(), d))
+                    when "entryDate" then td.appendChild(getSpan("", formatDate(d)))
+                    when "exitDate" then td.appendChild(getSpan("", formatDate(d)))
+                    when "entryPrice" then td.appendChild(getSpan("", d.toFixed(3)))
+                    when "stoploss" then td.appendChild(getSpan("", d.toFixed(3)))
+                    when "takeprofit1" then td.appendChild(getSpan("", d.toFixed(3)))
+                    when "takeprofit2" then td.appendChild(getSpan("", d.toFixed(3)))
+                    when "score" then addScoreSpan(td, d)
+                    when "seasonality10P" then td.appendChild(getSpan("winrate", d.toFixed(1)))
+                    when "seasonality15P" then td.appendChild(getSpan("winrate", d.toFixed(1)))
 
-            row.appendChild(td)
-            
+                    # when "direction" then td.appendChild(getSpan(d.toLowerCase(), d))
+                    # when "winrate" then td.appendChild(getSpan("winrate", d.toFixed(1)))
+                    # when "profitAvg" then td.appendChild(getSpan("profit", d.toFixed(1)))
+                    # when "profitMed" then td.appendChild(getSpan("profit", d.toFixed(1)))
+                    # when "maxGain" then td.appendChild(getSpan("up", d.toFixed(1)))
+                    # when "maxDrop" then td.appendChild(getSpan("down", d.toFixed(1)))
+                    # when "nextDate" then td.appendChild(getSpan("", formatDate(d)))
+                    else console.error("Rendering TableBody: Unexpected key #{key}!")
+
+                row.appendChild(td)
+            catch err then console.error("@key #{key}: #{err.message}")
+
         tbody.appendChild(row)
             
-    eventscreenerResult.appendChild(tbody)
+    forexscreenerResult.appendChild(tbody)
     return
 
 ############################################################
@@ -114,7 +116,7 @@ selectForDetailsView = (el, result) ->
     el.classList.add("chosen")
     displayDetails(result)
     setUIState("details")
-    eventscreenerframe.scrollTo({top:0, behavior:'smooth'})
+    forexscreenerframe.scrollTo({top:0, behavior:'smooth'})
     return
 
 ############################################################
@@ -130,14 +132,38 @@ onSortColumnClick = (evnt) ->
         sortColumn = key
         sortAscending = false  # New column: start descending
         
-    results = screener.getResults(numRows, sortColumn, sortAscending)
-    render(results)
+    results = await screener.getResults(sortColumn, sortAscending)
+    try render(results)
+    catch err then console.error err
+
     return
 
 ############################################################
 formatPercent = (value) ->
     sign = if value >= 0 then "+" else ""
     return "#{sign}#{value.toFixed(1)}%"
+
+addSymbolSpan = (td, result) ->
+    symbol = result.symbol
+    signal = result.signal
+    if !symbol? then throw new Error("Result had no symbol defined!")#
+    td.appendChild(getSpan("symbol", symbol))
+    if !signal? then return 
+    
+    td.classList.add("sym-#{signal.toLowerCase()}")
+    return
+
+addScoreSpan = (td, score) ->
+    { color, text } = getTrendForScore(score)
+    
+    td.classList.add("score")
+    td.style.backgroundColor = color
+    
+    score = parseInt(score)
+    if score > 0 then score = "+"+score
+    
+    td.appendChild(getSpan("", "#{text} #{score}"))
+    return 
 
 formatDate = (value) ->
     date = new Date(value)

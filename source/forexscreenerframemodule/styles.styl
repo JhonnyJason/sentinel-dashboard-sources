@@ -1,3 +1,229 @@
 // forexscreenerframe styles
+@import 'visibility.styl'
+
 #forexscreenerframe
     width 100%
+    height "calc(100vh - %s)" % header-height
+    overflow-y auto
+    scrollbar-gutter stable
+    padding 20px 10px 20px 20px
+    box-sizing: border-box
+
+    h2
+        font-weight: bold
+
+#forexscreener-result-row
+    width 100%
+    min-height 20px
+    padding 40px 20px
+    box-sizing: border-box
+    background-color cd-dark-blue
+    border-radius: 3px
+    margin-top 36px
+    font-size 11pt
+
+#forexscreener-result
+    display: none
+    width 100%
+    table-layout: fixed
+    box-sizing: border-box
+    font-size 9pt
+    color #fff
+    border-collapse collapse
+
+    th, td
+        padding 8px 20px
+        box-sizing: border-box
+        overflow hidden
+        text-overflow: ellipsis
+
+    td, tr
+        border-left solid 1px alpha(#fff, 0.1)
+    tr
+        border-right solid 1px alpha(#fff, 0.1)
+    th
+        background-color rgba(255, 255, 255, 0.1)
+        border-bottom 2px solid rgba(255, 255, 255, 0.2)
+        text-align left
+
+    th.sortable
+        cursor pointer
+        user-select none
+        position relative
+        padding-right 20px
+        box-sizing: border-box
+
+        &:hover
+            background-color alpha(#fff, 0.2)
+
+        &::after
+            content ""
+            position absolute
+            right 7px
+            top 50%
+            transform translateY(-50%)
+            border 4px solid transparent
+            opacity 0.3
+
+        &.sorted::after
+            opacity 1
+
+        &.asc::after
+            border-bottom-color #fff
+            margin-top -4px
+
+        &.desc::after
+            border-top-color #fff
+            margin-top 4px
+
+    tbody tr
+        border-bottom 1px solid rgba(255, 255, 255, 0.1)
+
+    tbody tr:nth-child(2n)
+        background-color alpha(#fff, 0.05)
+
+    tbody tr:hover
+        background-color alpha(#fff, 0.2)
+
+    tbody tr.chosen
+        background-color alpha(#abf, 0.2)
+
+    tbody tr.warn
+        background-color rgba(255, 100, 100, 0.2)
+        opacity 0.7
+
+    td.score
+        opacity: 0.8
+        color cd-dark-blue
+
+    td.sym-long
+        background-color cd-up-green
+        color cd-dark-blue
+
+    td.sym-short
+        background-color cd-down-red
+        color cd-dark-blue
+
+    span.symbol
+        font-weight: bold
+
+    span.long
+        font-weight: bold
+        color cd-up-green
+
+    span.short
+        font-weight: bold
+        color cd-down-red
+
+    span.winrate:after
+    span.profit:after
+    span.up:after
+    span.down:after
+        content "%"
+        margin-left 2px
+
+    span.profit
+    span.up
+        color cd-up-green
+
+    span.profit:before
+    span.up:before
+        content "+"
+        margin-right 2px
+
+    span.down
+        color cd-down-red
+
+    // symbol
+    // td:nth-child(1)
+    // th:nth-child(1)
+    //     width 81px
+    //     min-width 81px
+    //     max-width: 81px
+    // td:nth-child(1)
+    //     padding-left 0 
+    //     padding-right 0
+    //     text-align: center
+
+    // // event label
+    // td:nth-child(2)
+    // th:nth-child(2)
+    //     text-align: left
+    //     width 80%
+    //     // max-width 30%
+    // // direction
+    // td:nth-child(3)
+    // th:nth-child(3)
+    //     width 75px
+    //     min-width 75px
+    //     max-width: 75px
+    // // winrate
+    // td:nth-child(4)
+    // th:nth-child(4)
+    //     width 105px
+    //     min-width 105px
+    //     max-width 105px
+    // // profitAvg
+    // td:nth-child(5)
+    // th:nth-child(5)
+    //     width 95px
+    //     min-width 95px
+    //     max-width 95px
+    // // profitMed
+    // td:nth-child(6)
+    // th:nth-child(6)
+    //     width 95px
+    //     min-width 95px
+    //     max-width 95px
+    // // maxRise
+    // td:nth-child(7)
+    // th:nth-child(7)
+    //     width 95px
+    //     min-width 95px
+    //     max-width 95px
+    // // maxDrop
+    // td:nth-child(8)
+    // th:nth-child(8)
+    //     width 95px
+    //     min-width 95px
+    //     max-width 95px
+    // // next event
+    // td:nth-child(9)
+    // th:nth-child(9)
+    //     width 105px
+    //     min-width 105px
+    //     max-width 105px
+    // // next entry
+    // td:nth-child(10)
+    // th:nth-child(10)
+    //     width 105px
+    //     min-width 105px
+    //     max-width 105px
+    // // next exit
+    // td:nth-child(11)
+    // th:nth-child(11)
+    //     width 105px
+    //     min-width 105px
+    //     max-width 105px
+        
+
+#forexscreener-result-hint
+    display none
+    margin auto
+    color #fff
+
+    p.error
+        color cd-down-red
+        background-color rgba(255, 100, 100, 0.15)
+        border-left 3px solid cd-down-red
+        padding 20px
+        border-radius 3px
+
+#forexscreener-result-preloader
+    display none
+    width 50px
+    margin auto
+    .preloader
+        width 50px
+        height 50px
+        color #fff

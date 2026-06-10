@@ -64,6 +64,8 @@ export stopScreening = ->
 ############################################################
 export startScreening = (symbolToData, eventList) ->
     log "doScreening"
+
+    # olog eventList.map((el) -> el.id)
     # eventIdToDates = Object.create(null)
     # eventIdToDates[evnt.id] = evnt.datesToScreen for evnt in eventList
     # screeningInputs = { symbolToData, eventList, eventIdToDates }
@@ -74,10 +76,12 @@ export startScreening = (symbolToData, eventList) ->
         # throw new Error("We donot wait for Rerender!")
         promFun = (rslv, rjct) -> pending.push({ rslv, rjct })
         return new Promise(promFun) # still awaitable ;-)
-
+    
     isScreening = true
     trades4D = getTrades4D()
     trades14D = getTrades14D()
+    groupedEvals = []
+    groupedResults = []
 
     try loop
         start = performance.now()
@@ -379,17 +383,17 @@ getTradeResult = (sym, trade, date) ->
     
     # olog { entryDP, exitDP }
     if !entryDP? or !exitDP?
-        log "Case without entry or exit DP!"
-        entryDate = entryDay.getYYYYMMDD()
-        exitDate = exitDay.getYYYYMMDD()
+        # log "Case without entry or exit DP!"
+        # entryDate = entryDay.getYYYYMMDD()
+        # exitDate = exitDay.getYYYYMMDD()
 
-        olog {
-            date
-            relEntry
-            relExit
-            entryDate
-            exitDate
-        }
+        # olog {
+        #     date
+        #     relEntry
+        #     relExit
+        #     entryDate
+        #     exitDate
+        # }
         return null
 
     entryC = entryDP[entryDP.length - 1]
@@ -448,7 +452,7 @@ getDetailsResult = (sym, trade, date) ->
         day = day.getNextDay()
     factorsArray = utl.toFactorsArray(fullCloseSequence)
 
-    nextDate = eventDay.getYYYYMMDD()    
+    nextDate = eventDay.getYYYYMMDD() 
     entryD = utl.effectiveStartDate(entryDay, tDays) 
     exitD = utl.effectiveEndDate(exitDay, tDays)
 
@@ -525,7 +529,7 @@ getNextTradeDates = (trade, evnt, tDays) ->
         # nextExitDate = exitDay.getYYYYMMDD()
         nextExitDate = utl.effectiveEndDate(exitDay, tDays)
         
-        if nextExitDate < nextEntryDate 
+        if nextExitDate < nextEntryDate
             log "impossible trading days entry @#{nextEntryDate} exit @#{nextExitDate}"
             return {}
 

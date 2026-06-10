@@ -63,7 +63,6 @@ evaluateResults = (results, opts) ->
     
         yearlyResults.push(result)
 
-
     profitF = 100.0
     if !isLong then profitF = -100.0
 
@@ -97,7 +96,7 @@ evaluateYearsResult = (result, year) ->
     maxDropP = (maxDropF - 1) * 100
     ## TODO other necessary transformations
     
-    return { 
+    return {
         year, changeF, changeP, maxRiseF, maxRiseP, maxDropF, maxDropP, 
         startA, startAr, startAba, corrF, missingF, lastF, warn 
     }

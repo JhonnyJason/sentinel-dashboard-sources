@@ -63,7 +63,7 @@ export initialize = (onChangeListener) ->
             idToEvent[evnt.id] = evnt
             eventState = localState[evnt.id]
             
-            if !eventState? 
+            if !eventState?
                 isChosen = true
                 isWeekly = (evnt.id == "e009") #Jobless Claims is weekly
                 numRange = evnt.numScreenedEvents || localState.globalNumRange
@@ -81,7 +81,10 @@ export initialize = (onChangeListener) ->
 onUpdate = ->
     S.save(STATE_KEY)
     updateEventOptions()
-    onEventChoiceChange(getChosenEvents())
+    chosenEvents = getChosenEvents()
+    # olog chosenEvents.map((el) -> el.id)
+    # olog localState
+    onEventChoiceChange(chosenEvents)
     return
 
 ############################################################
@@ -267,7 +270,7 @@ numEventsFromDate = (date, evnt) ->
 getChosenEvents = -> return eventList.filter(
     (evnt) -> 
         eventState = localState[evnt.id]
-        if eventState? and eventState.isChosen then return true
+        if eventState? and eventState.isChosen == true then return true
         return false
 )
 
