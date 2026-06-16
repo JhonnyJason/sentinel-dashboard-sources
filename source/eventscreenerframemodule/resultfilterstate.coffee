@@ -208,7 +208,7 @@ updateFilterUI = ->
 onChange = ->
     S.save(FILTERS_KEY)
     updateFilterUI()
-    if externalonChangeListener? then externalonChangeListener()
+    if externalonChangeListener? then externalonChangeListener(filters)
     return
 
 ############################################################

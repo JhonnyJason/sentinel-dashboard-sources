@@ -146,7 +146,7 @@ export getResults = (limit, sortKey, isAscending) ->
     results.sort(sortFunction)
     
     if limit > results.length then return results
-    return results.slice(0, limit)    
+    return results.slice(0, limit)  
 
 export getTradeResultDetails = (tradeKey, direction) ->
     log "getTradeResultDetails"

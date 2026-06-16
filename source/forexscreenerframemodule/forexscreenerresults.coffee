@@ -153,14 +153,15 @@ addSymbolSpan = (td, result) ->
     td.classList.add("sym-#{signal.toLowerCase()}")
     return
 
-addScoreSpan = (td, score) ->
+addScoreSpan = (td, score) ->    
+    if typeof score == "string" then score = parseFloat(score)
     { color, text } = getTrendForScore(score)
-    
-    td.classList.add("score")
-    td.style.backgroundColor = color
-    
-    score = parseInt(score)
+
+    score = Math.round(score)
     if score > 0 then score = "+"+score
+
+    td.classList.add("score")
+    td.style.backgroundColor = color    
     
     td.appendChild(getSpan("", "#{text} #{score}"))
     return 

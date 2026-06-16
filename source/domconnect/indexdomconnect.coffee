@@ -10,6 +10,7 @@ indexdomconnect.initialize = () ->
     global.forexscreenerframe = document.getElementById("forexscreenerframe")
     global.forexscreenerResult = document.getElementById("forexscreener-result")
     global.eventscreenerframe = document.getElementById("eventscreenerframe")
+    global.eventscreenerScreenButton = document.getElementById("eventscreener-screen-button")
     global.eventscreenerResult = document.getElementById("eventscreener-result")
     global.closeDetailsButton = document.getElementById("close-details-button")
     global.tradedetailsTable = document.getElementById("tradedetails-table")

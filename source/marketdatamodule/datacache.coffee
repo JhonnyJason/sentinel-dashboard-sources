@@ -10,11 +10,14 @@ import * as utl from "./utilsmodule.js"
 
 ############################################################
 keyToHistory = Object.create(null)
+############################################################
+keyToRawData = Object.create(null)
 keyToMetaData = Object.create(null)
 
 ############################################################
 #region Interface
 export getCurrentMetaData = (dataKey) -> keyToMetaData[dataKey]
+export getCurrentRawData = (dataKey) -> keyToRawData[dataKey]
 
 ##
 # @params dataKey (e.g. symbol of stock)
@@ -132,6 +135,7 @@ digestRemoteData = (dataKey, result) ->
     startDate = new Date(meta.startDate + "T12:00:00")
     endDate = new Date(meta.endDate)
     keyToMetaData[dataKey] = meta
+    keyToRawData[dataKey] = data
 
     ## TODO update parsing logic
     # Parse start date (noon to avoid timezone edge cases)

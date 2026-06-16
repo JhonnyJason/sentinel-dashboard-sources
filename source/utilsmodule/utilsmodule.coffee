@@ -73,7 +73,7 @@ export leapNormToYYYYMMDD = (idx, year) ->
     if !isLeap and idx >= 59 then idx--
 
     ## create the date according to the Index
-    date = new Date(year, 0, 1)
+    date = new Date(year, 0, 1, 12, 0, 0)
     date.setDate(date.getDate() + idx)
     ## return the YYYY-MM-DD formated date string
     return date.toISOString().slice(0, 10)
@@ -162,7 +162,7 @@ export dateDifDays = (date1, date2) ->
     daysDif = msDif / 86_400_000 # = 1000 * 60 * 60 * 24
     return Math.round(daysDif)
 
-export getDayOfYear = (date) ->
+export getDayOfYear = (date) -> # 01.01. -> 0
     startOfYear = new Date(date.getFullYear(), 0, 1, 12, 0, 0)
     return dateDifDays(startOfYear, date)
 

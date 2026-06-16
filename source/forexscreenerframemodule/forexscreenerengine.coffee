@@ -21,8 +21,8 @@ export resultStructure = [
     { label: "TP1", key: "takeprofit1", sort: off }
     { label: "TP2", key: "takeprofit2", sort: off }
     { label: "Scoring", key: "score", sort: on }
-    { label: "TQ 10J", key: "seasonality10P", sort: on }
-    { label: "TQ 15J", key: "seasonality15P", sort: on }
+    { label: "Saisonale TQ 10J", key: "seasonality10P", sort: on }
+    { label: "Saisonale TQ 15J", key: "seasonality15P", sort: on }
 ]
 
 ############################################################
@@ -158,7 +158,7 @@ export startScreening = (forexPairsWithScore) ->
     catch err then log err
 
     log "Finished Forex Screening"
-    olog symbolToInfo
+    # olog symbolToInfo
     
     isScreening = false
     restartScreening = false
@@ -223,9 +223,9 @@ getRelevantSaisonalityComposites = ->
     symbolToSaisonality15J = Object.create(null)
 
     relevantSymbols = Object.keys(symbolToScore).filter(
-        (el) -> Math.abs(symbolToScore[el]) > 4
+        (el) -> Math.round(Math.abs(symbolToScore[el])) > 4
     )
-    olog relevantSymbols
+    # olog relevantSymbols
 
     proms = relevantSymbols.map(
         (sym) ->
@@ -237,12 +237,22 @@ getRelevantSaisonalityComposites = ->
     return
 
 ############################################################
-getSeasonalBestFitRangeFromToday = (composite, isLong, maxRange) -> 
+getSeasonalBestFitRangeFromToday = (composite, isLong, maxRange) ->
     ## Today to index in 366 leap-norm
     todayDate = new Date()
     startIdx = utl.getDayOfYear(todayDate)
     startIdx = utl.realToLeapNormIdx(startIdx, currentYearIsLeap)
-    
+    startYYYYMMDD = utl.leapNormToYYYYMMDD(startIdx, currentYear)
+    todayYYYYMMDD = todayDate.toISOString().slice(0,10)
+
+    olog {
+        todayYYYYMMDD,
+        startIdx,
+        startYYYYMMDD,
+        currentYear,
+        currentYearIsLeap
+    }
+
     # startIdx = 356
     # log startIdx
 

@@ -15,13 +15,13 @@ export modulesToDebug = {
     # EconomicArea: true
     # eventtradechartmodule: true
     # eventtradedetailsmodule: true
-    # eventscreenerframemodule: true
+    eventscreenerframemodule: true
     # eventschoicetable: true
     # eventscreenerresults: true
     # eventscreeningengine: true
-    forexscreeningengine: true
-    forexscreenerframemodule: true
-    forexscreenerresults: true
+    # forexscreeningengine: true
+    # forexscreenerframemodule: true
+    # forexscreenerresults: true
     # fouriermodule: true
     # summaryframemodule: true
     # currencytrendframemodule: true

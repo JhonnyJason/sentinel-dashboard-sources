@@ -2,6 +2,8 @@
 #eventscreenerframe.no-result
     #eventscreener-filter-row
         include filtersection.pug
+    #eventscreener-button-row
+        button#eventscreener-screen-button.click-button Screening Starten
     #eventscreener-details-row
         include ../eventtradedetailsmodule/eventtradedetails.pug
     #eventscreener-result-row
@@ -9,4 +11,8 @@
             p Mit diesen Einstellungen sind keine Resultate verfügbar.<br>Bitte wählen Sie die Symbole und Ereignisse, die Sie untersuchen wollen, oder ändern Sie die Filtereinstellungen.
         #eventscreener-result-preloader
             +preloader("spinner.1", "spinner-1")
+
+        #eventscreener-adjustment-warning
+            p Bitte beachten Sie, dass die <b>Einstiegs- bzw. Ausstiegstage</b> so gesetzt sind, dass sie nicht auf ein Wochenende Fallen. <b>Börsenfeiertage werden dabei (noch) nicht berücksichtigt</b>.
+
         table#eventscreener-result
