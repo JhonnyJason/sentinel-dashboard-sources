@@ -62,7 +62,7 @@ export leapNormToYYYYMMDD = (idx, year) ->
     ## leapNorm means that the idx assumes the 366 days of a leap year
     ## this means non-leap years still have an index for February 29 (idx = 59) Which would become February 28 and all later would be idx - 1
     ## isLeapYear(year) tells us if the year is a leap Year
-    if idx <= -732 or idx  >= 732 then throw new Error("idx out of bounds!")
+    if idx <= -733 or idx  >= 732 then throw new Error("idx out of bounds!")
     ## apply overflow to switch the year appropriately
     year += Math.floor(idx / 366)
     # if idx < 0 then year += Math.ceil(idx / 366)
@@ -83,7 +83,7 @@ export nonLeapNormToYYYYMMDD = (idx, year) ->
     ## nonLeapNorm means that the idx assumes the 365 days of a non-leap year
     ## this means leap years have no index for February 29 which should be considered
     ## isLeapYear(year) tells us if the year is a leap Year
-    if idx <= -730 or idx  >= 730 then throw new Error("idx out of bounds!")
+    if idx <= -731 or idx  >= 730 then throw new Error("idx out of bounds!")
 
     ## apply overflow to switch the year appropriately
     year += Math.floor(idx / 365)
@@ -95,7 +95,7 @@ export nonLeapNormToYYYYMMDD = (idx, year) ->
     if isLeap and idx >= 59 then idx++
 
     ## create the date according to the Index
-    date = new Date(year, 0, 1)
+    date = new Date(year, 0, 1, 12, 0, 0)
     date.setDate(date.getDate() + idx)
 
     ## return the YYYY-MM-DD formated date string
@@ -132,7 +132,6 @@ export fromFactorsBackward = (factors, endVal = 100) ->
     for i in [lastIndex..1]
         result[i - 1] = result[i] / factors[i - 1]
     return result
-
 
 export dataArrayFromFactors = (factors, startValue = 100, forward = true) ->
     result = new Array(factors.length + 1)

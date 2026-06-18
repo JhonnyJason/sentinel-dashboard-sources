@@ -6,7 +6,7 @@ import { createLogFunctions } from "thingy-debug"
 
 ############################################################
 import * as utl from "./utilsmodule.js"
-import * as dataC from "./datacache.js"
+import { SymbolBacktester } from "./hlcbacktestingmodule.js"
 import { filterResult } from "./resultfilterstate.js"
 
 ############################################################
@@ -38,12 +38,10 @@ letMainThreadRun = ->
     return new Promise((reslv) -> setTimeout(reslv, 0));
     
 ############################################################
-allEvals = []
 allResults = []
 
 ############################################################
 # grouped by symbol:eventId
-groupedEvals = []
 groupedResults = []
 
 ############################################################
@@ -53,13 +51,6 @@ pending = []
 screeningInputs = null
 isScreening = false
 restartScreening = false
-
-############################################################
-export stopScreening = ->
-    log "stopScreening"
-    isScreening = false
-    restartScreening = false
-    return
 
 ############################################################
 export startScreening = (symbolToData, eventList) ->
@@ -80,42 +71,38 @@ export startScreening = (symbolToData, eventList) ->
     isScreening = true
     trades4D = getTrades4D()
     trades14D = getTrades14D()
-    groupedEvals = []
     groupedResults = []
 
     try loop
         start = performance.now()
-        allEvals = []
         allResults = []
         symbols = Object.keys(symbolToData)
         for sym,i in symbols
-            log "evaluating #{sym} @#{i}"
+            # log "evaluating #{sym} @#{i}"
             for evnt,j in eventList when evnt.datesToScreen?
                 groupKey ="#{sym}:#{evnt.id}"
-                log "... evaluating #{groupKey} @#{i}:#{j}"
-                groupEvals = []
+                # log "... evaluating #{groupKey} @#{i}:#{j}"
                 groupResults = []
 
                 if evnt.isWeekly then trades = trades4D
                 else trades = trades14D
 
                 for trade in trades
-                    evaluation = evaluateEventTrades(sym, evnt, trade)
+                    evaluation = await evaluateEventTrades(sym, evnt, trade)
                     if evaluation? then result = generateResultObject(evaluation, evnt)
+                    else result = null
+
                     if result?
-                        allEvals.push(evaluation)
-                        groupEvals.push(evaluation)
                         allResults.push(result)
                         groupResults.push(result)
     
                     if performance.now() - start > maxBusyTimeMS
                         await letMainThreadRun()
-                        log "hit calculation barrier @#{i}:#{j}!"
+                        # log "hit calculation barrier @#{i}:#{j}!"
                         if restartScreening then break # restart inner loop
                         if !isScreening then return # stop fully
                         start = performance.now()
                 
-                groupedEvals[groupKey] = groupEvals
                 groupedResults[groupKey] = groupResults
 
         if i == symbols.length
@@ -124,7 +111,7 @@ export startScreening = (symbolToData, eventList) ->
 
     catch err then log err
     finally isScreening = false
-    log "Finished Screening, we have #{allEvals.length} evaluations."
+    log "Finished Screening, we have #{allResults.length} results."
     waiters = [...pending]
     pending = []
     w.rslv() for w in waiters
@@ -299,128 +286,156 @@ getSortFunction = (sortKey, isAscending) ->
         
 ############################################################
 evaluateEventTrades = (sym, evnt, trade) ->
-    key = "#{sym}:#{evnt.id}:#{trade}"
-    dates = evnt.datesToScreen
-    # log "#{evnt.id} has #{dates.length} dates to screen!"
-    tradeResults = dates.map((date) -> getTradeResult(sym, trade, date)).filter((el) -> el?)
-    return null unless tradeResults.length > 0
+    try
+        key = "#{sym}:#{evnt.id}:#{trade}"
+        dates = evnt.datesToScreen
 
-    direction = ""
-    maxGainF = 0.0
-    maxDropF = 1.0
-    avgDeltaF = 0.0
-    medDeltaF = 0.0
+        backtester = new SymbolBacktester(sym, key)
+        await backtester.loadData()
 
-    longSuccessCount = 0
-    shortSuccessCount = 0
-
-    for result in tradeResults
-        # olog result # { deltaF, maxGainF, maxDropF }
-        avgDeltaF += result.deltaF
+        for date in dates
+            year = parseInt(date.slice(0,4))
+            runKey = key + "@#{date}"
+            res = getLeapNormIndicesForTrade(date, trade)
+            backtester.addBacktestRun(year, res.startIdx, res.endIdx, runKey)
         
-        if result.deltaF > 1 then longSuccessCount++
-        if result.deltaF < 1 then shortSuccessCount++
-
-        if maxGainF < result.maxGainF then maxGainF = result.maxGainF
-        if maxDropF > result.maxDropF then maxDropF = result.maxDropF
-
-    avgDeltaF = avgDeltaF / tradeResults.length
-
-    tradeResults.sort((el1, el2) -> el2.deltaF - el1.deltaF)
-    totalTrades = tradeResults.length
-    medIdx = Math.floor(totalTrades / 2)
+        return backtester.runEvaluationSync()
+        # runSummary = backtester.runEvaluationSync()
+        # backtester.destroy()
+        # return runSummary 
     
-    if totalTrades % 2 # odd case
-        medDeltaF = tradeResults[medIdx].deltaF
-    else
-        medDeltaF = tradeResults[medIdx].deltaF
-        medDeltaF += tradeResults[medIdx - 1].deltaF
-        medDeltaF *= 0.5
+    catch err then console.error("@eventscreenerengine.evaluateEventTrades: #{err.message}")
+    return null
 
-    if avgDeltaF > 1
-        direction = "Long"
-        profitAvgP = 100.0 * (avgDeltaF - 1.0)
-        profitMedP = 100.0 * (medDeltaF - 1.0)
-        maxGainP = 100.0 * (maxGainF - 1.0)
-        maxDropP = 100.0 * (maxDropF - 1.0)
-        winrate = 100.0 * longSuccessCount / totalTrades
-    else
-        direction = "Short"
-        profitAvgP = 100.0 * (1.0 - avgDeltaF)
-        profitMedP = 100.0 * (1.0 - medDeltaF)
-        maxGainP = 100.0 * (maxGainF - 1.0)
-        maxDropP = 100.0 * (maxDropF - 1.0)
-        winrate = 100.0 * shortSuccessCount / totalTrades
-    
-    if winrate == 0
-        # log "Winrate was 0 - how can this be?"
-        # olog { tradeResults }
-        return null
+    # backtester: { 
+    #    key, isLong, winrate, totalTrades, avgChangeF, avgChangeF, maxRiseObj, maxDropObj 
+    # }
 
-    return { key, direction, winrate, totalTrades, profitAvgP, profitMedP, maxGainP, maxDropP }
+    # expected: { 
+    #    key, direction, winrate, totalTrades, profitAvgP, profitMedP, maxGainP, maxDropP 
+    # }
 
-############################################################
-getTradeResult = (sym, trade, date) ->
-    # log "getTradeResult #{date}"
-    hlc = screeningInputs.symbolToData[sym].hlc
 
-    tkns = trade.split("-")
-    entrIdx = parseInt(tkns[0])
-    exitIdx = parseInt(tkns[1])
-    evntIdx = parseInt(tkns[2])
-    relEntry = entrIdx - evntIdx
-    relExit = exitIdx - evntIdx
+    # # log "#{evnt.id} has #{dates.length} dates to screen!"
+    # tradeResults = dates.map((date) -> getTradeResult(sym, trade, date)).filter((el) -> el?)
+    # return null unless tradeResults.length > 0
 
-    eventDay = utl.createDayFromDate(date)
-    entryDay = eventDay.getRelativeDay(relEntry)
-    exitDay = eventDay.getRelativeDay(relExit)
+    # direction = ""
+    # maxGainF = 0.0
+    # maxDropF = 1.0
+    # avgDeltaF = 0.0
+    # medDeltaF = 0.0
 
-    entryD = entryDay.getYYYYMMDD() 
-    exitD = exitDay.getYYYYMMDD()
+    # longSuccessCount = 0
+    # shortSuccessCount = 0
 
-    entryDP = entryDay.lookupIn(hlc)
-    exitDP = exitDay.lookupIn(hlc)
-    
-    # olog { entryDP, exitDP }
-    if !entryDP? or !exitDP?
-        # log "Case without entry or exit DP!"
-        # entryDate = entryDay.getYYYYMMDD()
-        # exitDate = exitDay.getYYYYMMDD()
-
-        # olog {
-        #     date
-        #     relEntry
-        #     relExit
-        #     entryDate
-        #     exitDate
-        # }
-        return null
-
-    entryC = entryDP[entryDP.length - 1]
-    exitC = exitDP[exitDP.length - 1]
-    deltaAbs = exitC - entryC
-    deltaF = 1.0 + (1.0 * deltaAbs / entryC)
-
-    maxAbs = entryC
-    minAbs = entryC
+    # for result in tradeResults
+    #     # olog result # { deltaF, maxGainF, maxDropF }
+    #     avgDeltaF += result.deltaF
         
-    day = entryDay.getNextDay()
-    count = exitIdx - entrIdx
-    while count--
-        dayDP = day.lookupIn(hlc)
-        dayHighAbs = dayDP[0]
-        ## either we have 3 values [ H,L,C ] or we only have one [ C=H=L ] (non-trading days)
-        if dayDP.length == 3 then dayLowAbs = dayDP[1]
-        else dayLowAbs = dayHighAbs
+    #     if result.deltaF > 1 then longSuccessCount++
+    #     if result.deltaF < 1 then shortSuccessCount++
 
-        if dayHighAbs > maxAbs then maxAbs = dayHighAbs
-        if dayLowAbs < minAbs then minAbs = dayLowAbs
-        day = day.getNextDay()
+    #     if maxGainF < result.maxGainF then maxGainF = result.maxGainF
+    #     if maxDropF > result.maxDropF then maxDropF = result.maxDropF
 
-    maxGainF = 1.0 * maxAbs / entryC
-    maxDropF = 1.0 * minAbs / entryC
+    # avgDeltaF = avgDeltaF / tradeResults.length
 
-    return { entryD, deltaF, maxGainF, maxDropF, exitD }
+    # tradeResults.sort((el1, el2) -> el2.deltaF - el1.deltaF)
+    # totalTrades = tradeResults.length
+    # medIdx = Math.floor(totalTrades / 2)
+    
+    # if totalTrades % 2 # odd case
+    #     medDeltaF = tradeResults[medIdx].deltaF
+    # else
+    #     medDeltaF = tradeResults[medIdx].deltaF
+    #     medDeltaF += tradeResults[medIdx - 1].deltaF
+    #     medDeltaF *= 0.5
+
+    # if avgDeltaF > 1
+    #     direction = "Long"
+    #     profitAvgP = 100.0 * (avgDeltaF - 1.0)
+    #     profitMedP = 100.0 * (medDeltaF - 1.0)
+    #     maxGainP = 100.0 * (maxGainF - 1.0)
+    #     maxDropP = 100.0 * (maxDropF - 1.0)
+    #     winrate = 100.0 * longSuccessCount / totalTrades
+    # else
+    #     direction = "Short"
+    #     profitAvgP = 100.0 * (1.0 - avgDeltaF)
+    #     profitMedP = 100.0 * (1.0 - medDeltaF)
+    #     maxGainP = 100.0 * (maxGainF - 1.0)
+    #     maxDropP = 100.0 * (maxDropF - 1.0)
+    #     winrate = 100.0 * shortSuccessCount / totalTrades
+    
+    # if winrate == 0
+    #     # log "Winrate was 0 - how can this be?"
+    #     # olog { tradeResults }
+    #     return null
+
+    # return { key, direction, winrate, totalTrades, profitAvgP, profitMedP, maxGainP, maxDropP }
+
+# ############################################################
+# getTradeResult = (sym, trade, date) ->
+#     # log "getTradeResult #{date}"
+#     hlc = screeningInputs.symbolToData[sym].hlc
+
+#     tkns = trade.split("-")
+#     entrIdx = parseInt(tkns[0])
+#     exitIdx = parseInt(tkns[1])
+#     evntIdx = parseInt(tkns[2])
+#     relEntry = entrIdx - evntIdx
+#     relExit = exitIdx - evntIdx
+
+#     eventDay = utl.createDayFromDate(date)
+#     entryDay = eventDay.getRelativeDay(relEntry)
+#     exitDay = eventDay.getRelativeDay(relExit)
+
+#     entryD = entryDay.getYYYYMMDD() 
+#     exitD = exitDay.getYYYYMMDD()
+
+#     entryDP = entryDay.lookupIn(hlc)
+#     exitDP = exitDay.lookupIn(hlc)
+    
+#     # olog { entryDP, exitDP }
+#     if !entryDP? or !exitDP?
+#         # log "Case without entry or exit DP!"
+#         # entryDate = entryDay.getYYYYMMDD()
+#         # exitDate = exitDay.getYYYYMMDD()
+
+#         # olog {
+#         #     date
+#         #     relEntry
+#         #     relExit
+#         #     entryDate
+#         #     exitDate
+#         # }
+#         return null
+
+#     entryC = entryDP[entryDP.length - 1]
+#     exitC = exitDP[exitDP.length - 1]
+#     deltaAbs = exitC - entryC
+#     deltaF = 1.0 + (1.0 * deltaAbs / entryC)
+
+#     maxAbs = entryC
+#     minAbs = entryC
+        
+#     day = entryDay.getNextDay()
+#     count = exitIdx - entrIdx
+#     while count--
+#         dayDP = day.lookupIn(hlc)
+#         dayHighAbs = dayDP[0]
+#         ## either we have 3 values [ H,L,C ] or we only have one [ C=H=L ] (non-trading days)
+#         if dayDP.length == 3 then dayLowAbs = dayDP[1]
+#         else dayLowAbs = dayHighAbs
+
+#         if dayHighAbs > maxAbs then maxAbs = dayHighAbs
+#         if dayLowAbs < minAbs then minAbs = dayLowAbs
+#         day = day.getNextDay()
+
+#     maxGainF = 1.0 * maxAbs / entryC
+#     maxDropF = 1.0 * minAbs / entryC
+
+#     return { entryD, deltaF, maxGainF, maxDropF, exitD }
 
 ############################################################
 getDetailsResult = (sym, trade, date) ->
@@ -500,6 +515,23 @@ getDetailsResult = (sym, trade, date) ->
 
     return { entryD, eventD, exitD, entryC, exitC, deltaF, maxGainF, maxDropF, factorsArray }
 
+############################################################
+getLeapNormIndicesForTrade = (date, trade) ->
+    tkns = trade.split("-")
+    entrIdx = parseInt(tkns[0])
+    exitIdx = parseInt(tkns[1])
+    evntIdx = parseInt(tkns[2])
+    
+    relEntry = entrIdx - evntIdx
+    relExit = exitIdx - evntIdx
+    
+    lnIdx = utl.getDayOfYear(new Date(date))
+    
+    result = Object.create(null)
+
+    result.startIdx = lnIdx + relEntry
+    result.endIdx = lnIdx + relExit
+    return result
 
 ############################################################
 getNextTradeDates = (trade, evnt, tDays) ->
@@ -544,7 +576,9 @@ getNextTradeDates = (trade, evnt, tDays) ->
 generateResultObject = (evaluation, evnt) ->
     # log "generateResultObject"
     result = Object.create(null)
-    # { key, direction, profitAvgP, profitMedP, maxGainP, maxDropP } = evaluation
+    
+    # { key, isLong, avgChangeF, medChangeF, winTrades, totalTrades, maxRiseObj, maxDropObj }
+
     tkns = evaluation.key.split(":")
     symbol = tkns[0]
     evntId = tkns[1]
@@ -555,15 +589,22 @@ generateResultObject = (evaluation, evnt) ->
     # if !nextDate? then throw new Error("getNextTradeDates failed to return nextDate!") 
     if !nextDate? then return null # we possibly had impossible exit and entry dates... 
 
+    if evaluation.isLong 
+        direction = "Long"
+        profitF = 100.0
+    else 
+        direction = "Short"
+        profitF = -100.0
+    
     result.symbol = symbol 
     # result.marketcap = # donot use for now  
     result.eventLabel = evnt.label
-    result.direction = evaluation.direction
-    result.winrate = evaluation.winrate
-    result.profitAvg = evaluation.profitAvgP
-    result.profitMed = evaluation.profitMedP
-    result.maxGain =  evaluation.maxGainP
-    result.maxDrop =  evaluation.maxDropP
+    result.direction = direction
+    result.winrate = 100.0 * evaluation.winTrades / evaluation.totalTrades 
+    result.profitAvg = profitF * evaluation.avgChangeF
+    result.profitMed = profitF * evaluation.medChangeF
+    result.maxGain =  100.0 * evaluation.maxRiseObj.maxRiseF
+    result.maxDrop =  100.0 * evaluation.maxDropObj.maxDropF
     result.nextDate = nextDate
     result.entryDate = nextEntryDate
     result.exitDate = nextExitDate

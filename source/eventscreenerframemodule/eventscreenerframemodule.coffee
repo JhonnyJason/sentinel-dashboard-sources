@@ -47,8 +47,8 @@ activated = false
 ############################################################
 export initialize = ->
     log "initialize"
-    runTest()
-    return
+    # runTest()
+    # return
     filterState.initialize()
     filterState.setOnChangeListener(onFilterUpdate)
 
@@ -69,7 +69,7 @@ export initialize = ->
 
 ############################################################
 export activate = ->
-    return
+    # return
     return if activated
     eventsChoice.initialize(onEventChoiceUpdate)
     setUIState("nodetails")
@@ -306,6 +306,7 @@ tDates = [
     "2000-02-29", ## DoY: 59 = real Index = leap Norm | not available in non-Leap Norm -> 58
     "2000-03-01"  ## DoY: 60 = real Index = leap Norm | 59 in non-Leap Norm
 ]
+
 ############################################################
 runTest = ->
     log "runTest"
@@ -327,21 +328,34 @@ runTest = ->
     date = utl.leapNormToYYYYMMDD(leapNormIdx, currentYear)
     log "leapNormIdx #{leapNormIdx} -> date: #{date}" 
     
-    return
+    leapNormIdx = -1 ## 31.12.2025
+    date = utl.leapNormToYYYYMMDD(leapNormIdx, currentYear)
+    log "leapNormIdx #{leapNormIdx} -> date: #{date}" 
 
-    startIdx = utl.getDayOfYear(todayDate)
-    log "startIdx (DoY): #{startIdx}"
-    startIdx = utl.realToLeapNormIdx(startIdx, isLeapYear)
-    log "startIdx (leapNorm): #{startIdx}"
+    leapNormIdx = -367 ## 31.12.2024
+    date = utl.leapNormToYYYYMMDD(leapNormIdx, currentYear)
+    log "leapNormIdx #{leapNormIdx} -> date: #{date}" 
 
-    startYYYYMMDD = utl.leapNormToYYYYMMDD(startIdx, currentYear)
-    todayYYYYMMDD = todayDate.toISOString().slice(0,10)
+    leapNormIdx = -731 ## 02.01.2024
+    date = utl.leapNormToYYYYMMDD(leapNormIdx, currentYear)
+    log "leapNormIdx #{leapNormIdx} -> date: #{date}" 
 
-    olog {
-        startYYYYMMDD, 
-        todayYYYYMMDD
-    }
-    return
+
+    # return
+
+    # startIdx = utl.getDayOfYear(todayDate)
+    # log "startIdx (DoY): #{startIdx}"
+    # startIdx = utl.realToLeapNormIdx(startIdx, isLeapYear)
+    # log "startIdx (leapNorm): #{startIdx}"
+
+    # startYYYYMMDD = utl.leapNormToYYYYMMDD(startIdx, currentYear)
+    # todayYYYYMMDD = todayDate.toISOString().slice(0,10)
+
+    # olog {
+    #     startYYYYMMDD, 
+    #     todayYYYYMMDD
+    # }
+    # return
 
     for dt in tDates
         date = new Date(dt)
@@ -352,9 +366,9 @@ runTest = ->
         leapNorm = utl.realToLeapNormIdx(dayOfYear, isLeap)
         nonLeapNorm = utl.realToNonLeapNormIdx(dayOfYear, isLeap)
         realIdxLN = utl.leapNormToRealIdx(leapNorm, isLeap)
-        if realIdxLN != dayOfYear then console.error("@#{dt} realIdx(=#{realIdxLN}) from leapNorm(=#{leapNorm}) is not dayOfYear(=#{dayOfYear})!")
+        if realIdxLN != dayOfYear then console.error("@#{dt} realIdxLN(=#{realIdxLN}) from leapNorm(=#{leapNorm}) is not dayOfYear(=#{dayOfYear})!")
         realIdxNLN = utl.nonLeapNormToRealIdx(nonLeapNorm, isLeap)
-        if realIdxNLN != dayOfYear then console.error("@#{dt} realIdxA(=#{realIdxNLN}) from nonLeapNorm(=#{nonLeapNorm}) is not dayOfYear(=#{dayOfYear})!")
+        if realIdxNLN != dayOfYear then console.error("@#{dt} realIdxNLN(=#{realIdxNLN}) from nonLeapNorm(=#{nonLeapNorm}) is not dayOfYear(=#{dayOfYear})!")
 
         olog { dt, year, isLeap, dayOfYear, leapNorm, nonLeapNorm, realIdxLN, realIdxNLN }
     return

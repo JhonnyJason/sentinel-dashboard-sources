@@ -177,11 +177,7 @@ runAndDisplayBacktesting = ->
     symbol = selectedSymbol
     years = parseInt(selectedRangeY)
 
-    hlcData = await mData.getHistoryHLC(symbol, years)
-    tradingDays = await mData.getHistoricTradingDays(symbol, years)
-    metaData = mData.getCurrentMetaData(symbol)
-
-    backtesting.run(hlcData, metaData, startIdx, endIdx, tradingDays)
+    await backtesting.run(symbol, startIdx, endIdx, years)
     return
 
 ############################################################
@@ -264,12 +260,12 @@ retrieveRelevantData = ->
 
 
 ############################################################
-# Converts raw chart indices to nonLeapNorm indices (0-364)
+# Converts raw chart indices to LeapNorm indices (0-365)
 # Chart layout: [...lastYearData, ...currentYearData]
-#
 # startIdx will be negative on year overlap
 getNormalizedSelectionIndices = ->
     return unless backtestingRegion? # no selection, nothing to do
+    
     cfg = utl.getLeapYearConfig()
     lastYearDays = cfg.lastYearDays
     { startIdx, endIdx } = backtestingRegion
@@ -278,17 +274,17 @@ getNormalizedSelectionIndices = ->
     endInLastYear = endIdx < lastYearDays
 
     if startInLastYear
-        startIdx = utl.realToNonLeapNormIdx(startIdx, cfg.lastYearIsLeap)
+        startIdx = utl.realToLeapNormIdx(startIdx, cfg.lastYearIsLeap)
     else
-        startIdx = utl.realToNonLeapNormIdx(startIdx - lastYearDays, cfg.currentYearIsLeap)
+        startIdx = utl.realToLeapNormIdx(startIdx - lastYearDays, cfg.currentYearIsLeap)
 
     if endInLastYear
-        endIdx = utl.realToNonLeapNormIdx(endIdx, cfg.lastYearIsLeap)
+        endIdx = utl.realToLeapNormIdx(endIdx, cfg.lastYearIsLeap)
     else
-        endIdx = utl.realToNonLeapNormIdx(endIdx - lastYearDays, cfg.currentYearIsLeap)
+        endIdx = utl.realToLeapNormIdx(endIdx - lastYearDays, cfg.currentYearIsLeap)
 
     # Only make startIdx negative when selection overlaps years
     if startInLastYear and !endInLastYear
-        startIdx = startIdx - 365
+        startIdx = startIdx - 366
 
     return { startIdx, endIdx }

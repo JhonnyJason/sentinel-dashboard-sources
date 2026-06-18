@@ -74,7 +74,7 @@ renderBacktestingTable = ->
 
         # End price column
         td = document.createElement("td")
-        endPriceAba = result.startAba * result.changeF
+        endPriceAba = result.startAba * (1.0 + result.deltaF) 
         td.innerHTML = formatAbsolutePrice(endPriceAba, result.missingF)
         row.appendChild(td)
 
@@ -194,19 +194,68 @@ formatDate = (value) ->
 
 
 ############################################################
-export render = (results) ->
+export render = (summary) ->
     log "render"
     # Populate details table (reset sort state for new data)
-    currentYearlyResults = results.yearlyResults
-    currentIsShort = !results.isLong
+
+    currentYearlyResults = transformToYearlyResults(summary)
+    currentIsShort = !summary.isLong
     sortColumn = "startDate"
     sortAscending = false
     renderBacktestingTable()
 
     # Show warning if any year had anomalies
-    if results.warn
+    if summary.warn
         backtestingWarning.style.display = "block"
     else
         backtestingWarning.style.display = "none"
 
     return
+
+############################################################
+transformToYearlyResults = (summary) ->
+    yearlyResults = []
+    keys = Object.keys(summary.keyToRunObjects)
+
+    for key in keys
+        runObj = summary.keyToRunObjects[key]
+        resObj = Object.create(null)
+        
+        resObj.year = runObj.key
+        resObj.entryDate = runObj.entryDate
+        resObj.exitDate = runObj.exitDate
+
+        resObj.deltaF = runObj.deltaF
+        resObj.changeP = 100.0 * runObj.deltaF
+        
+        resObj.maxRiseF = runObj.maxRiseF 
+        resObj.maxRiseP = 100.0 * runObj.maxRiseF 
+        
+        resObj.maxDropF = runObj.maxDropF 
+        resObj.maxDropP = 100.0 * runObj.maxDropF
+
+        resObj.startA = runObj.entryCv
+        resObj.startAr = runObj.entryCr 
+        resObj.startAba = runObj.entryCba 
+
+        resObj.corrF = runObj.corrSF 
+        resObj.missingF = runObj.missingSF 
+        # resObj.lastF = runObj.lastSF # does not exist? not needed? 
+        resObj.warn = runObj.warn
+
+        ############################################################
+        # "key": "2021",
+        # "entryDate": "2021-06-07",
+        # "exitDate": "2021-06-30",
+        # "entryExitDif": 23,
+        # "entryCv": 8457.119999999999,
+        # "entryCr": 704.7599999999999,
+        # "entryCba": 17.618999999999996,
+        # "corrSF": 12,
+        # "missingSF": 40,
+        # "warn": false
+    
+        yearlyResults.push(resObj)
+    
+    return yearlyResults
+    

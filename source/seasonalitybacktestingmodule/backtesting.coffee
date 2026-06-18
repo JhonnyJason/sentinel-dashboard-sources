@@ -87,17 +87,17 @@ evaluateResults = (results, opts) ->
 evaluateYearsResult = (result, year) ->
     log "evaluateYearsResult"
     { 
-        startA, startAr, startAba, changeF, maxRiseF, 
+        startA, startAr, startAba, deltaF, maxRiseF, 
         maxDropF, corrF, missingF, lastF, warn 
     } = result
 
-    changeP = (changeF - 1) * 100
+    changeP = (deltaF - 1) * 100
     maxRiseP = (maxRiseF - 1) * 100
     maxDropP = (maxDropF - 1) * 100
     ## TODO other necessary transformations
     
     return {
-        year, changeF, changeP, maxRiseF, maxRiseP, maxDropF, maxDropP, 
+        year, deltaF, changeP, maxRiseF, maxRiseP, maxDropF, maxDropP, 
         startA, startAr, startAba, corrF, missingF, lastF, warn 
     }
 
@@ -182,11 +182,11 @@ backtestSequence = (seq) ->
         lastClose = close
 
     # Calculate facors to easily get the percentages
-    changeF = 1.0 * endA / startA
+    deltaF = 1.0 * endA / startA
     maxRiseF = 1.0 * maxRiseA / startA
     maxDropF = 1.0 * maxDropA / startA
 
-    return { startA, changeF, maxRiseF, maxDropF, warn }
+    return { startA, deltaF, maxRiseF, maxDropF, warn }
 
 ############################################################
 #region summarizing results
@@ -197,8 +197,8 @@ getAverageAndMedianChanges = (results, ignoreWithWarning = true) ->
     num = 0
     for el,i in results when el?
         if ignoreWithWarning and el.warn then continue
-        changeSum += el.changeF
-        factors.push(el.changeF)
+        changeSum += el.deltaF
+        factors.push(el.deltaF)
         num++
 
     # default to 1, 1 if we donot have a valid year
@@ -252,8 +252,8 @@ countTradeResults = (results, isLong, ignoreWithWarning = true) ->
     for el in results when el?
         if ignoreWithWarning and el.warn then continue
         totalTrades++
-        if isLong and el.changeF > 1 then winTrades++
-        else if not isLong and el.changeF < 1 then winTrades++
+        if isLong and el.deltaF > 1 then winTrades++
+        else if not isLong and el.deltaF < 1 then winTrades++
     return { winTrades, totalTrades } 
 
 #endregion
