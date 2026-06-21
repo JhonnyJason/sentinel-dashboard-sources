@@ -215,10 +215,10 @@ export render = (summary) ->
 ############################################################
 transformToYearlyResults = (summary) ->
     yearlyResults = []
-    keys = Object.keys(summary.keyToRunObjects)
+    # keys = Object.keys(summary.keyToRunObjects)
 
-    for key in keys
-        runObj = summary.keyToRunObjects[key]
+    for runObj in summary.runObjects
+        # runObj = summary.keyToRunObjects[key]
         resObj = Object.create(null)
         
         resObj.year = runObj.key

@@ -89,7 +89,7 @@ export startScreening = (symbolToData, eventList) ->
 
                 for trade in trades
                     evaluation = await evaluateEventTrades(sym, evnt, trade)
-                    if evaluation? then result = generateResultObject(evaluation, evnt)
+                    if evaluation? then result = generateResultSummaryObject(evaluation, evnt)
                     else result = null
 
                     if result?
@@ -117,7 +117,6 @@ export startScreening = (symbolToData, eventList) ->
     w.rslv() for w in waiters
     return 
 
-
 ############################################################
 export getResults = (limit, sortKey, isAscending) ->
     log "getResults"
@@ -135,8 +134,10 @@ export getResults = (limit, sortKey, isAscending) ->
     if limit > results.length then return results
     return results.slice(0, limit)  
 
+############################################################
 export getTradeResultDetails = (tradeKey, direction) ->
     log "getTradeResultDetails"
+    log tradeKey
     tkns = tradeKey.split(":")
     if tkns.length != 3 then throw new Error("Invalid TradeKey! #{tradeKey}")
     sym = tkns[0]
@@ -150,9 +151,121 @@ export getTradeResultDetails = (tradeKey, direction) ->
         break
     if !evnt? then throw new Error("Could not find the target Event with id #{evntId}")
 
+    evaluation = await evaluateEventTrades(sym, evnt, trade)
+    if evaluation? then result = generateResultDetailsObject(evaluation, evnt)
+    else throw new Error("Could not evaluateEventTrades for #{tradeKey}")
+
+    return result
+
+############################################################
+evaluateEventTrades = (sym, evnt, trade) ->
+    try
+        key = "#{sym}:#{evnt.id}:#{trade}"
+        dates = evnt.datesToScreen
+
+        backtester = new SymbolBacktester(sym, key)
+        await backtester.loadData()
+
+        for date in dates
+            year = parseInt(date.slice(0,4))
+            runKey = key + "@#{date}"
+            res = getLeapNormIndicesForTrade(date, trade)
+            backtester.addBacktestRun(year, res.startIdx, res.endIdx, runKey)
+        
+        return backtester.runEvaluationSync()
+    
+    catch err then console.error("@eventscreenerengine.evaluateEventTrades: #{err.message}")
+    return null
+
+    # backtester.reunEvaluationSync returns: { keyToInfoObjects X,
+    #    key, runObjects, avgChangeF, medChangeF, isLong, winrate, totalTrades,
+    #    maxRiseObj, maxDropObj 
+    # }
+
+
+############################################################
+generateResultDetailsObject = (evaluation, evnt) ->
+    avgDailyReturn = getAverageDailyReturn(evaluation.runObjects)
+
+    ############################################################
+    getDetailsResult = (sym, trade, date) ->
+        # log "getTradeResult #{date}"
+        tDays = screeningInputs.symbolToData[sym].tDays 
+
+        tkns = trade.split("-")
+        entrIdx = parseInt(tkns[0])
+        exitIdx = parseInt(tkns[1])
+        evntIdx = parseInt(tkns[2])
+        relEntry = entrIdx - evntIdx
+        relExit = exitIdx - evntIdx
+
+        eventD = date
+        eventDay = utl.createDayFromDate(date)
+        entryDay = eventDay.getRelativeDay(relEntry)
+        exitDay = eventDay.getRelativeDay(relExit)
+        
+        ## Retrieve factors array
+        fullCloseSequence = []
+        day = eventDay.getRelativeDay(-evntIdx)
+        timeframeLength = evntIdx * 2 + 1
+        for count in [0...timeframeLength]
+            dp = day.lookupIn(hlc)
+            if !dp? then close = fullCloseSequence[fullCloseSequence.length - 1]
+            else close = dp[dp.length - 1]
+            fullCloseSequence.push(close)
+            day = day.getNextDay()
+        factorsArray = utl.toFactorsArray(fullCloseSequence)
+
+        nextDate = eventDay.getYYYYMMDD() 
+        entryD = utl.effectiveStartDate(entryDay, tDays) 
+        exitD = utl.effectiveEndDate(exitDay, tDays)
+
+        entryDP = entryDay.lookupIn(hlc)
+        exitDP = exitDay.lookupIn(hlc)
+        
+        # olog { entryDP, exitDP }
+        if !entryDP? or !exitDP?
+            log "Case without entry or exit DP!"
+            entryDate = entryDay.getYYYYMMDD()
+            exitDate = exitDay.getYYYYMMDD()
+
+            olog {
+                date
+                relEntry
+                relExit
+                entryDate
+                exitDate
+            }
+            return null
+
+        entryC = entryDP[entryDP.length - 1]
+        exitC = exitDP[exitDP.length - 1]
+        deltaAbs = exitC - entryC
+        deltaF = 1.0 + (1.0 * deltaAbs / entryC)  # = 1.0 * exitC / entryC
+
+        maxAbs = entryC
+        minAbs = entryC
+            
+        day = entryDay.getNextDay()
+        count = exitIdx - entrIdx
+        while count--
+            dayDP = day.lookupIn(hlc)
+            dayHighAbs = dayDP[0]
+            ## either we have 3 values [ H,L,C ] or we only have one [ C=H=L ] (non-trading days)
+            if dayDP.length == 3 then dayLowAbs = dayDP[1]
+            else dayLowAbs = dayHighAbs
+
+            if dayHighAbs > maxAbs then maxAbs = dayHighAbs
+            if dayLowAbs < minAbs then minAbs = dayLowAbs
+            day = day.getNextDay()
+
+        maxGainF = 1.0 * maxAbs / entryC
+        maxDropF = 1.0 * minAbs / entryC
+
+        return { entryD, eventD, exitD, entryC, exitC, deltaF, maxGainF, maxDropF, factorsArray }
+
     allResults = evnt.datesToScreen.map((date) -> getDetailsResult(sym, trade, date))
     allResults = allResults.filter((el) -> el?)
-    addSplitsInfo(allResults, sym)
 
     cumFactors = new Array(timeframeLength).fill(0)
     totalTrades = 0
@@ -212,371 +325,11 @@ export getTradeResultDetails = (tradeKey, direction) ->
         maxGain, maxGainAba, maxGainMissingF
     }
 
-
 ############################################################
-#region Split Factor Correction
-
-############################################################
-addSplitsInfo = (results, sym) ->
-    { splitFactors } = dataC.getCurrentMetaData(sym)
-    return unless splitFactors?.length
-    hasApplied = splitFactors.some((sf) -> sf.applied)
-    return unless hasApplied
-
-
-    if splitFactors[splitFactors.length - 1].applied
-        lastF = splitFactors[splitFactors.length - 1].f
-    else
-        lastF = 1.0
-
-    for el in results when el?
-        el.lastF = lastF ## kind if redundant but handy later
-        corrF = getSplitCorrectionFactor(splitFactors, el.entryD)
-        el.corrF = corrF
-        el.entryAr = el.entryC / corrF
-        el.entryAba = el.entryC / lastF
-        el.missingF = 1.0 * lastF / corrF
-    return
-
-############################################################
-getSplitCorrectionFactor = (splitFactors, dateYYYYMMDD) ->
-    return 1 unless splitFactors?.length
-    # splitFactors = [{f, applied, end: "YYYY-MM-DD"}, ...]
-
-    for sf in splitFactors when dateYYYYMMDD <= sf.end or !sf.end?
-        # our date is within range of this splitFactor
-        if sf.applied then return sf.f 
-        else return 1
-    return 1
-
-#endregion
-
-############################################################
-# Compare Functions
-numberCompare = (a, b, f) -> (b - a) * f
-negNumberCompare = (a, b, f) -> ((-b) - (-a)) * f
-stringCompare = (a, b, f) -> 
-    if a > b then return (-1) * f 
-    if a < b then return f 
-    return 0
-
-############################################################
-getSortFunction = (sortKey, isAscending) ->
-    log "getSortFunction #{sortKey}, #{isAscending}"
-    info = keyToInfo[sortKey]
-    
-    if isAscending then f = -1
-    else f = 1
-
-    switch sortKey
-        when "symbol" then return (el1, el2) -> stringCompare(el1.symbol, el2.symbol, f)
-        when "marketcap" then return (el1, el2) -> numberCompare(el1.marketcap, el2.marketcap, f)
-        when "eventLabel" then return (el1, el2) -> stringCompare(el1.eventLabel, el2.eventLabel, f)
-        when "direction" then return (el1, el2) -> stringCompare(el1.direction, el2.direction, f)
-        when "winrate" then return (el1, el2) -> numberCompare(el1.winrate, el2.winrate, f)
-        when "profitAvg" then return (el1, el2) -> numberCompare(el1.profitAvg, el2.profitAvg, f)
-        when "profitMed" then return (el1, el2) -> numberCompare(el1.profitMed, el2.profitMed, f)
-        when "maxGain" then return (el1, el2) -> numberCompare(el1.maxGain, el2.maxGain, f)
-        when "maxDrop" then return (el1, el2) -> negNumberCompare(el1.maxDrop, el2.maxDrop, f)
-        when "nextDate" then return (el1, el2) -> stringCompare(el1.nextDate, el2.nextDate, f)
-        when "entryDate" then return (el1, el2) -> stringCompare(el1.entryDate, el2.entryDate, f)
-        when "exitDate" then return (el1, el2) -> stringCompare(el1.nextDate, el2.exitDate, f)
-        else throw new Error("No sort Function for #{sortKey}!")
-    return
-        
-############################################################
-evaluateEventTrades = (sym, evnt, trade) ->
-    try
-        key = "#{sym}:#{evnt.id}:#{trade}"
-        dates = evnt.datesToScreen
-
-        backtester = new SymbolBacktester(sym, key)
-        await backtester.loadData()
-
-        for date in dates
-            year = parseInt(date.slice(0,4))
-            runKey = key + "@#{date}"
-            res = getLeapNormIndicesForTrade(date, trade)
-            backtester.addBacktestRun(year, res.startIdx, res.endIdx, runKey)
-        
-        return backtester.runEvaluationSync()
-        # runSummary = backtester.runEvaluationSync()
-        # backtester.destroy()
-        # return runSummary 
-    
-    catch err then console.error("@eventscreenerengine.evaluateEventTrades: #{err.message}")
-    return null
-
-    # backtester: { 
-    #    key, isLong, winrate, totalTrades, avgChangeF, avgChangeF, maxRiseObj, maxDropObj 
-    # }
-
-    # expected: { 
-    #    key, direction, winrate, totalTrades, profitAvgP, profitMedP, maxGainP, maxDropP 
-    # }
-
-
-    # # log "#{evnt.id} has #{dates.length} dates to screen!"
-    # tradeResults = dates.map((date) -> getTradeResult(sym, trade, date)).filter((el) -> el?)
-    # return null unless tradeResults.length > 0
-
-    # direction = ""
-    # maxGainF = 0.0
-    # maxDropF = 1.0
-    # avgDeltaF = 0.0
-    # medDeltaF = 0.0
-
-    # longSuccessCount = 0
-    # shortSuccessCount = 0
-
-    # for result in tradeResults
-    #     # olog result # { deltaF, maxGainF, maxDropF }
-    #     avgDeltaF += result.deltaF
-        
-    #     if result.deltaF > 1 then longSuccessCount++
-    #     if result.deltaF < 1 then shortSuccessCount++
-
-    #     if maxGainF < result.maxGainF then maxGainF = result.maxGainF
-    #     if maxDropF > result.maxDropF then maxDropF = result.maxDropF
-
-    # avgDeltaF = avgDeltaF / tradeResults.length
-
-    # tradeResults.sort((el1, el2) -> el2.deltaF - el1.deltaF)
-    # totalTrades = tradeResults.length
-    # medIdx = Math.floor(totalTrades / 2)
-    
-    # if totalTrades % 2 # odd case
-    #     medDeltaF = tradeResults[medIdx].deltaF
-    # else
-    #     medDeltaF = tradeResults[medIdx].deltaF
-    #     medDeltaF += tradeResults[medIdx - 1].deltaF
-    #     medDeltaF *= 0.5
-
-    # if avgDeltaF > 1
-    #     direction = "Long"
-    #     profitAvgP = 100.0 * (avgDeltaF - 1.0)
-    #     profitMedP = 100.0 * (medDeltaF - 1.0)
-    #     maxGainP = 100.0 * (maxGainF - 1.0)
-    #     maxDropP = 100.0 * (maxDropF - 1.0)
-    #     winrate = 100.0 * longSuccessCount / totalTrades
-    # else
-    #     direction = "Short"
-    #     profitAvgP = 100.0 * (1.0 - avgDeltaF)
-    #     profitMedP = 100.0 * (1.0 - medDeltaF)
-    #     maxGainP = 100.0 * (maxGainF - 1.0)
-    #     maxDropP = 100.0 * (maxDropF - 1.0)
-    #     winrate = 100.0 * shortSuccessCount / totalTrades
-    
-    # if winrate == 0
-    #     # log "Winrate was 0 - how can this be?"
-    #     # olog { tradeResults }
-    #     return null
-
-    # return { key, direction, winrate, totalTrades, profitAvgP, profitMedP, maxGainP, maxDropP }
-
-# ############################################################
-# getTradeResult = (sym, trade, date) ->
-#     # log "getTradeResult #{date}"
-#     hlc = screeningInputs.symbolToData[sym].hlc
-
-#     tkns = trade.split("-")
-#     entrIdx = parseInt(tkns[0])
-#     exitIdx = parseInt(tkns[1])
-#     evntIdx = parseInt(tkns[2])
-#     relEntry = entrIdx - evntIdx
-#     relExit = exitIdx - evntIdx
-
-#     eventDay = utl.createDayFromDate(date)
-#     entryDay = eventDay.getRelativeDay(relEntry)
-#     exitDay = eventDay.getRelativeDay(relExit)
-
-#     entryD = entryDay.getYYYYMMDD() 
-#     exitD = exitDay.getYYYYMMDD()
-
-#     entryDP = entryDay.lookupIn(hlc)
-#     exitDP = exitDay.lookupIn(hlc)
-    
-#     # olog { entryDP, exitDP }
-#     if !entryDP? or !exitDP?
-#         # log "Case without entry or exit DP!"
-#         # entryDate = entryDay.getYYYYMMDD()
-#         # exitDate = exitDay.getYYYYMMDD()
-
-#         # olog {
-#         #     date
-#         #     relEntry
-#         #     relExit
-#         #     entryDate
-#         #     exitDate
-#         # }
-#         return null
-
-#     entryC = entryDP[entryDP.length - 1]
-#     exitC = exitDP[exitDP.length - 1]
-#     deltaAbs = exitC - entryC
-#     deltaF = 1.0 + (1.0 * deltaAbs / entryC)
-
-#     maxAbs = entryC
-#     minAbs = entryC
-        
-#     day = entryDay.getNextDay()
-#     count = exitIdx - entrIdx
-#     while count--
-#         dayDP = day.lookupIn(hlc)
-#         dayHighAbs = dayDP[0]
-#         ## either we have 3 values [ H,L,C ] or we only have one [ C=H=L ] (non-trading days)
-#         if dayDP.length == 3 then dayLowAbs = dayDP[1]
-#         else dayLowAbs = dayHighAbs
-
-#         if dayHighAbs > maxAbs then maxAbs = dayHighAbs
-#         if dayLowAbs < minAbs then minAbs = dayLowAbs
-#         day = day.getNextDay()
-
-#     maxGainF = 1.0 * maxAbs / entryC
-#     maxDropF = 1.0 * minAbs / entryC
-
-#     return { entryD, deltaF, maxGainF, maxDropF, exitD }
-
-############################################################
-getDetailsResult = (sym, trade, date) ->
-    # log "getTradeResult #{date}"
-    hlc = screeningInputs.symbolToData[sym].hlc
-    tDays = screeningInputs.symbolToData[sym].tDays 
-
-    tkns = trade.split("-")
-    entrIdx = parseInt(tkns[0])
-    exitIdx = parseInt(tkns[1])
-    evntIdx = parseInt(tkns[2])
-    relEntry = entrIdx - evntIdx
-    relExit = exitIdx - evntIdx
-
-    eventD = date
-    eventDay = utl.createDayFromDate(date)
-    entryDay = eventDay.getRelativeDay(relEntry)
-    exitDay = eventDay.getRelativeDay(relExit)
-    
-    ## Retrieve factors array
-    fullCloseSequence = []
-    day = eventDay.getRelativeDay(-evntIdx)
-    timeframeLength = evntIdx * 2 + 1
-    for count in [0...timeframeLength]
-        dp = day.lookupIn(hlc)
-        if !dp? then close = fullCloseSequence[fullCloseSequence.length - 1]
-        else close = dp[dp.length - 1]
-        fullCloseSequence.push(close)
-        day = day.getNextDay()
-    factorsArray = utl.toFactorsArray(fullCloseSequence)
-
-    nextDate = eventDay.getYYYYMMDD() 
-    entryD = utl.effectiveStartDate(entryDay, tDays) 
-    exitD = utl.effectiveEndDate(exitDay, tDays)
-
-    entryDP = entryDay.lookupIn(hlc)
-    exitDP = exitDay.lookupIn(hlc)
-    
-    # olog { entryDP, exitDP }
-    if !entryDP? or !exitDP?
-        log "Case without entry or exit DP!"
-        entryDate = entryDay.getYYYYMMDD()
-        exitDate = exitDay.getYYYYMMDD()
-
-        olog {
-            date
-            relEntry
-            relExit
-            entryDate
-            exitDate
-        }
-        return null
-
-    entryC = entryDP[entryDP.length - 1]
-    exitC = exitDP[exitDP.length - 1]
-    deltaAbs = exitC - entryC
-    deltaF = 1.0 + (1.0 * deltaAbs / entryC)  # = 1.0 * exitC / entryC
-
-    maxAbs = entryC
-    minAbs = entryC
-        
-    day = entryDay.getNextDay()
-    count = exitIdx - entrIdx
-    while count--
-        dayDP = day.lookupIn(hlc)
-        dayHighAbs = dayDP[0]
-        ## either we have 3 values [ H,L,C ] or we only have one [ C=H=L ] (non-trading days)
-        if dayDP.length == 3 then dayLowAbs = dayDP[1]
-        else dayLowAbs = dayHighAbs
-
-        if dayHighAbs > maxAbs then maxAbs = dayHighAbs
-        if dayLowAbs < minAbs then minAbs = dayLowAbs
-        day = day.getNextDay()
-
-    maxGainF = 1.0 * maxAbs / entryC
-    maxDropF = 1.0 * minAbs / entryC
-
-    return { entryD, eventD, exitD, entryC, exitC, deltaF, maxGainF, maxDropF, factorsArray }
-
-############################################################
-getLeapNormIndicesForTrade = (date, trade) ->
-    tkns = trade.split("-")
-    entrIdx = parseInt(tkns[0])
-    exitIdx = parseInt(tkns[1])
-    evntIdx = parseInt(tkns[2])
-    
-    relEntry = entrIdx - evntIdx
-    relExit = exitIdx - evntIdx
-    
-    lnIdx = utl.getDayOfYear(new Date(date))
-    
-    result = Object.create(null)
-
-    result.startIdx = lnIdx + relEntry
-    result.endIdx = lnIdx + relExit
-    return result
-
-############################################################
-getNextTradeDates = (trade, evnt, tDays) ->
-    # log "getNextTradeDates"
-    tkns = trade.split("-")
-    entrIdx = parseInt(tkns[0])
-    exitIdx = parseInt(tkns[1])
-    evntIdx = parseInt(tkns[2])
-    
-    relEntry = entrIdx - evntIdx
-    relExit = exitIdx - evntIdx
-    try
-        dates = evnt.nextDates
-        for date in dates
-            eventDay = utl.createDayFromDate(date)
-            entryDay = eventDay.getRelativeDay(relEntry)
-            exitDay = eventDay.getRelativeDay(relExit)
-
-            entryDate = entryDay.getYYYYMMDD()
-            todayDate = (new Date()).toISOString().slice(0, 10)
-
-            if entryDate >= todayDate then break
-
-        nextDate = eventDay.getYYYYMMDD()
-        # nextEntryDate = entryDay.getYYYYMMDD()
-        nextEntryDate = utl.effectiveStartDate(entryDay, tDays)
-        # nextExitDate = exitDay.getYYYYMMDD()
-        nextExitDate = utl.effectiveEndDate(exitDay, tDays)
-        
-        if nextExitDate < nextEntryDate
-            log "impossible trading days entry @#{nextEntryDate} exit @#{nextExitDate}"
-            return {}
-
-    catch err
-        log err
-        olog { trade, dates }
-        return {}
-
-    return { nextDate, nextEntryDate, nextExitDate }
-
-############################################################
-generateResultObject = (evaluation, evnt) ->
+generateResultSummaryObject = (evaluation, evnt) ->
     # log "generateResultObject"
     result = Object.create(null)
-    
+    # evaluation:
     # { key, isLong, avgChangeF, medChangeF, winTrades, totalTrades, maxRiseObj, maxDropObj }
 
     tkns = evaluation.key.split(":")
@@ -611,7 +364,9 @@ generateResultObject = (evaluation, evnt) ->
     result.tradeKey = evaluation.key
     return result
 
+
 ############################################################
+#region general Helper Functions
 getTrades14D = ->
     #idx 0 = 14th day before
     #idx 28 = 14th day after
@@ -629,3 +384,116 @@ getTrades4D = ->
         for j in[(i+1)..8]
             result.push("#{i}-#{j}-4")
     return result
+
+############################################################
+getLeapNormIndicesForTrade = (date, trade) ->
+    tkns = trade.split("-")
+    entrIdx = parseInt(tkns[0])
+    exitIdx = parseInt(tkns[1])
+    evntIdx = parseInt(tkns[2])
+    
+    relEntry = entrIdx - evntIdx
+    relExit = exitIdx - evntIdx
+    
+    lnIdx = utl.getDayOfYear(new Date(date))
+    
+    result = Object.create(null)
+
+    result.startIdx = lnIdx + relEntry
+    result.endIdx = lnIdx + relExit
+    return result
+
+############################################################
+getNextTradeDates = (trade, evnt, tDays) ->
+    # log "getNextTradeDates"
+    tkns = trade.split("-")
+    entrIdx = parseInt(tkns[0])
+    exitIdx = parseInt(tkns[1])
+    evntIdx = parseInt(tkns[2])
+    
+    relEntry = entrIdx - evntIdx
+    relExit = exitIdx - evntIdx
+
+    try
+        dates = evnt.nextDates
+        for date in dates
+            eventDay = utl.createDayFromDate(date)
+            entryDay = eventDay.getRelativeDay(relEntry)
+            exitDay = eventDay.getRelativeDay(relExit)
+
+            entryDate = entryDay.getYYYYMMDD()
+            todayDate = (new Date()).toISOString().slice(0, 10)
+
+            if entryDate >= todayDate then break
+
+        nextDate = eventDay.getYYYYMMDD()
+        # nextEntryDate = entryDay.getYYYYMMDD()
+        nextEntryDate = utl.effectiveStartDate(entryDay, tDays)
+        # nextExitDate = exitDay.getYYYYMMDD()
+        nextExitDate = utl.effectiveEndDate(exitDay, tDays)
+        
+        if nextExitDate < nextEntryDate
+            log "impossible trading days entry @#{nextEntryDate} exit @#{nextExitDate}"
+            return {}
+
+    catch err
+        log err
+        olog { trade, dates }
+        return {}
+
+    return { nextDate, nextEntryDate, nextExitDate }
+
+
+getAverageDailyReturn = (runObjects) ->
+    log "getAverageDailyReturn"
+    counts = []
+    sums = []
+    for obj in runObjects
+        gap = obj.lnEntryIdx - obj.lnStartIdx
+        factorsArray = utl.toFactorsArray(obj.seq.map((el) -> el[el.length - 1]))
+        for f,i in factorsArray
+            counts[gap + i]++
+            sums[gap + i] += f
+
+    cumFactors = []
+    for num,i in counts when typeof num == "number" and num > 0
+        cumFactors.push(sums[i] / num)
+
+    return
+
+#endregion
+
+############################################################
+#region Compare Functions + getSortFunction
+numberCompare = (a, b, f) -> (b - a) * f
+negNumberCompare = (a, b, f) -> ((-b) - (-a)) * f
+stringCompare = (a, b, f) -> 
+    if a > b then return (-1) * f 
+    if a < b then return f 
+    return 0
+
+############################################################
+getSortFunction = (sortKey, isAscending) ->
+    log "getSortFunction #{sortKey}, #{isAscending}"
+    info = keyToInfo[sortKey]
+    
+    if isAscending then f = -1
+    else f = 1
+
+    switch sortKey
+        when "symbol" then return (el1, el2) -> stringCompare(el1.symbol, el2.symbol, f)
+        when "marketcap" then return (el1, el2) -> numberCompare(el1.marketcap, el2.marketcap, f)
+        when "eventLabel" then return (el1, el2) -> stringCompare(el1.eventLabel, el2.eventLabel, f)
+        when "direction" then return (el1, el2) -> stringCompare(el1.direction, el2.direction, f)
+        when "winrate" then return (el1, el2) -> numberCompare(el1.winrate, el2.winrate, f)
+        when "profitAvg" then return (el1, el2) -> numberCompare(el1.profitAvg, el2.profitAvg, f)
+        when "profitMed" then return (el1, el2) -> numberCompare(el1.profitMed, el2.profitMed, f)
+        when "maxGain" then return (el1, el2) -> numberCompare(el1.maxGain, el2.maxGain, f)
+        when "maxDrop" then return (el1, el2) -> negNumberCompare(el1.maxDrop, el2.maxDrop, f)
+        when "nextDate" then return (el1, el2) -> stringCompare(el1.nextDate, el2.nextDate, f)
+        when "entryDate" then return (el1, el2) -> stringCompare(el1.entryDate, el2.entryDate, f)
+        when "exitDate" then return (el1, el2) -> stringCompare(el1.nextDate, el2.exitDate, f)
+        else throw new Error("No sort Function for #{sortKey}!")
+    return
+        
+#endregion

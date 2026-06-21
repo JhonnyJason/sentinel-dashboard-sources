@@ -70,11 +70,8 @@ export class SymbolBacktester
         if dataStartIdx < 0 or dataEndIdx < 0 then return 
         if dataEndIdx - dataStartIdx < 1 then return 
 
-        entryDateObj = new Date(zeroDateObj)
-        entryDateObj.setDate(entryDateObj.getDate() + dataStartIdx)
-        exitDateObj = new Date(zeroDateObj)
-        exitDateObj.setDate(exitDateObj.getDate() + dataEndIdx)
-
+        entryDateObj.setDate(zeroDateObj.getDate() + dataStartIdx)
+        exitDateObj.setDate(zeroDateObj.getDate() + dataEndIdx)
 
         infoObj.seq = @rawData.slice(dataStartIdx, dataEndIdx + 1) # we need to include the exit date
         infoObj.seqLen = infoObj.seq.length
@@ -82,6 +79,15 @@ export class SymbolBacktester
         infoObj.entryCv = infoObj.seq[0][2] 
         infoObj.exitDate = exitDateObj.toISOString().slice(0, 10)
         infoObj.entryExitDif = utl.dateDifDays(entryDateObj, exitDateObj)
+
+        entryDateObj.setFullYear(2000)
+        infoObj.lnEntryIdx = utl.getDayOfYear(entryDateObj)
+        infoObj.lnStartIdx = startIdx
+        exitDateObj.setFullYear(2000)
+        infoObj.lnExitIdx = utl.getDayOfYear(exitDateObj)
+        infoObj.lnEndIdx = endIdx
+        infoObj.isInLeapYear = utl.isLeapYear(startYear)
+
         infoObj.key = key
         # infoObj.intendedStartYear = startYear
 
@@ -119,13 +125,14 @@ export class SymbolBacktester
         # olog @runInfoObjects
         evaluateBacktestRun(infoObj) for infoObj in @runInfoObjects
 
-        keyToRunObjects = Object.create(null)
-        keyToRunObjects[infoObj.key] = infoObj for infoObj in @runInfoObjects
+        # keyToRunObjects = Object.create(null)
+        # keyToRunObjects[infoObj.key] = infoObj for infoObj in @runInfoObjects
 
         @summary = Object.create(null)
         @summary.key = @key
-        @summary.keyToRunObjects = keyToRunObjects
-
+        # @summary.keyToRunObjects = keyToRunObjects
+        @summary.runObjects = @runInfoObjects
+        
         res = getAverageAndMedianChanges(@runInfoObjects)
         @summary.avgChangeF = res.avgChangeF
         @summary.isLong  = res.avgChangeF > 0.0
