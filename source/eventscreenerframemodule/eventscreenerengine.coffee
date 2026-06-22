@@ -185,7 +185,7 @@ evaluateEventTrades = (sym, evnt, trade) ->
 
 ############################################################
 generateResultDetailsObject = (evaluation, evnt) ->
-    avgDailyReturn = getAverageDailyReturn(evaluation.runObjects)
+    avgDailyReturnSeq = getAverageDailyReturnSeq(evaluation.runObjects)
 
     ############################################################
     getDetailsResult = (sym, trade, date) ->
@@ -444,10 +444,19 @@ getNextTradeDates = (trade, evnt, tDays) ->
     return { nextDate, nextEntryDate, nextExitDate }
 
 
-getAverageDailyReturn = (runObjects) ->
-    log "getAverageDailyReturn"
-    counts = []
-    sums = []
+getAverageDailyReturnSeq = (runObjects) ->
+    log "getAverageDailyReturnSeq"
+    fullLen = 0
+    for obj in runObjects
+        gap = obj.realStartIdx - obj.startIdx
+        if fullLen == 0 then fullLen = gap + obj.seqLen
+        else if fullLen != gap + obj.seqLen 
+            console.error("fullLen is off!")
+            olog { fullLen, gap, seqLen: obj.seqLen }
+
+    counts = new Array(fullLen).fill(0)
+    sums = new Array(fullLen).fill(0)
+
     for obj in runObjects
         gap = obj.lnEntryIdx - obj.lnStartIdx
         factorsArray = utl.toFactorsArray(obj.seq.map((el) -> el[el.length - 1]))
@@ -455,11 +464,15 @@ getAverageDailyReturn = (runObjects) ->
             counts[gap + i]++
             sums[gap + i] += f
 
+    # If we have a gap that was never touched by a factor then it will be undefined
+    # We assume that we cannot have  "gap" in between of the sequences only a the front
+    # The "gap" after the sequence is never visited anyways as we stop after the sequence has ended
+
     cumFactors = []
     for num,i in counts when typeof num == "number" and num > 0
         cumFactors.push(sums[i] / num)
 
-    return
+    return utl.fromFactorsForward(cumFactors)
 
 #endregion
 

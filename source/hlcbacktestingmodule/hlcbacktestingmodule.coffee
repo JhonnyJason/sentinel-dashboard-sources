@@ -44,7 +44,13 @@ export class SymbolBacktester
     ############################################################
     addBacktestRun: (startYear, startIdx, endIdx, key) =>
         # startIdx and endIdx need to be real indices - endIdx might be overflown
-        
+        olog { startYear, startIdx, endIdx, key }
+
+        # (= addBacktestRun[startYear, startIdx, endIdx, key] # definition
+        # res =(addBacktestRun[startYear, startIdx, endIdx, key] # execution
+
+
+
         if !@ready then throw new Error("Symbol Backtester #{@symbol}:#{key} cannot addBacktestRun when not being in ready state!")
         if @evaluated then throw new Error("Symbol Backtester #{@symbol}:#{key} cannot addBacktestRun in an evaluated state!")
 
@@ -58,19 +64,24 @@ export class SymbolBacktester
         entryDateObj = new Date(entryDate + "T12:00:00")
         exitDate = utl.leapNormToYYYYMMDD(endIdx, startYear)
         exitDateObj = new Date(exitDate + "T12:00:00")
-        
-        zeroDateObj = new Date(@metaData.startDate + "T12:00:00")
-        dataStartIdx = utl.dateDifDays(zeroDateObj, entryDateObj)
-        dataEndIdx = utl.dateDifDays(zeroDateObj, exitDateObj)
+        olog { entryDate, exitDate }
 
-        dataStartIdx = getTradableStartIndex(@rawData, dataStartIdx)
-        dataEndIdx = getTradableEndIndex(@rawData, dataEndIdx)
+        zeroDateObj = new Date(@metaData.startDate + "T12:00:00")
+        log zeroDateObj.toISOString()
+        dataStartIdx = utl.dateDifDays(zeroDateObj, entryDateObj) # real index
+        dataEndIdx = utl.dateDifDays(zeroDateObj, exitDateObj) # real index
+        olog { dataStartIdx, dataEndIdx }
+        dataStartIdx = getTradableStartIndex(@rawData, dataStartIdx) # real index
+        dataEndIdx = getTradableEndIndex(@rawData, dataEndIdx) # real index
+        olog { dataStartIdx, dataEndIdx }
 
         ## Donot add the Backtest Run if it does not result in a tradable range
         if dataStartIdx < 0 or dataEndIdx < 0 then return 
         if dataEndIdx - dataStartIdx < 1 then return 
 
+        entryDateObj = new Date(zeroDateObj)
         entryDateObj.setDate(zeroDateObj.getDate() + dataStartIdx)
+        exitDateObj = new Date(zeroDateObj)
         exitDateObj.setDate(zeroDateObj.getDate() + dataEndIdx)
 
         infoObj.seq = @rawData.slice(dataStartIdx, dataEndIdx + 1) # we need to include the exit date
@@ -78,15 +89,13 @@ export class SymbolBacktester
         infoObj.entryDate = entryDateObj.toISOString().slice(0, 10)
         infoObj.entryCv = infoObj.seq[0][2] 
         infoObj.exitDate = exitDateObj.toISOString().slice(0, 10)
-        infoObj.entryExitDif = utl.dateDifDays(entryDateObj, exitDateObj)
+        # entryExitDif = seqLen - 1
+        # infoObj.entryExitDif = utl.dateDifDays(entryDateObj, exitDateObj)
 
-        entryDateObj.setFullYear(2000)
-        infoObj.lnEntryIdx = utl.getDayOfYear(entryDateObj)
-        infoObj.lnStartIdx = startIdx
-        exitDateObj.setFullYear(2000)
-        infoObj.lnExitIdx = utl.getDayOfYear(exitDateObj)
-        infoObj.lnEndIdx = endIdx
-        infoObj.isInLeapYear = utl.isLeapYear(startYear)
+        infoObj.realStartIdx = utl.getDayOfYear(entryDateObj) # real index here
+        # realEndIdx = realStartIdx + seqLen - 1
+        infoObj.startIdx = startIdx # theoretical start
+        infoObj.endIdx = endIdx # theoretical end
 
         infoObj.key = key
         # infoObj.intendedStartYear = startYear
@@ -110,7 +119,10 @@ export class SymbolBacktester
         infoObj.missingSF = 1.0 * lastSF / corrSF 
         infoObj.entryCr = infoObj.entryCv / corrSF
         infoObj.entryCba = infoObj.entryCv / lastSF
-
+        
+        olog infoObj
+        alert("Stoping Execution -> debug!")
+        throw new Error("Death on Purpose!")
         @runInfoObjects.push(infoObj)
         return
 
@@ -132,7 +144,7 @@ export class SymbolBacktester
         @summary.key = @key
         # @summary.keyToRunObjects = keyToRunObjects
         @summary.runObjects = @runInfoObjects
-        
+
         res = getAverageAndMedianChanges(@runInfoObjects)
         @summary.avgChangeF = res.avgChangeF
         @summary.isLong  = res.avgChangeF > 0.0
