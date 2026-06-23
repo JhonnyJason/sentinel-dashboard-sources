@@ -41,65 +41,100 @@ export class SymbolBacktester
         @ready = true
         return
 
+    
     ############################################################
-    addBacktestRun: (startYear, startIdx, endIdx, key) =>
-        # startIdx and endIdx need to be real indices - endIdx might be overflown
-        olog { startYear, startIdx, endIdx, key }
+    addBacktestRun: (startYear, startIdxLN, endIdxLN, key) =>
+        # startIdxLN and endIdxLN need to be leap Norm indices - endIdxLN might be overflown
+        # olog { startYear, startIdxLN, endIdxLN, key }
 
-        # (= addBacktestRun[startYear, startIdx, endIdx, key] # definition
-        # res =(addBacktestRun[startYear, startIdx, endIdx, key] # execution
-
-
+        # (= addBacktestRun[startYear, startIdxLN, endIdxLN, key] # definition
+        # res =(addBacktestRun[startYear, startIdxLN, endIdxLN, key] # execution
+        
+        maxSeqLen = endIdxLN - startIdxLN + 1
 
         if !@ready then throw new Error("Symbol Backtester #{@symbol}:#{key} cannot addBacktestRun when not being in ready state!")
         if @evaluated then throw new Error("Symbol Backtester #{@symbol}:#{key} cannot addBacktestRun in an evaluated state!")
 
+        endYear = startYear
+        count = 4
+        while startIdxLN < 0
+            startIdxLN += 366
+            startYear--
+            count--
+            throw new Error("Index Adjustment.Illegal overflow!(>=4 years)") if count == 0
+        
+        count = 4
+        while endIdxLN > 366
+            endIdxLN -= 366
+            endYear++
+            count--
+            throw new Error("Index Adjustment.Illegal overflow!(>=4 years)") if count == 0
+
         if !key? then key = @runInfoObjects.length
         if typeof key != "string" then key = "#{key}"
 
+        # olog {startYear, startIdxLN, endYear, endIdxLN, maxSeqLen}
+
         infoObj = Object.create(null)
 
-        ## Get correct start/end date + index 
-        entryDate = utl.leapNormToYYYYMMDD(startIdx, startYear)
+        ## targeted start/end dates  
+        entryDate = utl.leapNormToYYYYMMDD(startIdxLN, startYear)
         entryDateObj = new Date(entryDate + "T12:00:00")
-        exitDate = utl.leapNormToYYYYMMDD(endIdx, startYear)
+        exitDate = utl.leapNormToYYYYMMDD(endIdxLN, endYear)
         exitDateObj = new Date(exitDate + "T12:00:00")
-        olog { entryDate, exitDate }
+        # olog { entryDate, exitDate }
 
+        ## get effectively tradable start/end index
         zeroDateObj = new Date(@metaData.startDate + "T12:00:00")
-        log zeroDateObj.toISOString()
+        # log zeroDateObj.toISOString()
         dataStartIdx = utl.dateDifDays(zeroDateObj, entryDateObj) # real index
         dataEndIdx = utl.dateDifDays(zeroDateObj, exitDateObj) # real index
-        olog { dataStartIdx, dataEndIdx }
+        # olog { dataStartIdx, dataEndIdx }
         dataStartIdx = getTradableStartIndex(@rawData, dataStartIdx) # real index
         dataEndIdx = getTradableEndIndex(@rawData, dataEndIdx) # real index
-        olog { dataStartIdx, dataEndIdx }
-
+        # olog { dataStartIdx, dataEndIdx }
+        
         ## Donot add the Backtest Run if it does not result in a tradable range
         if dataStartIdx < 0 or dataEndIdx < 0 then return 
         if dataEndIdx - dataStartIdx < 1 then return 
 
+
+        # exctract traded sequence
+        infoObj.seq = @rawData.slice(dataStartIdx, dataEndIdx + 1) # including exit data point
+        infoObj.seqLen = infoObj.seq.length
+        infoObj.maxSeqLen = maxSeqLen
+
+        if infoObj.seqLen > maxSeqLen then throw new Error("infoObj.seqLen (#{infoObj.seqLen}) > maxSeqLen (#{maxSeqLen})")
+
+
+        ## get the effectively tradable start/end dates
         entryDateObj = new Date(zeroDateObj)
         entryDateObj.setDate(zeroDateObj.getDate() + dataStartIdx)
         exitDateObj = new Date(zeroDateObj)
         exitDateObj.setDate(zeroDateObj.getDate() + dataEndIdx)
 
-        infoObj.seq = @rawData.slice(dataStartIdx, dataEndIdx + 1) # we need to include the exit date
-        infoObj.seqLen = infoObj.seq.length
         infoObj.entryDate = entryDateObj.toISOString().slice(0, 10)
-        infoObj.entryCv = infoObj.seq[0][2] 
         infoObj.exitDate = exitDateObj.toISOString().slice(0, 10)
         # entryExitDif = seqLen - 1
         # infoObj.entryExitDif = utl.dateDifDays(entryDateObj, exitDateObj)
 
-        infoObj.realStartIdx = utl.getDayOfYear(entryDateObj) # real index here
-        # realEndIdx = realStartIdx + seqLen - 1
-        infoObj.startIdx = startIdx # theoretical start
-        infoObj.endIdx = endIdx # theoretical end
+        infoObj.effEntryIdx = utl.getDayOfYear(entryDateObj) # real index of effective entryDate
+        # effExitIdx = effEntryIdx + seqLen - 1
+
+        ## save other indices to know how much we are off target in real or leap normed terms
+        infoObj.startIdxLN = startIdxLN # leap-normed start index (target)
+        infoObj.endIdxLN = endIdxLN # leap-normed end index (target)
+        isLeap = utl.isLeapYear(startYear)
+        infoObj.startIdxR = utl.leapNormToRealIdx(startIdxLN, isLeap) # real start index (target)
+        isLeap = utl.isLeapYear(endYear)
+        infoObj.endIdxR = utl.leapNormToRealIdx(endIdxLN, isLeap) # real end index (target)
 
         infoObj.key = key
         # infoObj.intendedStartYear = startYear
 
+        ## Absolute virtual entry close -> reference for all absolute values
+        infoObj.entryCv = infoObj.seq[0][2] 
+        
         ## add split info
         lastSF = @lastSplitFactor
         if !(lastSF > 1.0) then corrSF = 1.0
@@ -120,9 +155,9 @@ export class SymbolBacktester
         infoObj.entryCr = infoObj.entryCv / corrSF
         infoObj.entryCba = infoObj.entryCv / lastSF
         
-        olog infoObj
-        alert("Stoping Execution -> debug!")
-        throw new Error("Death on Purpose!")
+        # olog infoObj
+        # alert("Stoping Execution -> debug!")
+        # # throw new Error("Death on Purpose!")
         @runInfoObjects.push(infoObj)
         return
 
@@ -169,22 +204,6 @@ export class SymbolBacktester
         @rawData = null
         @metaData = null
         return
-
-    # ############################################################
-    # getResults: () => ## maybe add filter and sort options for result?
-    #     if !@ready then throw new Error("Symbol Backtester #{@symbol}:#{key} cannot getResults when not being in ready state!")
-    #     if !@evaluated then throw new Error("Symbol Backtester #{@symbol}:#{key} cannot getResults when not being in evaluated state!")
-
-    #     resultObj = Object.create(null)
-    #     ## TODO compile results?        
-    #     return resultObj
-
-
-    # ############################################################
-    # backtestSync: =>
-    #     log "backtestSync"
-    #     @runEvaluationSync()
-    #     return @getResults()
 
 
 ############################################################

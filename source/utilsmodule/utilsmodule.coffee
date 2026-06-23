@@ -217,7 +217,7 @@ export normalizedIdxToYYYYMMDD = (year, dayIdx) ->
 # Convert year + real day index (0-364/365) to "YYYY-MM-DD"
 export realIdxToYYYYMMDD = (year, dayIdx) ->
     jan1 = new Date(year, 0, 1, 12)
-    target = new Date(jan1.getTime() + realIdx * 86_400_000)
+    target = new Date(jan1.getTime() + dayIdx * 86_400_000)
     return target.toISOString().slice(0, 10)
 
 ############################################################

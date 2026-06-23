@@ -175,8 +175,15 @@ export displayDetails = (result) ->
 ############################################################
 evaluateAndRenderTradeDetails = ->
     log "evaluateAndRenderTradeDetails"
-    result = engine.getTradeResultDetails(_tradeKey, _direction)
-    olog result
+    try
+        log _tradeKey
+        result = await engine.getTradeResultDetails(_tradeKey)
+        # olog result
+        log Object.keys(result)
+    catch err
+        console.error(err)
+        charting.reset()
+        return
 
     if result.profitAvg < 0 # somehow we should be changing direction on this trade...
         if _direction == "Long" then direction = "Short"
@@ -186,15 +193,17 @@ evaluateAndRenderTradeDetails = ->
     
 
     displaySummary(result)
-    await letMainThreadRun
+    await letMainThreadRun()
 
-    _allResults = result.allResults
-    renderDetailsTable()
+    _allResults = result.runObjects.map(transformRunObjToDetailsResult)
+    # renderDetailsTable()
     
     tkns = _trade.split("-")
     startIdx = parseInt(tkns[0])
     endIdx = parseInt(tkns[1])
-    # olog {startIdx, endIdx}
+    log "after general rendering"
+    olog { _tradeKey, _trade }
+    olog { startIdx, endIdx }
     
     await letMainThreadRun()
     charting.reset()
@@ -215,6 +224,8 @@ setHeaderInfo = ->
 
 displaySummary = (summaryResult) ->
     log "displaySummary"
+    # olog summaryResult
+
     nextEventDateDisplay.textContent = formatDate(summaryResult.nextDate)
     nextEntryDateDisplay.textContent = formatDate(summaryResult.nextEntryDate)
     nextExitDateDisplay.textContent = formatDate(summaryResult.nextExitDate)
@@ -431,6 +442,24 @@ sortAllResults = (results) ->
     unless sortAscending then sorted.reverse()
     return sorted
 
+
+############################################################
+transformRunObjToDetailsResult = (runObj) ->
+    detailsRes = Object.create(null)
+    eventDate = runObj.key.split("@")[1]
+
+    detailsRes.entryD = runObj.entryDate
+    detailsRes.eventD = eventDate 
+    detailsRes.exitD = runObj.exitDate
+    detailsRes.entryC = runObj.entryCba
+    detailsRes.exitC = runObj.entryCba * (runObj.deltaF + 1)
+    detailsRes.deltaF = runObj.deltaF
+    detailsRes.maxGainF = runObj.maxRiseF
+    detailsRes.maxDropF = runObj.maxDrop
+
+    return detailsRes
+
+
 ############################################################
 formatPercent = (value) ->
     sign = if value >= 0 then "+" else ""
@@ -445,15 +474,15 @@ formatAbsolutePrice = (value, missingF) ->
     if missingF > 1 then return "#{value.toFixed(2)}<span class='missing-factor' title='Fehlender Faktor zum exakten historischen Wert.'>#{missingF.toFixed(2)}</span>"
     else return "#{value.toFixed(2)}"
 
-formatDate = (value) ->
-    date = new Date(value)
-    day = date.getDate()
-    month = date.getMonth() + 1
-    year = date.getFullYear()
+# formatDate = (value) ->
+#     date = new Date(value)
+#     day = date.getDate()
+#     month = date.getMonth() + 1
+#     year = date.getFullYear()
 
-    dayStr = if day < 10 then "0#{day}" else "#{day}"
-    monthStr = if month < 10 then "0#{month}" else "#{month}"
-    return "#{dayStr}.#{monthStr}.#{year}"
+#     dayStr = if day < 10 then "0#{day}" else "#{day}"
+#     monthStr = if month < 10 then "0#{month}" else "#{month}"
+#     return "#{dayStr}.#{monthStr}.#{year}"
 
 
 ############################################################

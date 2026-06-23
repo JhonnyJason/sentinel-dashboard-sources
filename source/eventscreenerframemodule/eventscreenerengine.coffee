@@ -135,7 +135,7 @@ export getResults = (limit, sortKey, isAscending) ->
     return results.slice(0, limit)  
 
 ############################################################
-export getTradeResultDetails = (tradeKey, direction) ->
+export getTradeResultDetails = (tradeKey) ->
     log "getTradeResultDetails"
     log tradeKey
     tkns = tradeKey.split(":")
@@ -143,7 +143,6 @@ export getTradeResultDetails = (tradeKey, direction) ->
     sym = tkns[0]
     evntId = tkns[1]
     trade = tkns[2]
-    timeframeLength = parseInt(trade.split("-")[2]) * 2
 
     evnt = null
     for e in screeningInputs.eventList when e.id == evntId
@@ -152,7 +151,7 @@ export getTradeResultDetails = (tradeKey, direction) ->
     if !evnt? then throw new Error("Could not find the target Event with id #{evntId}")
 
     evaluation = await evaluateEventTrades(sym, evnt, trade)
-    if evaluation? then result = generateResultDetailsObject(evaluation, evnt)
+    if evaluation? then result = generateResultDetailsObject(evaluation, evnt, trade)
     else throw new Error("Could not evaluateEventTrades for #{tradeKey}")
 
     return result
@@ -170,7 +169,7 @@ evaluateEventTrades = (sym, evnt, trade) ->
             year = parseInt(date.slice(0,4))
             runKey = key + "@#{date}"
             res = getLeapNormIndicesForTrade(date, trade)
-            backtester.addBacktestRun(year, res.startIdx, res.endIdx, runKey)
+            backtester.addBacktestRun(year, res.startIdxLN, res.endIdxLN, runKey)
         
         return backtester.runEvaluationSync()
     
@@ -184,146 +183,44 @@ evaluateEventTrades = (sym, evnt, trade) ->
 
 
 ############################################################
-generateResultDetailsObject = (evaluation, evnt) ->
+generateResultDetailsObject = (evaluation, evnt, trade) ->
+    detailsObj = Object.create(null)
+
+    # main summary data
+    if evaluation.isLong
+        detailsObj.profitAvg = 100.0 * evaluation.avgChangeF
+        detailsObj.profitMed = 100.0 * evaluation.medChangeF
+    else 
+        detailsObj.profitAvg = -100.0 * evaluation.avgChangeF
+        detailsObj.profitMed = -100.0 * evaluation.medChangeF
+
+    detailsObj.winTrades = evaluation.winTrades
+    detailsObj.totalTrades = evaluation.totalTrades
+
+    # avergage daily return pattern
     avgDailyReturnSeq = getAverageDailyReturnSeq(evaluation.runObjects)
+    # olog avgDailyReturnSeq
 
-    ############################################################
-    getDetailsResult = (sym, trade, date) ->
-        # log "getTradeResult #{date}"
-        tDays = screeningInputs.symbolToData[sym].tDays 
-
-        tkns = trade.split("-")
-        entrIdx = parseInt(tkns[0])
-        exitIdx = parseInt(tkns[1])
-        evntIdx = parseInt(tkns[2])
-        relEntry = entrIdx - evntIdx
-        relExit = exitIdx - evntIdx
-
-        eventD = date
-        eventDay = utl.createDayFromDate(date)
-        entryDay = eventDay.getRelativeDay(relEntry)
-        exitDay = eventDay.getRelativeDay(relExit)
-        
-        ## Retrieve factors array
-        fullCloseSequence = []
-        day = eventDay.getRelativeDay(-evntIdx)
-        timeframeLength = evntIdx * 2 + 1
-        for count in [0...timeframeLength]
-            dp = day.lookupIn(hlc)
-            if !dp? then close = fullCloseSequence[fullCloseSequence.length - 1]
-            else close = dp[dp.length - 1]
-            fullCloseSequence.push(close)
-            day = day.getNextDay()
-        factorsArray = utl.toFactorsArray(fullCloseSequence)
-
-        nextDate = eventDay.getYYYYMMDD() 
-        entryD = utl.effectiveStartDate(entryDay, tDays) 
-        exitD = utl.effectiveEndDate(exitDay, tDays)
-
-        entryDP = entryDay.lookupIn(hlc)
-        exitDP = exitDay.lookupIn(hlc)
-        
-        # olog { entryDP, exitDP }
-        if !entryDP? or !exitDP?
-            log "Case without entry or exit DP!"
-            entryDate = entryDay.getYYYYMMDD()
-            exitDate = exitDay.getYYYYMMDD()
-
-            olog {
-                date
-                relEntry
-                relExit
-                entryDate
-                exitDate
-            }
-            return null
-
-        entryC = entryDP[entryDP.length - 1]
-        exitC = exitDP[exitDP.length - 1]
-        deltaAbs = exitC - entryC
-        deltaF = 1.0 + (1.0 * deltaAbs / entryC)  # = 1.0 * exitC / entryC
-
-        maxAbs = entryC
-        minAbs = entryC
-            
-        day = entryDay.getNextDay()
-        count = exitIdx - entrIdx
-        while count--
-            dayDP = day.lookupIn(hlc)
-            dayHighAbs = dayDP[0]
-            ## either we have 3 values [ H,L,C ] or we only have one [ C=H=L ] (non-trading days)
-            if dayDP.length == 3 then dayLowAbs = dayDP[1]
-            else dayLowAbs = dayHighAbs
-
-            if dayHighAbs > maxAbs then maxAbs = dayHighAbs
-            if dayLowAbs < minAbs then minAbs = dayLowAbs
-            day = day.getNextDay()
-
-        maxGainF = 1.0 * maxAbs / entryC
-        maxDropF = 1.0 * minAbs / entryC
-
-        return { entryD, eventD, exitD, entryC, exitC, deltaF, maxGainF, maxDropF, factorsArray }
-
-    allResults = evnt.datesToScreen.map((date) -> getDetailsResult(sym, trade, date))
-    allResults = allResults.filter((el) -> el?)
-
-    cumFactors = new Array(timeframeLength).fill(0)
-    totalTrades = 0
-    winTrades = 0
-
-    avgDeltaF = 0.0
-    medDeltaF = 0.0
-    maxGainEl = allResults[0]
-    maxDropEl = allResults[0]
-
-    for result in allResults when result?
-        totalTrades++
-        avgDeltaF += result.deltaF
-        cumFactors[i] += f for f,i in result.factorsArray
-        delete result.factorsArray
-        if direction == "Long" and result.deltaF > 1 then winTrades++
-        if direction == "Short" and result.deltaF < 1 then winTrades++
-        if result.maxGainF > maxGainEl.maxGainF then maxGainEl = result
-        if result.maxDropF < maxDropEl.maxDropF then maxDropEl = result
-
-    cumFactors[i] = 1.0 * f / totalTrades for f,i in cumFactors
-    avgDailyReturn = utl.fromFactorsForward(cumFactors)    
+    detailsObj.avgDailyReturn = avgDailyReturnSeq
     
-    avgDeltaF = 1.0 * avgDeltaF / totalTrades
-    allResults.sort((el1, el2) -> el2.deltaF - el1.deltaF)
-    medIdx = Math.floor(totalTrades / 2)
-    if totalTrades % 2 # odd case
-        medDeltaF = allResults[medIdx].deltaF
-    else
-        medDeltaF = allResults[medIdx].deltaF
-        medDeltaF += allResults[medIdx - 1].deltaF
-        medDeltaF *= 0.5
+    # next possible entry for this event
+    { nextDate, nextEntryDate, nextExitDate } = getNextTradeDates(trade, evnt)
+    detailsObj.nextDate = nextDate
+    detailsObj.nextEntryDate = nextEntryDate
+    detailsObj.nextExitDate = nextExitDate
 
-    if direction == "Long"
-        profitAvg = 100.0 * (avgDeltaF - 1.0)
-        profitMed = 100.0 * (medDeltaF - 1.0)
-    if direction == "Short" 
-        profitAvg = -100.0 * (avgDeltaF - 1.0)
-        profitMed = -100.0 * (medDeltaF - 1.0)
+    # extremes
+    detailsObj.maxDrop = 100.0 * evaluation.maxDropObj.maxDropF
+    detailsObj.maxDropAba = evaluation.maxDropObj.entryCba * evaluation.maxDropObj.maxDropF
+    detailsObj.maxDropMissingF = evaluation.maxDropObj.missingSF
+    
+    detailsObj.maxGain = 100.0 * evaluation.maxRiseObj.maxRiseF
+    detailsObj.maxGainAba = evaluation.maxRiseObj.entryCba * evaluation.maxRiseObj.maxRiseF
+    detailsObj.maxGainMissingF = evaluation.maxRiseObj.missingSF
 
-    maxDrop = 100.0 * (maxDropEl.maxDropF - 1.0)
-    maxDropAba = maxDropEl.entryAba * (maxDropEl.maxDropF - 1.0)
-    maxDropMissingF = maxDropEl.missingF
-    
-    maxGain = 100.0 * (maxGainEl.maxGainF - 1.0)
-    maxGainAba = maxGainEl.entryAba * (maxGainEl.maxGainF - 1.0)
-    maxGainMissingF = maxGainEl.missingF
-    
-    tDays = screeningInputs.symbolToData[sym].tDays
-    { nextDate, nextEntryDate, nextExitDate } = getNextTradeDates(trade, evnt, tDays)
-    
-    return {
-        nextDate, nextEntryDate, nextExitDate,
-        profitAvg, profitMed,
-        allResults, avgDailyReturn, winTrades, totalTrades,
-        maxDrop, maxDropAba, maxDropMissingF,
-        maxGain, maxGainAba, maxGainMissingF
-    }
+    # all Results
+    detailsObj.runObjects = evaluation.runObjects
+    return detailsObj
 
 ############################################################
 generateResultSummaryObject = (evaluation, evnt) ->
@@ -336,16 +233,15 @@ generateResultSummaryObject = (evaluation, evnt) ->
     symbol = tkns[0]
     evntId = tkns[1]
     trade = tkns[2]
-    tDays = screeningInputs.symbolToData[symbol].tDays 
-
-    { nextDate, nextEntryDate, nextExitDate } = getNextTradeDates(trade, evnt, tDays)
+    
+    { nextDate, nextEntryDate, nextExitDate } = getNextTradeDates(trade, evnt)
     # if !nextDate? then throw new Error("getNextTradeDates failed to return nextDate!") 
     if !nextDate? then return null # we possibly had impossible exit and entry dates... 
 
-    if evaluation.isLong 
+    if evaluation.isLong
         direction = "Long"
         profitF = 100.0
-    else 
+    else
         direction = "Short"
         profitF = -100.0
     
@@ -394,18 +290,30 @@ getLeapNormIndicesForTrade = (date, trade) ->
     
     relEntry = entrIdx - evntIdx
     relExit = exitIdx - evntIdx
-    
-    lnIdx = utl.getDayOfYear(new Date(date))
+
+    tradeDate = new Date(date+"T12:00:00")
+    isLeap = utl.isLeapYear(tradeDate.getFullYear())
+    idxR = utl.getDayOfYear(tradeDate) # real index of trade date
+    idxLN = utl.realToLeapNormIdx(idxR, isLeap) # Leap normed index of trade date
     
     result = Object.create(null)
 
-    result.startIdx = lnIdx + relEntry
-    result.endIdx = lnIdx + relExit
+    # We need to return Leap Normed Indices for the backtester.addBacktestRun()
+    result.startIdxLN = idxLN + relEntry
+    result.endIdxLN = idxLN + relExit
     return result
 
 ############################################################
-getNextTradeDates = (trade, evnt, tDays) ->
+getNextTradeDates = (trade, evnt) ->
     # log "getNextTradeDates"
+
+    ## TODO introduce options to adjust behaviour...
+    #    - case 0: neither exit nor entry date is a weekend -> next date in future
+    #    - case 1: either exit or entry is on a weekend
+    #    - case 1.a: trade becomes non-tradable -> next date
+    #    - case 1.b: filter is set with mintraduduration and it falls short -> next date?
+    #    - case 1.c: filter is set to ignore dates that fall on Weekends -> next date 
+
     tkns = trade.split("-")
     entrIdx = parseInt(tkns[0])
     exitIdx = parseInt(tkns[1])
@@ -414,51 +322,58 @@ getNextTradeDates = (trade, evnt, tDays) ->
     relEntry = entrIdx - evntIdx
     relExit = exitIdx - evntIdx
 
+    result = Object.create(null)
+
     try
+        # olog evnt.nextDates
         dates = evnt.nextDates
-        for date in dates
-            eventDay = utl.createDayFromDate(date)
-            entryDay = eventDay.getRelativeDay(relEntry)
-            exitDay = eventDay.getRelativeDay(relExit)
+        todayDate = (new Date()).toISOString().slice(0, 10)
+        for date in dates # dates are YYYY-MM-DD strings
+            dateObj = new Date(date+"T12:00:00")
+            idxR = utl.getDayOfYear(dateObj)
+            entryIdxR = idxR + relEntry
+            exitIdxR = idxR + relExit
 
-            entryDate = entryDay.getYYYYMMDD()
-            todayDate = (new Date()).toISOString().slice(0, 10)
+            targetEntry = utl.realIdxToYYYYMMDD(dateObj.getFullYear(), entryIdxR)
+            targetExit = utl.realIdxToYYYYMMDD(dateObj.getFullYear(), exitIdxR)
 
-            if entryDate >= todayDate then break
-
-        nextDate = eventDay.getYYYYMMDD()
-        # nextEntryDate = entryDay.getYYYYMMDD()
-        nextEntryDate = utl.effectiveStartDate(entryDay, tDays)
-        # nextExitDate = exitDay.getYYYYMMDD()
-        nextExitDate = utl.effectiveEndDate(exitDay, tDays)
-        
-        if nextExitDate < nextEntryDate
-            log "impossible trading days entry @#{nextEntryDate} exit @#{nextExitDate}"
-            return {}
-
+            effEntry = utl.nextWeekdayAfter(targetEntry)
+            effExit = utl.lastWeekdayBefore(targetExit)
+            # log "attempt af effEntry: #{effEntry}"
+            if effEntry < todayDate then continue ## our entry is not in the future
+            if effEntry == effExit or effEntry > effExit then continue ## not tradable
+    
+            ## results are also YYYY-MM-DD strings
+            result.nextDate = date 
+            result.nextEntryDate = effEntry
+            result.nextExitDate = effExit
+            # olog result
+            return result
     catch err
         log err
         olog { trade, dates }
-        return {}
+        return result
 
-    return { nextDate, nextEntryDate, nextExitDate }
+    return result
 
-
+############################################################
 getAverageDailyReturnSeq = (runObjects) ->
-    log "getAverageDailyReturnSeq"
+    # log "getAverageDailyReturnSeq"
     fullLen = 0
+    # refObj = null
     for obj in runObjects
-        gap = obj.realStartIdx - obj.startIdx
-        if fullLen == 0 then fullLen = gap + obj.seqLen
-        else if fullLen != gap + obj.seqLen 
+        if fullLen == 0 then fullLen = obj.maxSeqLen 
+        else if fullLen != obj.maxSeqLen
             console.error("fullLen is off!")
-            olog { fullLen, gap, seqLen: obj.seqLen }
+            olog { fullLen, maxSeqLen: obj.maxSeqLen }
+            # olog obj
+            # olog refObj
 
     counts = new Array(fullLen).fill(0)
     sums = new Array(fullLen).fill(0)
 
     for obj in runObjects
-        gap = obj.lnEntryIdx - obj.lnStartIdx
+        gap = obj.effEntryIdx - obj.startIdxR # effective entry is >= real targeted start
         factorsArray = utl.toFactorsArray(obj.seq.map((el) -> el[el.length - 1]))
         for f,i in factorsArray
             counts[gap + i]++

@@ -13,8 +13,8 @@ export modulesToDebug = {
     # datacache: true
     # economicareasmodule: true
     # EconomicArea: true
-    # eventtradechartmodule: true
-    # eventtradedetailsmodule: true
+    eventtradechartmodule: true
+    eventtradedetailsmodule: true
     # eventscreenerframemodule: true
     # eventschoicetable: true
     # eventscreenerresults: true

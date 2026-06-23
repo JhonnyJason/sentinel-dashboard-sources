@@ -108,7 +108,7 @@ export setSelectedRegion = (selReg) ->
     return unless selReg? or selection?
     { startIdx, endIdx, isDelta } = selReg
     
-    # olog selReg
+    olog selReg
 
     if !selection? and isDelta then throw new Error("Cannot apply delta on empty selection!")
     
@@ -129,7 +129,7 @@ export setSelectedRegion = (selReg) ->
     if selection.startIdx < 0 then selection.startIdx = 0
     if selection.startIdx == selection.endIdx then selection.endIdx++
 
-    # olog selection
+    olog selection
 
     ## communicate change and redraw 
     onRangeSelect(selection) if onRangeSelect?
