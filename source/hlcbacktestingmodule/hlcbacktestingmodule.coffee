@@ -76,6 +76,9 @@ export class SymbolBacktester
         # olog {startYear, startIdxLN, endYear, endIdxLN, maxSeqLen}
 
         infoObj = Object.create(null)
+        @runInfoObjects.push(infoObj)
+        
+        infoObj.key = key
 
         ## targeted start/end dates  
         entryDate = utl.leapNormToYYYYMMDD(startIdxLN, startYear)
@@ -95,9 +98,12 @@ export class SymbolBacktester
         # olog { dataStartIdx, dataEndIdx }
         
         ## Donot add the Backtest Run if it does not result in a tradable range
-        if dataStartIdx < 0 or dataEndIdx < 0 then return 
-        if dataEndIdx - dataStartIdx < 1 then return 
-
+        tradable = true
+        if dataStartIdx < 0 or dataEndIdx < 0 then tradable = false
+        if dataEndIdx - dataStartIdx < 1 then tradable = false
+        
+        infoObj.tradable = tradable
+        if !infoObj.tradable then return
 
         # exctract traded sequence
         infoObj.seq = @rawData.slice(dataStartIdx, dataEndIdx + 1) # including exit data point
@@ -124,14 +130,15 @@ export class SymbolBacktester
         ## save other indices to know how much we are off target in real or leap normed terms
         infoObj.startIdxLN = startIdxLN # leap-normed start index (target)
         infoObj.endIdxLN = endIdxLN # leap-normed end index (target)
+        
         isLeap = utl.isLeapYear(startYear)
         infoObj.startIdxR = utl.leapNormToRealIdx(startIdxLN, isLeap) # real start index (target)
+        infoObj.startYear = startYear
+        
         isLeap = utl.isLeapYear(endYear)
         infoObj.endIdxR = utl.leapNormToRealIdx(endIdxLN, isLeap) # real end index (target)
-
-        infoObj.key = key
-        # infoObj.intendedStartYear = startYear
-
+        infoObj.endYear = endYear
+        
         ## Absolute virtual entry close -> reference for all absolute values
         infoObj.entryCv = infoObj.seq[0][2] 
         
@@ -158,7 +165,6 @@ export class SymbolBacktester
         # olog infoObj
         # alert("Stoping Execution -> debug!")
         # # throw new Error("Death on Purpose!")
-        @runInfoObjects.push(infoObj)
         return
 
     ############################################################
@@ -170,7 +176,8 @@ export class SymbolBacktester
         if @runInfoObjects.length == 0 then return null
         
         # olog @runInfoObjects
-        evaluateBacktestRun(infoObj) for infoObj in @runInfoObjects
+        runObjects = @runInfoObjects.filter((el) -> el.tradable)
+        evaluateTradableRun(obj) for obj in runObjects
 
         # keyToRunObjects = Object.create(null)
         # keyToRunObjects[infoObj.key] = infoObj for infoObj in @runInfoObjects
@@ -178,20 +185,32 @@ export class SymbolBacktester
         @summary = Object.create(null)
         @summary.key = @key
         # @summary.keyToRunObjects = keyToRunObjects
-        @summary.runObjects = @runInfoObjects
-
-        res = getAverageAndMedianChanges(@runInfoObjects)
-        @summary.avgChangeF = res.avgChangeF
-        @summary.isLong  = res.avgChangeF > 0.0
-        @summary.medChangeF = res.medChangeF
+        @summary.runInfoObjects = @runInfoObjects 
         
-        res = countTradeResults(@runInfoObjects, @summary.isLong)
-        @summary.winTrades = res.winTrades
-        @summary.totalTrades = res.totalTrades
+        if runObjects.length > 0
+            res = getAverageAndMedianChanges(runObjects)
+            @summary.avgChangeF = res.avgChangeF
+            @summary.medChangeF = res.medChangeF
+            @summary.isLong  = res.avgChangeF > 0.0
+            
+            res = countTradeResults(runObjects, @summary.isLong)
+            @summary.winTrades = res.winTrades
+            @summary.totalTrades = res.totalTrades
 
-        res = getMaxRiseAndMaxDrop(@runInfoObjects)
-        @summary.maxRiseObj = res.maxRiseEl
-        @summary.maxDropObj = res.maxDropEl
+            res = getMaxRiseAndMaxDrop(runObjects)
+            @summary.maxRiseObj = res.maxRiseEl
+            @summary.maxDropObj = res.maxDropEl
+        else
+            @summary.noTrades = true
+            @summary.avgChangeF = 0.0
+            @summary.medChangeF = 0.0
+            @summary.isLong  = false
+        
+            @summary.winTrades = 0
+            @summary.totalTrades = 0
+
+            @summary.maxRiseObj = null
+            @summary.maxDropObj = null
 
         @evaluated = true
         return @summary
@@ -210,7 +229,7 @@ export class SymbolBacktester
 countTradeResults = (infoObjs, isLong, ignoreWithWarning = true) ->
     winTrades = 0
     totalTrades = 0
-    for el in infoObjs when el?
+    for el in infoObjs
         if ignoreWithWarning and el.warn then continue
         totalTrades++
         if isLong and el.deltaF > 0.0 then winTrades++
@@ -234,7 +253,7 @@ getAverageAndMedianChanges = (infoObjs, ignoreWithWarning = true) ->
     changeSum = 0
     factors = []
     num = 0
-    for el,i in infoObjs when el?
+    for el,i in infoObjs
         if ignoreWithWarning and el.warn then continue
         changeSum += el.deltaF
         factors.push(el.deltaF)
@@ -261,7 +280,7 @@ getMaxRiseAndMaxDrop = (infoObjs, ignoreWithWarning = true) ->
     maxRiseEl = { maxRiseF: 0.0 }
     maxDropEl = { maxDropF: 0.0 }
 
-    for el in infoObjs when el?
+    for el in infoObjs
         if ignoreWithWarning and el.warn then continue        
         if el.maxRiseF > maxRiseEl.maxRiseF then maxRiseEl = el
         if el.maxDropF < maxDropEl.maxDropF then maxDropEl = el
@@ -289,9 +308,10 @@ getMaxRiseAndMaxDrop = (infoObjs, ignoreWithWarning = true) ->
     # }
 
 ############################################################
-evaluateBacktestRun = (infoObj) ->
-    # log "evaluate"
-    seq = infoObj.seq
+evaluateTradableRun = (runObj) ->
+    # log "evaluateTradableRun"
+
+    seq = runObj.seq
 
     # We start at end of day of the first trade and we leave at end of day of the last Tradeday
     startA = seq[0][seq[0].length - 1] # start price is close of day 0
@@ -319,11 +339,11 @@ evaluateBacktestRun = (infoObj) ->
         lastClose = close
 
     # Calculate facors to easily get the percentages
-    infoObj.deltaF = (1.0 * endA / startA) - 1.0
-    infoObj.maxRiseF = (1.0 * maxRiseA / startA) - 1.0
-    infoObj.maxDropF = (1.0 * maxDropA / startA) - 1.0
+    runObj.deltaF = (1.0 * endA / startA) - 1.0
+    runObj.maxRiseF = (1.0 * maxRiseA / startA) - 1.0
+    runObj.maxDropF = (1.0 * maxDropA / startA) - 1.0
     
-    infoObj.warn = warn
+    runObj.warn = warn
     return 
 
 

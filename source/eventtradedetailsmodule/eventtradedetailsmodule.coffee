@@ -195,7 +195,8 @@ evaluateAndRenderTradeDetails = ->
     displaySummary(result)
     await letMainThreadRun()
 
-    _allResults = result.runObjects.map(transformRunObjToDetailsResult)
+    runObjects = result.infoObjects.filter((el) -> el.traded)
+    _allResults = runObjects.map(transformRunObjToDetailsResult)
     # renderDetailsTable()
     
     tkns = _trade.split("-")

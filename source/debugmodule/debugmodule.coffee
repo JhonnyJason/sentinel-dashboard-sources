@@ -13,8 +13,8 @@ export modulesToDebug = {
     # datacache: true
     # economicareasmodule: true
     # EconomicArea: true
-    eventtradechartmodule: true
-    eventtradedetailsmodule: true
+    # eventtradechartmodule: true
+    # eventtradedetailsmodule: true
     # eventscreenerframemodule: true
     # eventschoicetable: true
     # eventscreenerresults: true
@@ -23,7 +23,7 @@ export modulesToDebug = {
     # forexscreenerframemodule: true
     # forexscreenerresults: true
     # fouriermodule: true
-    hlcbacktestingmodule: true
+    # hlcbacktestingmodule: true
     # summaryframemodule: true
     # currencytrendframemodule: true
     # CurrencyPair: true

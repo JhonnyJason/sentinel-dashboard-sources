@@ -92,7 +92,6 @@ onExitPlusClicked = ->
 ############################################################
 renderSummary = (results) ->
     log "renderSummary"
-
     olog results
 
     if results.isLong
@@ -125,13 +124,6 @@ renderSummary = (results) ->
     winVsLose.textContent = "#{wins} | #{losers}"
 
     # Summary stats
-    # val = factorToDeltaPercent(results.maxRiseObj.maxRiseF)
-    val = factorToPercent(results.maxRiseObj.maxRiseF)
-    maxRiseValue.textContent = "#{val.toFixed(1)}%"
-
-    # val = factorToDeltaPercent(results.maxDropObj.maxDropF)
-    val = factorToPercent(results.maxDropObj.maxDropF)
-    maxDropValue.textContent = "#{val.toFixed(1)}%"
     
     # val = factorToDeltaPercent(results.avgChangeF)
     val = factorToPercent(results.avgChangeF)
@@ -144,7 +136,21 @@ renderSummary = (results) ->
     medianChangeValue.textContent = "#{val.toFixed(1)}%"
     daysInTradeValue.textContent = "#{results.daysInTrade} Tage"
 
+    if results.noTrades # protect from acessing null.maxRiseF etc. 
+        maxRiseValue.textContent = "0.0%"
+        maxRiseAbsValue.textContent = "0.00"
+        maxDropValue.textContent = "0.0%"
+        maxDropAbsValue.textContent = "0.00"
+        return
+    
+    # val = factorToDeltaPercent(results.maxRiseObj.maxRiseF)
+    val = factorToPercent(results.maxRiseObj.maxRiseF)
+    maxRiseValue.textContent = "#{val.toFixed(1)}%"
 
+    # val = factorToDeltaPercent(results.maxDropObj.maxDropF)
+    val = factorToPercent(results.maxDropObj.maxDropF)
+    maxDropValue.textContent = "#{val.toFixed(1)}%"
+    
     missingSF = results.maxRiseObj.missingSF 
     # val = factorToBackwardsAdjustedAbsoluteDeltaValue(results.maxRiseObj.maxRiseF, results.maxRiseObj)
     val = factorToBackwardsAdjustedAbsoluteValue(results.maxRiseObj.maxRiseF, results.maxRiseObj)

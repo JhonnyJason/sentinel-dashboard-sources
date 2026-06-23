@@ -215,10 +215,10 @@ export render = (summary) ->
 ############################################################
 transformToYearlyResults = (summary) ->
     yearlyResults = []
-    # keys = Object.keys(summary.keyToRunObjects)
+    
+    if summary.noTrades then return yearlyResults
 
-    for runObj in summary.runObjects
-        # runObj = summary.keyToRunObjects[key]
+    for runObj in summary.runInfoObjects when runObj.tradable
         resObj = Object.create(null)
         
         resObj.year = runObj.key
@@ -240,20 +240,8 @@ transformToYearlyResults = (summary) ->
 
         resObj.corrF = runObj.corrSF 
         resObj.missingF = runObj.missingSF 
-        # resObj.lastF = runObj.lastSF # does not exist? not needed? 
-        resObj.warn = runObj.warn
 
-        ############################################################
-        # "key": "2021",
-        # "entryDate": "2021-06-07",
-        # "exitDate": "2021-06-30",
-        # "entryExitDif": 23,
-        # "entryCv": 8457.119999999999,
-        # "entryCr": 704.7599999999999,
-        # "entryCba": 17.618999999999996,
-        # "corrSF": 12,
-        # "missingSF": 40,
-        # "warn": false
+        resObj.warn = runObj.warn
     
         yearlyResults.push(resObj)
     

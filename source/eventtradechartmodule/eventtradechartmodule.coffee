@@ -75,10 +75,10 @@ export prepareData = (rawAdr, date) ->
     
     ## Create time axis
     timeframeLength = rawAdr.length
-    # olog {
-    #     timeframeLength,
-    #     date
-    # }
+    olog {
+        timeframeLength,
+        date
+    }
 
     day0 = eventDay.getRelativeDay(Math.floor(-0.5 * timeframeLength))
     dateDay0 = new Date(day0.getYYYYMMDD())
@@ -108,12 +108,10 @@ export setSelectedRegion = (selReg) ->
     return unless selReg? or selection?
     { startIdx, endIdx, isDelta } = selReg
     
-    olog selReg
-
     if !selection? and isDelta then throw new Error("Cannot apply delta on empty selection!")
     
     if !selection? then selection = selReg 
-    else if !isDelta and selection.startIdx == startIdx and selection.endIdx == endIdx 
+    else if !isDelta and selection.startIdx == startIdx and selection.endIdx == endIdx
         return ## nothing to update
     else if !isDelta # at least one new value to set
         selection.startIdx = startIdx
@@ -124,6 +122,8 @@ export setSelectedRegion = (selReg) ->
 
     ## Readjust invald configurations
     maxIdx = xAxisData.length - 1
+    olog { selReg, selection, maxIdx }
+
     if selection.endIdx > maxIdx then selection.endIdx = maxIdx
     if selection.startIdx >= selection.endIdx then selection.startIdx = selection.endIdx - 1
     if selection.startIdx < 0 then selection.startIdx = 0

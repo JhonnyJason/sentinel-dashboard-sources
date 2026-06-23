@@ -6,6 +6,8 @@ import { createLogFunctions } from "thingy-debug"
 
 ############################################################
 import * as utl from "./utilsmodule.js"
+import * as dCache from "./datacache.js"
+
 import { SymbolBacktester } from "./hlcbacktestingmodule.js"
 import { filterResult } from "./resultfilterstate.js"
 
@@ -89,9 +91,7 @@ export startScreening = (symbolToData, eventList) ->
 
                 for trade in trades
                     evaluation = await evaluateEventTrades(sym, evnt, trade)
-                    if evaluation? then result = generateResultSummaryObject(evaluation, evnt)
-                    else result = null
-
+                    result = generateResultSummaryObject(evaluation, evnt)
                     if result?
                         allResults.push(result)
                         groupResults.push(result)
@@ -151,8 +151,8 @@ export getTradeResultDetails = (tradeKey) ->
     if !evnt? then throw new Error("Could not find the target Event with id #{evntId}")
 
     evaluation = await evaluateEventTrades(sym, evnt, trade)
-    if evaluation? then result = generateResultDetailsObject(evaluation, evnt, trade)
-    else throw new Error("Could not evaluateEventTrades for #{tradeKey}")
+    result = generateResultDetailsObject(evaluation, evnt, trade)
+    if !result? then throw new Error("Could not evaluateEventTrades for #{tradeKey}")
 
     return result
 
@@ -184,6 +184,8 @@ evaluateEventTrades = (sym, evnt, trade) ->
 
 ############################################################
 generateResultDetailsObject = (evaluation, evnt, trade) ->
+    if evaluation.noTrades then return null
+
     detailsObj = Object.create(null)
 
     # main summary data
@@ -198,8 +200,10 @@ generateResultDetailsObject = (evaluation, evnt, trade) ->
     detailsObj.totalTrades = evaluation.totalTrades
 
     # avergage daily return pattern
-    avgDailyReturnSeq = getAverageDailyReturnSeq(evaluation.runObjects)
-    # olog avgDailyReturnSeq
+    avgDailyReturnSeq = await getAverageDailyReturnSeq(evaluation.runInfoObjects, evaluation.key)
+
+    log avgDailyReturnSeq.length 
+    log avgDailyReturnSeq
 
     detailsObj.avgDailyReturn = avgDailyReturnSeq
     
@@ -219,12 +223,14 @@ generateResultDetailsObject = (evaluation, evnt, trade) ->
     detailsObj.maxGainMissingF = evaluation.maxRiseObj.missingSF
 
     # all Results
-    detailsObj.runObjects = evaluation.runObjects
+    detailsObj.infoObjects = evaluation.runInfoObjects
     return detailsObj
 
 ############################################################
 generateResultSummaryObject = (evaluation, evnt) ->
     # log "generateResultObject"
+    if evaluation.noTrades then return null
+
     result = Object.create(null)
     # evaluation:
     # { key, isLong, avgChangeF, medChangeF, winTrades, totalTrades, maxRiseObj, maxDropObj }
@@ -258,6 +264,7 @@ generateResultSummaryObject = (evaluation, evnt) ->
     result.entryDate = nextEntryDate
     result.exitDate = nextExitDate
     result.tradeKey = evaluation.key
+    # log "result object ready"
     return result
 
 
@@ -357,45 +364,58 @@ getNextTradeDates = (trade, evnt) ->
     return result
 
 ############################################################
-getAverageDailyReturnSeq = (runObjects) ->
-    # log "getAverageDailyReturnSeq"
-    fullLen = 0
-    # refObj = null
-    for obj in runObjects
-        if fullLen == 0 then fullLen = obj.maxSeqLen 
-        else if fullLen != obj.maxSeqLen
-            console.error("fullLen is off!")
-            olog { fullLen, maxSeqLen: obj.maxSeqLen }
-            # olog obj
-            # olog refObj
+getAverageDailyReturnSeq = (infoObjects, key) ->
+    log "getAverageDailyReturnSeq"
+    log key
+    tkns = key.split(":")
+    sym = tkns[0]
+    trade = tkns[2] 
+    tkns = trade.split("-")
+    centerIdx = parseInt(tkns[2])
+    fullLen = 2 * centerIdx + 1
 
-    counts = new Array(fullLen).fill(0)
-    sums = new Array(fullLen).fill(0)
+    dataPerYear = await dCache.getHistoryHLC(sym, 31) ## ensure data is loaded
+    rawData = dCache.getCurrentRawData(sym)
+    metaData = dCache.getCurrentMetaData(sym)
 
-    for obj in runObjects
-        gap = obj.effEntryIdx - obj.startIdxR # effective entry is >= real targeted start
-        factorsArray = utl.toFactorsArray(obj.seq.map((el) -> el[el.length - 1]))
-        for f,i in factorsArray
-            counts[gap + i]++
-            sums[gap + i] += f
+    zeroDateObj = new Date(metaData.startDate + "T12:00:00")
+    count = 0
+    sums = new Array(fullLen - 1).fill(0)
+    log zeroDateObj
 
-    # If we have a gap that was never touched by a factor then it will be undefined
-    # We assume that we cannot have  "gap" in between of the sequences only a the front
-    # The "gap" after the sequence is never visited anyways as we stop after the sequence has ended
+    for obj in infoObjects
+        evntDateObj = getCorrespondingDateObj(obj)
+        rawStartIdx = utl.dateDifDays(zeroDateObj, evntDateObj) - centerIdx
+        log rawStartIdx
+        end = rawStartIdx + fullLen
+        # do we have all data available for this event?
+        if rawStartIdx < 0 or end >= rawData.length then continue 
+        
+        count++ # adding another row of factors
+        seq = rawData.slice(rawStartIdx, end)
+        factorsArray = utl.toFactorsArray(seq.map((el) -> el[el.length - 1]))
+        if factorsArray.length != sums.length then alert("unexpected factorsArray length!")
+        sums[i] += f for f,i in factorsArray
 
     cumFactors = []
-    for num,i in counts when typeof num == "number" and num > 0
-        cumFactors.push(sums[i] / num)
+    cumFactors.push(sum / count) for sum in sums 
 
     return utl.fromFactorsForward(cumFactors)
 
+
+############################################################
+getCorrespondingDateObj = (runObj) ->
+    date = runObj.key.split("@")[1]
+    # log date
+    return new Date(date + "T12:00:00")
+    
 #endregion
 
 ############################################################
 #region Compare Functions + getSortFunction
 numberCompare = (a, b, f) -> (b - a) * f
 negNumberCompare = (a, b, f) -> ((-b) - (-a)) * f
-stringCompare = (a, b, f) -> 
+stringCompare = (a, b, f) ->
     if a > b then return (-1) * f 
     if a < b then return f 
     return 0
