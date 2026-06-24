@@ -136,7 +136,8 @@ renderSummary = (results) ->
     medianChangeValue.textContent = "#{val.toFixed(1)}%"
     daysInTradeValue.textContent = "#{results.daysInTrade} Tage"
 
-    if results.noTrades # protect from acessing null.maxRiseF etc. 
+    if !results.maxRiseObj? or !results.maxDropObj? 
+        # protect from acessing null.maxRiseF etc. 
         maxRiseValue.textContent = "0.0%"
         maxRiseAbsValue.textContent = "0.00"
         maxDropValue.textContent = "0.0%"

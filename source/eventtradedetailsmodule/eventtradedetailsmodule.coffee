@@ -182,22 +182,19 @@ evaluateAndRenderTradeDetails = ->
         log Object.keys(result)
     catch err
         console.error(err)
-        charting.reset()
+        ## Maybe no update at all?
         return
 
-    if result.profitAvg < 0 # somehow we should be changing direction on this trade...
-        if _direction == "Long" then direction = "Short"
-        if _direction == "Short" then direction = "Long"
-        newResult = { direction, tradeKey:_tradeKey, eventLabel: _eventLabel }
+    if result.direction != _direction # somehow we should be changing direction on this trade...
+        newResult = { direction: result.direction, tradeKey:_tradeKey, eventLabel: _eventLabel }
         return displayDetails(newResult)
     
-
     displaySummary(result)
     await letMainThreadRun()
 
-    runObjects = result.infoObjects.filter((el) -> el.traded)
+    runObjects = result.infoObjects.filter((el) -> el.tradable)
     _allResults = runObjects.map(transformRunObjToDetailsResult)
-    # renderDetailsTable()
+    renderDetailsTable()
     
     tkns = _trade.split("-")
     startIdx = parseInt(tkns[0])
@@ -225,11 +222,16 @@ setHeaderInfo = ->
 
 displaySummary = (summaryResult) ->
     log "displaySummary"
-    # olog summaryResult
+    olog summaryResult
 
-    nextEventDateDisplay.textContent = formatDate(summaryResult.nextDate)
-    nextEntryDateDisplay.textContent = formatDate(summaryResult.nextEntryDate)
-    nextExitDateDisplay.textContent = formatDate(summaryResult.nextExitDate)
+    if !summaryResult.nextDate? then nextEventDateDisplay.textContent = "-"
+    else nextEventDateDisplay.textContent = formatDate(summaryResult.nextDate)
+    
+    if !summaryResult.nextEntryDate? then nextEntryDateDisplay.textContent = "-" 
+    else nextEntryDateDisplay.textContent = formatDate(summaryResult.nextEntryDate)
+    
+    if !summaryResult.nextExitDate? then nextExitDateDisplay.textContent = "-" 
+    else nextExitDateDisplay.textContent = formatDate(summaryResult.nextExitDate)
 
     entryIdxDisplay.textContent = getEntryIdxForDisplay()
     exitIdxDisplay.textContent = getExitIdxForDisplay()
@@ -253,14 +255,18 @@ displaySummary = (summaryResult) ->
     winVsLoseDisplay.textContent = "#{wins} | #{losers}"
 
     # Summary stats
-    maxRiseDisplay.textContent = formatPercent(summaryResult.maxGain)
-    maxDropDisplay.textContent = formatPercent(summaryResult.maxDrop)
     averageProfitDisplay.textContent = formatPercent(summaryResult.profitAvg)
     medianProfitDisplay.textContent = formatPercent(summaryResult.profitMed)
-    daysInTradeDisplay.textContent = "#{getNrTradeDays()} Tage"
 
+    maxRiseDisplay.textContent = formatPercent(summaryResult.maxGain)
+    maxDropDisplay.textContent = formatPercent(summaryResult.maxDrop)
+    
     absMaxDropDisplay.innerHTML = formatAbsoluteDelta(summaryResult.maxDropAba, summaryResult.maxDropMissingF)
     absMaxRiseDisplay.innerHTML = formatAbsoluteDelta(summaryResult.maxGainAba, summaryResult.maxGainMissingF)
+
+    daysInTradeDisplay.textContent = "#{getNrTradeDays()} Tage"
+
+
     return
 
 ############################################################
@@ -274,6 +280,7 @@ renderDetailsTable = ->
 
     tbody = document.createElement("tbody")
     for result in results
+        olog result
         tr = document.createElement("tr")
 
         ## event date: eventD 
@@ -293,8 +300,7 @@ renderDetailsTable = ->
 
         ## end price: startPrice * deltaF
         td = document.createElement("td")
-        exitAba = result.entryAba * result.deltaF
-        td.innerHTML = formatAbsolutePrice(exitAba, result.missingF)
+        td.innerHTML = formatAbsolutePrice(result.exitAba, result.missingF)
         tr.appendChild(td)
 
         ## end date: exitD
@@ -304,8 +310,8 @@ renderDetailsTable = ->
 
         ## profit: profit?
         td = document.createElement("td")
-        if direction == "Long" then profit = 100.0 * (result.deltaF - 1.0)
-        if direction == "Short" then profit = -100.0 * (result.deltaF - 1.0)
+        if direction == "Long" then profit = 100.0 * result.deltaF
+        if direction == "Short" then profit = -100.0 * result.deltaF
         td.textContent = formatPercent(profit)
         if profit > 0 then cls = "positive"
         if profit < 0 then cls = "negative"
@@ -316,7 +322,7 @@ renderDetailsTable = ->
         
         ## Max Anstieg: maxGainF -> maxGainP
         td = document.createElement("td")
-        maxGainP = 100.0 * (result.maxGainF - 1.0)
+        maxGainP = 100.0 * result.maxGainF
         if direction == "Long" and maxGainP > 0 then cls = "positive"
         if direction == "Short" and maxGainP < 0 then cls = "positive"
         if direction == "Long" and maxGainP < 0 then cls = "negative"
@@ -333,7 +339,7 @@ renderDetailsTable = ->
 
         ## Max Rückgang: maxDrop
         td = document.createElement("td")
-        maxDropP = 100.0 * (result.maxDropF - 1.0)
+        maxDropP = 100.0 * result.maxDropF
         if direction == "Long" and maxDropP > 0 then cls = "positive"
         if direction == "Short" and maxDropP < 0 then cls = "positive"
         if direction == "Long" and maxDropP < 0 then cls = "negative"
@@ -452,11 +458,12 @@ transformRunObjToDetailsResult = (runObj) ->
     detailsRes.entryD = runObj.entryDate
     detailsRes.eventD = eventDate 
     detailsRes.exitD = runObj.exitDate
-    detailsRes.entryC = runObj.entryCba
-    detailsRes.exitC = runObj.entryCba * (runObj.deltaF + 1)
+    detailsRes.entryAba = runObj.entryCba
+    detailsRes.exitAba = runObj.entryCba * (runObj.deltaF + 1.0)
+    detailsRes.missinF = runObj.missingSF
     detailsRes.deltaF = runObj.deltaF
     detailsRes.maxGainF = runObj.maxRiseF
-    detailsRes.maxDropF = runObj.maxDrop
+    detailsRes.maxDropF = runObj.maxDropF
 
     return detailsRes
 
@@ -472,6 +479,7 @@ formatAbsoluteDelta = (value, missingF) ->
     return "#{sign}#{html}"
 
 formatAbsolutePrice = (value, missingF) ->
+    value = 1.0 * value
     if missingF > 1 then return "#{value.toFixed(2)}<span class='missing-factor' title='Fehlender Faktor zum exakten historischen Wert.'>#{missingF.toFixed(2)}</span>"
     else return "#{value.toFixed(2)}"
 
@@ -488,7 +496,7 @@ formatAbsolutePrice = (value, missingF) ->
 
 ############################################################
 getNrTradeDays = ->
-    log "getNrTradeDays"
+    # log "getNrTradeDays"
     tkns = _trade.split("-")
     if tkns.length != 3 then throw new Error("invalid _trade!")
     entryIdx = parseInt(tkns[0])
@@ -497,7 +505,7 @@ getNrTradeDays = ->
 
 ############################################################
 getEntryIdxForDisplay = ->
-    log "getEntryIdxForDisplay"
+    # log "getEntryIdxForDisplay"
     if !_trade? then throw new Error("no _trade available!")
     tkns = _trade.split("-")
     if tkns.length != 3 then throw new Error("invalid _trade!")

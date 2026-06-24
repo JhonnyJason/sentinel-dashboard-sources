@@ -172,9 +172,7 @@ export class SymbolBacktester
         # log "runEvaluationSync"
         if !@ready then throw new Error("Symbol Backtester #{@symbol}:#{key} cannot runEvaluationSync when not being in ready state!")
         if @evaluated then throw new Error("Symbol Backtester #{@symbol}:#{key} cannot runEvaluationSync in an evaluated state!")
-        
-        if @runInfoObjects.length == 0 then return null
-        
+                
         # olog @runInfoObjects
         runObjects = @runInfoObjects.filter((el) -> el.tradable)
         evaluateTradableRun(obj) for obj in runObjects
@@ -277,8 +275,8 @@ getAverageAndMedianChanges = (infoObjs, ignoreWithWarning = true) ->
 ############################################################
 getMaxRiseAndMaxDrop = (infoObjs, ignoreWithWarning = true) ->
     # log "getMaxRiseAndMaxDrop"
-    maxRiseEl = { maxRiseF: 0.0 }
-    maxDropEl = { maxDropF: 0.0 }
+    maxRiseEl = { maxRiseF: -0.1 }
+    maxDropEl = { maxDropF: 0.1 }
 
     for el in infoObjs
         if ignoreWithWarning and el.warn then continue        

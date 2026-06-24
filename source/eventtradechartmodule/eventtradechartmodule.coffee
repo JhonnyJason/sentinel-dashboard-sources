@@ -71,6 +71,12 @@ export reset = ->
 ############################################################
 export prepareData = (rawAdr, date) ->
     log "prepareData"
+    if !date? 
+        date = new Date()
+        date.setHours(12)
+        date.setDate(date.getDate() + 15) # next date > 14
+        date = date.toISOString().slice(0, 10)
+
     eventDay = utl.createDayFromDate(date)
     
     ## Create time axis
@@ -114,22 +120,59 @@ export setSelectedRegion = (selReg) ->
     else if !isDelta and selection.startIdx == startIdx and selection.endIdx == endIdx
         return ## nothing to update
     else if !isDelta # at least one new value to set
-        selection.startIdx = startIdx
-        selection.endIdx = endIdx
+        if startIdx? then selection.startIdx = startIdx
+        if endIdx? then selection.endIdx = endIdx
     else # apply delta
         if startIdx? then selection.startIdx += startIdx
         if endIdx? then selection.endIdx += endIdx
 
     ## Readjust invald configurations
     maxIdx = xAxisData.length - 1
-    olog { selReg, selection, maxIdx }
+    # olog { selReg, selection }
 
+    # first radically cut down to the limits
     if selection.endIdx > maxIdx then selection.endIdx = maxIdx
-    if selection.startIdx >= selection.endIdx then selection.startIdx = selection.endIdx - 1
     if selection.startIdx < 0 then selection.startIdx = 0
-    if selection.startIdx == selection.endIdx then selection.endIdx++
 
-    olog selection
+    # Then resolve potential impossibilities
+    if selection.startIdx >= selection.endIdx and selection.endIdx == maxIdx
+        # obvious choice when endIdx is at the max
+        selection.startIdx = selection.endIdx - 1
+
+    if selection.endIdx <= selection.startIdx and selection.startIdx == 0
+        # obvious choice when startIdx is at 0W
+        selection.endIdx = selection.startIdx + 1
+
+    if selection.startIdx >= selection.endIdx # either decrease startIdx or increase endIdx
+        if isDelta            
+            deltaSum = 0
+            if startIdx? then deltaSum += startIdx
+            if endIdx? then deltaSum += endIdx
+
+            # increase endIdx, when we were moving up - unless we are already at the max
+            if deltaSum > 0 and selection.endIdx < maxIdx then selection.endIdx++
+            else if deltaSum > 0 and selection.endIdx == maxIdx then selection.startIdx--
+
+            # decrease startIdx, when we were moving down - unless we are at 0
+            if deltaSum < 0 and selection.startIdx > 0 then selection.startIdx--
+            else if deltaSum < 0 and selection.startIdx == 0 then selection.endIdx++
+
+            # in case of zero - default to decrease startIdx - unless we are at 0
+            if deltaSum == 0 and selection.startIdx > 0 then selection.startIdx--
+            else if deltaSum == 0 and selection.startIdx == 0 then selection.endIdx++
+            
+        else
+            # The index that has more space to move moves
+            startIdxSpace = selection.startIdx
+            endIdxSpace = maxIdx - selection.endIdx
+            if endIdxSpace > startIdxSpace then selection.endIdx++
+            if startIdxSpace > endIdxSpace then selection.startIdx--
+            if endIdxSpace == startIdxSpace then selection.startIdx--
+
+
+    if selection.startIdx < 0 or selection.endIdx > maxIdx or selection.endIdx <= selection.startIdx
+        console.error("Adjusting indices went wrong!") 
+        olog selection
 
     ## communicate change and redraw 
     onRangeSelect(selection) if onRangeSelect?

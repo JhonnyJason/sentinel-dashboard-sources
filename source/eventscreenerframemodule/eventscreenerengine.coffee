@@ -184,15 +184,17 @@ evaluateEventTrades = (sym, evnt, trade) ->
 
 ############################################################
 generateResultDetailsObject = (evaluation, evnt, trade) ->
-    if evaluation.noTrades then return null
-
+    log "generateResultDetailsObject"
+    log "evaluation.isLong: #{evaluation.isLong}"
     detailsObj = Object.create(null)
 
     # main summary data
     if evaluation.isLong
+        detailsObj.direction = "Long"
         detailsObj.profitAvg = 100.0 * evaluation.avgChangeF
         detailsObj.profitMed = 100.0 * evaluation.medChangeF
-    else 
+    else
+        detailsObj.direction = "Short"
         detailsObj.profitAvg = -100.0 * evaluation.avgChangeF
         detailsObj.profitMed = -100.0 * evaluation.medChangeF
 
@@ -202,8 +204,8 @@ generateResultDetailsObject = (evaluation, evnt, trade) ->
     # avergage daily return pattern
     avgDailyReturnSeq = await getAverageDailyReturnSeq(evaluation.runInfoObjects, evaluation.key)
 
-    log avgDailyReturnSeq.length 
-    log avgDailyReturnSeq
+    # log avgDailyReturnSeq.length 
+    # log avgDailyReturnSeq
 
     detailsObj.avgDailyReturn = avgDailyReturnSeq
     
@@ -214,13 +216,23 @@ generateResultDetailsObject = (evaluation, evnt, trade) ->
     detailsObj.nextExitDate = nextExitDate
 
     # extremes
-    detailsObj.maxDrop = 100.0 * evaluation.maxDropObj.maxDropF
-    detailsObj.maxDropAba = evaluation.maxDropObj.entryCba * evaluation.maxDropObj.maxDropF
-    detailsObj.maxDropMissingF = evaluation.maxDropObj.missingSF
-    
-    detailsObj.maxGain = 100.0 * evaluation.maxRiseObj.maxRiseF
-    detailsObj.maxGainAba = evaluation.maxRiseObj.entryCba * evaluation.maxRiseObj.maxRiseF
-    detailsObj.maxGainMissingF = evaluation.maxRiseObj.missingSF
+    if evaluation.maxDropObj?
+        detailsObj.maxDrop = 100.0 * evaluation.maxDropObj.maxDropF
+        detailsObj.maxDropAba = evaluation.maxDropObj.entryCba * evaluation.maxDropObj.maxDropF
+        detailsObj.maxDropMissingF = evaluation.maxDropObj.missingSF
+    else
+        detailsObj.maxDrop = 0.0
+        detailsObj.maxDropAba = 0.0
+        detailsObj.maxDropMissingF = 1.0
+
+    if evaluation.maxRiseObj?
+        detailsObj.maxGain = 100.0 * evaluation.maxRiseObj.maxRiseF
+        detailsObj.maxGainAba = evaluation.maxRiseObj.entryCba * evaluation.maxRiseObj.maxRiseF
+        detailsObj.maxGainMissingF = evaluation.maxRiseObj.missingSF
+    else
+        detailsObj.maxGain = 0.0
+        detailsObj.maxGainAba = 0.0
+        detailsObj.maxGainMissingF = 1.0
 
     # all Results
     detailsObj.infoObjects = evaluation.runInfoObjects
@@ -229,7 +241,6 @@ generateResultDetailsObject = (evaluation, evnt, trade) ->
 ############################################################
 generateResultSummaryObject = (evaluation, evnt) ->
     # log "generateResultObject"
-    if evaluation.noTrades then return null
 
     result = Object.create(null)
     # evaluation:
@@ -255,11 +266,19 @@ generateResultSummaryObject = (evaluation, evnt) ->
     # result.marketcap = # donot use for now  
     result.eventLabel = evnt.label
     result.direction = direction
-    result.winrate = 100.0 * evaluation.winTrades / evaluation.totalTrades 
+    
+    if evaluation.totalTrades == 0 then result.winrate = 0
+    else result.winrate = 100.0 * evaluation.winTrades / evaluation.totalTrades 
+    
     result.profitAvg = profitF * evaluation.avgChangeF
     result.profitMed = profitF * evaluation.medChangeF
-    result.maxGain =  100.0 * evaluation.maxRiseObj.maxRiseF
-    result.maxDrop =  100.0 * evaluation.maxDropObj.maxDropF
+
+    if !evaluation.maxRiseObj? then result.maxGain = 0.0
+    else result.maxGain =  100.0 * evaluation.maxRiseObj.maxRiseF
+    
+    if !evaluation.maxDropObj? then result.maxDrop = 0.0
+    else result.maxDrop =  100.0 * evaluation.maxDropObj.maxDropF
+    
     result.nextDate = nextDate
     result.entryDate = nextEntryDate
     result.exitDate = nextExitDate
@@ -365,8 +384,8 @@ getNextTradeDates = (trade, evnt) ->
 
 ############################################################
 getAverageDailyReturnSeq = (infoObjects, key) ->
-    log "getAverageDailyReturnSeq"
-    log key
+    # log "getAverageDailyReturnSeq"
+    # log key
     tkns = key.split(":")
     sym = tkns[0]
     trade = tkns[2] 
@@ -381,12 +400,12 @@ getAverageDailyReturnSeq = (infoObjects, key) ->
     zeroDateObj = new Date(metaData.startDate + "T12:00:00")
     count = 0
     sums = new Array(fullLen - 1).fill(0)
-    log zeroDateObj
+    # log zeroDateObj
 
     for obj in infoObjects
         evntDateObj = getCorrespondingDateObj(obj)
         rawStartIdx = utl.dateDifDays(zeroDateObj, evntDateObj) - centerIdx
-        log rawStartIdx
+        # log rawStartIdx
         end = rawStartIdx + fullLen
         # do we have all data available for this event?
         if rawStartIdx < 0 or end >= rawData.length then continue 

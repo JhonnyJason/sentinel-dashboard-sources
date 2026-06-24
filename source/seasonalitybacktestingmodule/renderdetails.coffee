@@ -215,8 +215,6 @@ export render = (summary) ->
 ############################################################
 transformToYearlyResults = (summary) ->
     yearlyResults = []
-    
-    if summary.noTrades then return yearlyResults
 
     for runObj in summary.runInfoObjects when runObj.tradable
         resObj = Object.create(null)
