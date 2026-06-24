@@ -9,6 +9,7 @@ import * as utl from "./utilsmodule.js"
 import * as mData from "./marketdatamodule.js"
 import * as dataC from "./datacache.js"
 import { shownCurrencyPairLabels as allForexSymbols } from "./configmodule.js"
+import { SymbolBacktester } from "./hlcbacktestingmodule.js"
 
 ############################################################
 export resultStructure = [
@@ -57,7 +58,7 @@ resultsReady = new Promise((rslv) -> setResultsReady = rslv)
 
 ############################################################
 export startScreening = (forexPairsWithScore) ->
-    log "doScreening"
+    log "startScreening"
     return unless Array.isArray(forexPairsWithScore)
 
     latestForexPairList = forexPairsWithScore
@@ -90,7 +91,7 @@ export startScreening = (forexPairsWithScore) ->
             sc10 = symbolToSaisonality10J[sym]
             if !sc10? or !sc15?
                 symbolToInfo[sym] = Object.create(null)
-                log "This symbol seems not to be relevant... continue!"
+                log "This symbol has a seasonal composite missing... continue!"
                 continue
             
             score = symbolToScore[sym]
@@ -102,25 +103,30 @@ export startScreening = (forexPairsWithScore) ->
                 symbolToInfo[sym] = Object.create(null)
                 log "This symbol has no matching seasonal pattern... continue!"
                 continue 
+            # olog range
 
             entryDate = utl.leapNormToYYYYMMDD(range.startIdx, currentYear)
             exitDate = utl.leapNormToYYYYMMDD(range.endIdx, currentYear)
 
+            # olog { entryDate, exitDate }
+
             hlc = await dataC.getHistoryHLC(sym, 1)
             # olog hlc
             if hlc.length == 2 then hlc = [...hlc[0], ...hlc[1]]
-            else throw new Error("retrieved HLC data per year was not for 2 years! Shiould be for this and the year before.")
+            else throw new Error("retrieved HLC data per year was not for 2 years! Should be for this and the year before.")
             # olog hlc
 
             ## calc ATR14
             atr14 = getATR14(hlc)
             
+            ## calculate SL and TP values
+            if isLong then f = 1.0
+            else f = -1.0
+
+            ## TODO: retrieve most recent live Data instead!
             lastHLC = hlc[hlc.length - 1]
             lastC = lastHLC[lastHLC.length - 1]
             if typeof lastC == "string" then lastC = parseFloat(lastC)
-
-            if isLong then f = 1.0
-            else f = -1.0
 
             entryPrice = lastC
 
@@ -134,12 +140,65 @@ export startScreening = (forexPairsWithScore) ->
             if isLong then signal = "Long"
             else signal = "Short"
             
-            ## TODO implement get success rates...
-            # seasonality10P = 90.0
-            # seasonality15P = 93.3
+            ## Get and check success rates
+            minSuccessRate = 0.7
+            
+            ## Get success Rate 10Y            
+            backtester10Y = new SymbolBacktester(sym, "#{sym}:10Y")
+            await backtester10Y.loadData()
+            count = 10
+            while count--
+                year = currentYear - count
+                backtester10Y.addBacktestRun(year, range.startIdx, range.endIdx, "#{sym}:10Y@#{year}")
 
-            seasonality10P = 0.0
-            seasonality15P = 0.0
+            backtest10YRes = backtester10Y.runEvaluationSync()
+            if backtest10YRes.isLong != isLong # our trade direction was not optimal... so not relevant
+                symbolToInfo[sym] = Object.create(null)
+                log "10Y Backtesting revealed different preferrable trade direction - continue!"
+                continue
+            if backtest10YRes.totalTrades < 8
+                symbolToInfo[sym] = Object.create(null)
+                log "10Y Range was too often untradable - continue!"
+                continue
+            winrate10Y = backtest10YRes.winTrades / backtest10YRes.totalTrades
+            if winrate10Y < minSuccessRate
+                symbolToInfo[sym] = Object.create(null)
+                log "10Y Successrate was too low - continue!"
+                continue
+
+            log "winTrades10Y: #{backtest10YRes.winTrades}"
+            log "totalTrades10Y: #{backtest10YRes.totalTrades}"
+            log "winrate10Y: #{winrate10Y}"
+
+            ## Get success Rate 15Y            
+            backtester15Y = new SymbolBacktester(sym, "#{sym}:15Y")
+            await backtester15Y.loadData()
+            count = 15
+            while count--
+                year = currentYear - count
+                backtester15Y.addBacktestRun(year, range.startIdx, range.endIdx, "#{sym}:15Y@#{year}")
+
+            backtest15YRes = backtester15Y.runEvaluationSync()
+            if backtest15YRes.isLong != isLong # our trade direction was not optimal... so not relevant
+                symbolToInfo[sym] = Object.create(null)
+                log "15Y Backtesting revealed different preferrable trade direction - continue!"
+                continue
+            if backtest15YRes.totalTrades < 13
+                symbolToInfo[sym] = Object.create(null)
+                log "15Y Range was too often untradable - continue!"
+                continue            
+            winrate15Y = backtest15YRes.winTrades / backtest15YRes.totalTrades
+            if winrate15Y < minSuccessRate
+                symbolToInfo[sym] = Object.create(null)
+                log "15Y Successrate was too low - continue!"
+                continue
+
+            log "winTrades15Y: #{backtest15YRes.winTrades}"
+            log "totalTrades15Y: #{backtest15YRes.totalTrades}"
+            log "winrate15Y: #{winrate15Y}"
+
+            seasonality10P = 100.0 * winrate10Y
+            seasonality15P = 100.0 * winrate15Y
 
             symbolToInfo[sym] = { signal, stoploss, entryPrice, takeprofit1, takeprofit2, entryDate, exitDate, score, seasonality10P, seasonality15P }
             
@@ -185,7 +244,7 @@ export getResults = (sortKey, isAscending) ->
 ############################################################
 #region Helper Functions
 getATR14 = (hlc) -> ## average true range of last 14 hlc
-    log "getATR14"
+    # log "getATR14"
     last14 = []
     last14.push(hlc[hlc.length - i]) for i in [15..1]
 
@@ -193,8 +252,8 @@ getATR14 = (hlc) -> ## average true range of last 14 hlc
     latestClose = first[first.length - 1]
     sum = 0
 
-    log last14.length
-    log last14
+    # log last14.length
+    # log last14
 
     for hlc,i in last14 
         h = hlc[0]
@@ -245,13 +304,13 @@ getSeasonalBestFitRangeFromToday = (composite, isLong, maxRange) ->
     startYYYYMMDD = utl.leapNormToYYYYMMDD(startIdx, currentYear)
     todayYYYYMMDD = todayDate.toISOString().slice(0,10)
 
-    olog {
-        todayYYYYMMDD,
-        startIdx,
-        startYYYYMMDD,
-        currentYear,
-        currentYearIsLeap
-    }
+    # olog {
+    #     todayYYYYMMDD,
+    #     startIdx,
+    #     startYYYYMMDD,
+    #     currentYear,
+    #     currentYearIsLeap
+    # }
 
     # startIdx = 356
     # log startIdx
@@ -286,7 +345,7 @@ getSeasonalBestFitRangeFromToday = (composite, isLong, maxRange) ->
     return range
 
 getSeasonalBestFitRange = (composite, isLong, maxRange) ->
-    log "getSeasonalBestFitRange"
+    # log "getSeasonalBestFitRange"
 
     ## Today to index in 366 leap-norm
     todayDate = new Date()
@@ -330,7 +389,7 @@ getSeasonalBestFitRange = (composite, isLong, maxRange) ->
 
 ############################################################
 getBestRangeForLong = (seq) ->
-    log "getBestRangeForLong"
+    # log "getBestRangeForLong"
     # log seq.map((el) -> el.toFixed(2))
 
     ## If the full sequence is not positive -> no good range
@@ -366,7 +425,7 @@ getBestRangeForLong = (seq) ->
     return { startIdx: startIdxMax, endIdx: endIdxMax }
 
 getBestRangeForShort = (seq) ->
-    log "getBestRangeForShort"
+    # log "getBestRangeForShort"
     # log seq.map((el) -> el.toFixed(2))
 
     ## If the full sequence is not negative -> no good range

@@ -25,8 +25,8 @@ export class SymbolBacktester
 
     ############################################################
     loadData: =>
-        if @ready then throw new Error("Symbol Backtester #{@symbol}:#{key} illegal loadData when  being in ready state!")
-        if @evaluated then throw new Error("Symbol Backtester #{@symbol}:#{key} illegal loadData in an evaluated state!")
+        if @ready then throw new Error("Symbol Backtester #{@symbol}:#{@key} illegal loadData when  being in ready state!")
+        if @evaluated then throw new Error("Symbol Backtester #{@symbol}:#{@key} illegal loadData in an evaluated state!")
 
         dataPerYear = await dCache.getHistoryHLC(@symbol, 31) ## ensure data is loaded
 
@@ -52,8 +52,8 @@ export class SymbolBacktester
         
         maxSeqLen = endIdxLN - startIdxLN + 1
 
-        if !@ready then throw new Error("Symbol Backtester #{@symbol}:#{key} cannot addBacktestRun when not being in ready state!")
-        if @evaluated then throw new Error("Symbol Backtester #{@symbol}:#{key} cannot addBacktestRun in an evaluated state!")
+        if !@ready then throw new Error("Symbol Backtester #{@symbol}:#{@key} cannot addBacktestRun when not being in ready state!")
+        if @evaluated then throw new Error("Symbol Backtester #{@symbol}:#{@key} cannot addBacktestRun in an evaluated state!")
 
         endYear = startYear
         count = 4
@@ -170,8 +170,8 @@ export class SymbolBacktester
     ############################################################
     runEvaluationSync: =>
         # log "runEvaluationSync"
-        if !@ready then throw new Error("Symbol Backtester #{@symbol}:#{key} cannot runEvaluationSync when not being in ready state!")
-        if @evaluated then throw new Error("Symbol Backtester #{@symbol}:#{key} cannot runEvaluationSync in an evaluated state!")
+        if !@ready then throw new Error("Symbol Backtester #{@symbol}:#{@key} cannot runEvaluationSync when not being in ready state!")
+        if @evaluated then throw new Error("Symbol Backtester #{@symbol}:#{@key} cannot runEvaluationSync in an evaluated state!")
                 
         # olog @runInfoObjects
         runObjects = @runInfoObjects.filter((el) -> el.tradable)

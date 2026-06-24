@@ -77,15 +77,16 @@ render = (results) ->
             try
                 d = result[key]
                 if !d? then td.appendChild(getSpan("empty", "-"))
-                else switch key
+                else switch key    
+    
                     when "symbol" then addSymbolSpan(td, result)
                     when "signal" then td.appendChild(getSpan(d.toLowerCase(), d))
                     when "entryDate" then td.appendChild(getSpan("", formatDate(d)))
                     when "exitDate" then td.appendChild(getSpan("", formatDate(d)))
-                    when "entryPrice" then td.appendChild(getSpan("", d.toFixed(3)))
-                    when "stoploss" then td.appendChild(getSpan("", d.toFixed(3)))
-                    when "takeprofit1" then td.appendChild(getSpan("", d.toFixed(3)))
-                    when "takeprofit2" then td.appendChild(getSpan("", d.toFixed(3)))
+                    when "entryPrice" then td.appendChild(getSpan("", d.toFixed(5)))
+                    when "stoploss" then td.appendChild(getSpan("", d.toFixed(5)))
+                    when "takeprofit1" then td.appendChild(getSpan("", d.toFixed(5)))
+                    when "takeprofit2" then td.appendChild(getSpan("", d.toFixed(5)))
                     when "score" then addScoreSpan(td, d)
                     when "seasonality10P" then td.appendChild(getSpan("winrate", d.toFixed(1)))
                     when "seasonality15P" then td.appendChild(getSpan("winrate", d.toFixed(1)))
@@ -110,6 +111,8 @@ render = (results) ->
 ############################################################
 selectForDetailsView = (el, result) ->
     log "selectForDetailsView"
+    return
+    ## TODO decide if it should be implemented...
     if selectedEl? then selectedEl.classList.remove("chosen")
     selectedEl = el
     selectedResult = result
@@ -158,6 +161,9 @@ addScoreSpan = (td, score) ->
     { color, text } = getTrendForScore(score)
 
     score = Math.round(score)
+    if score > 30 then score = 30
+    if score < -30 then score = -30
+
     if score > 0 then score = "+"+score
 
     td.classList.add("score")
