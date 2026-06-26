@@ -150,7 +150,7 @@ export startScreening = (forexPairsWithScore) ->
             ## Get success Rate 10Y            
             backtester10Y = new SymbolBacktester(sym, "#{sym}:10Y")
             await backtester10Y.loadData()
-            count = 10
+            count = 11
             while count--
                 year = currentYear - count
                 backtester10Y.addBacktestRun(year, range.startIdx, range.endIdx, "#{sym}:10Y@#{year}")
