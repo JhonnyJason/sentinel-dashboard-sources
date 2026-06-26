@@ -61,7 +61,8 @@ resultsReady = new Promise((rslv) -> setResultsReady = rslv)
 export startScreening = (forexPairsWithScore) ->
     log "startScreening"
     return unless Array.isArray(forexPairsWithScore)
-
+    await liveD.pricesReceived()
+    
     latestForexPairList = forexPairsWithScore
     
     if !setResultsReady? # instanciate new Promise if the last one had been resolved already.
@@ -124,14 +125,13 @@ export startScreening = (forexPairsWithScore) ->
             if isLong then f = 1.0
             else f = -1.0
 
-            ## TODO: retrieve most recent live Data instead!
             livePrice = liveD.getLatestPrice(sym)
             if livePrice? then entryPrice = livePrice
             else 
                 lastHLC = hlc[hlc.length - 1]
                 lastC = lastHLC[lastHLC.length - 1]
                 if typeof lastC == "string" then lastC = parseFloat(lastC)
-
+                console.log("Using lastClose")
                 entryPrice = lastC
 
             ## calc SL

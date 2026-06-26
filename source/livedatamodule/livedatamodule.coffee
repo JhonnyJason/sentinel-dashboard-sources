@@ -23,7 +23,6 @@ connecting = false
 ############################################################
 symToListeners = Object.create(null)
 
-
 ############################################################
 onPriceUpdate = null
 
