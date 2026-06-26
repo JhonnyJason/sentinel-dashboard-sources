@@ -9,6 +9,8 @@ export modulesToDebug = {
     # chartfun: true
     # colorstates: true
     # comboboxfun: true
+    # currencytrendframemodule: true
+    # CurrencyPair: true
     # datamodule: true
     # datacache: true
     # economicareasmodule: true
@@ -19,22 +21,20 @@ export modulesToDebug = {
     # eventschoicetable: true
     # eventscreenerresults: true
     # eventscreeningengine: true
-    forexscreeningengine: true
-    forexscreenerframemodule: true
-    forexscreenerresults: true
+    # forexlivedata: true
+    # forexscreeningengine: true
+    # forexscreenerframemodule: true
+    # forexscreenerresults: true
     # fouriermodule: true
     # hlcbacktestingmodule: true
-    # summaryframemodule: true
-    # currencytrendframemodule: true
-    # CurrencyPair: true
+    # livedatamodule: true
     # marketdatamodule: true
-    # sampledata: true
-    # scimodule: true
-    # livedata: true
     # navtriggers: true
     # resultfilterstate: true
+    # sampledata: true
     # scimodule: true
     # scorehelper: true
+    # scimodule: true
     # seasonality: true
     # seasonalityframemodule: true
     # seasonalitychartmodule: true

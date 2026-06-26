@@ -13,6 +13,7 @@ import * as forexscreenerframemodule from "./forexscreenerframemodule.js"
 import * as fouriermodule from "./fouriermodule.js"
 import * as fuzzyscoremodule from "./fuzzyscoremodule.js"
 import * as hlcbacktestingmodule from "./hlcbacktestingmodule.js"
+import * as livedatamodule from "./livedatamodule.js"
 import * as marketdatamodule from "./marketdatamodule.js"
 import * as noaccountmodule from "./noaccountmodule.js"
 import * as scimodule from "./scimodule.js"
@@ -44,6 +45,7 @@ Modules = {
     fouriermodule,
     fuzzyscoremodule,
     hlcbacktestingmodule,
+    livedatamodule,
     marketdatamodule,
     noaccountmodule,
     scimodule,

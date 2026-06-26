@@ -7,8 +7,8 @@ import { createLogFunctions } from "thingy-debug"
 ############################################################
 import * as dCache from "./datacache.js"
 
-
 ############################################################
+import * as liveD from "./forexlivedata.js"
 import * as resultTable from "./forexscreenerresults.js"
 
 ############################################################
@@ -20,9 +20,9 @@ isProcessing = false
 processOnceMore = false
 
 ############################################################
-export initialize = ->
+export initialize = (c) ->
     log "initialize"
-    ## TODO implement or remove
+    liveD.initialize(c)
     return
 
 ############################################################

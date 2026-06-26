@@ -8,6 +8,7 @@ import { createLogFunctions } from "thingy-debug"
 import * as utl from "./utilsmodule.js"
 import * as mData from "./marketdatamodule.js"
 import * as dataC from "./datacache.js"
+import * as liveD from "./forexlivedata.js"
 import { shownCurrencyPairLabels as allForexSymbols } from "./configmodule.js"
 import { SymbolBacktester } from "./hlcbacktestingmodule.js"
 
@@ -111,8 +112,8 @@ export startScreening = (forexPairsWithScore) ->
             # olog { entryDate, exitDate }
 
             hlc = await dataC.getHistoryHLC(sym, 1)
-            # olog hlc
-            if hlc.length == 2 then hlc = [...hlc[0], ...hlc[1]]
+
+            if hlc.length == 2 then hlc = [...hlc[1], ...hlc[0]].filter((el) -> el?)
             else throw new Error("retrieved HLC data per year was not for 2 years! Should be for this and the year before.")
             # olog hlc
 
@@ -124,18 +125,21 @@ export startScreening = (forexPairsWithScore) ->
             else f = -1.0
 
             ## TODO: retrieve most recent live Data instead!
-            lastHLC = hlc[hlc.length - 1]
-            lastC = lastHLC[lastHLC.length - 1]
-            if typeof lastC == "string" then lastC = parseFloat(lastC)
+            livePrice = liveD.getLatestPrice(sym)
+            if livePrice? then entryPrice = livePrice
+            else 
+                lastHLC = hlc[hlc.length - 1]
+                lastC = lastHLC[lastHLC.length - 1]
+                if typeof lastC == "string" then lastC = parseFloat(lastC)
 
-            entryPrice = lastC
+                entryPrice = lastC
 
             ## calc SL
-            stoploss = lastC - f * atr14
+            stoploss = entryPrice - f * atr14
             ## calc TP1
-            takeprofit1 = lastC + f * 1.5 * atr14
+            takeprofit1 = entryPrice + f * 1.5 * atr14
             ## calc TP2
-            takeprofit2 = lastC + f * 3.0 * atr14
+            takeprofit2 = entryPrice + f * 3.0 * atr14
 
             if isLong then signal = "Long"
             else signal = "Short"
@@ -199,7 +203,7 @@ export startScreening = (forexPairsWithScore) ->
 
             seasonality10P = 100.0 * winrate10Y
             seasonality15P = 100.0 * winrate15Y
-
+            
             symbolToInfo[sym] = { signal, stoploss, entryPrice, takeprofit1, takeprofit2, entryDate, exitDate, score, seasonality10P, seasonality15P }
             
             ## DONOT freeze the UI Thread if calculation takes too much time...

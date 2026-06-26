@@ -7,7 +7,8 @@ import { createLogFunctions } from "thingy-debug"
 ############################################################
 import { getEodData } from "./scimodule.js"
 import { getAuthCode } from "./accountmodule.js"
-import * as liveD from "./livedata.js"
+# import * as liveD from "./livedata.js"
+import * as liveD from "./livedatamodule.js"
 import * as colorS from "./colorstates.js"
 
 ############################################################
@@ -43,15 +44,13 @@ export initialize = ->
     log "initialize"
     setInterval(heartbeat, heartbeatMS)
     setTimeout(heartbeat, initialDelayMS)
-    liveD.setOnLiveUpdateListener(onLiveDataUpdate)
+    liveD.listenOnSymbolsData([HYG], onLiveDataUpdate)
     return
 
 ############################################################
 export heartbeat = ->
     log "heartbeat"
-    try 
-        await fetchData()
-        await liveD.connectAndSubscribe()
+    try await fetchData()
     catch err then console.error(err) # should not throw actually
     return
 
@@ -68,8 +67,10 @@ dataIsRecent = ->
     return (now - lastFetch) < (2 * 60 * 60 * 1000) # less than 2 hours ago
 
 ############################################################
-onLiveDataUpdate = (price) ->
+onLiveDataUpdate = (sym, price) ->
     log "onLiveDataUpdate"
+    if sym != HYG then console.error("onLiveUpdate did not receive HYG! (received #{sym})")
+    console.log("HYG live: #{price}")
     currentState = colorS.getCurrentPriceState(price)
     onStateChange(currentState)
     return
@@ -145,7 +146,6 @@ fetchData = ->
         lastFetch = Date.now()
         processData(spyResult, hygResult)
         onStateChange(currentState)
-    catch err
-        log "fetch error: #{err.message}"
+    catch err then log "fetch error: #{err.message}"
     return
 
