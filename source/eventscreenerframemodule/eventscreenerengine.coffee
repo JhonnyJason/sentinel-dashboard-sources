@@ -20,8 +20,8 @@ export resultStructure = [
     { label: "Trefferquote", key: "winrate", sort: on }
     { label: "Profit (Dur.)", key: "profitAvg", sort: on }
     { label: "Profit (Med.)", key: "profitMed", sort: on }
-    { label: "Max Anstieg", key: "maxGain", sort: on }
-    { label: "Max Rückgang", key: "maxDrop", sort: on }
+    { label: "Max Anstieg (Absolut)", key: "maxRise", sort: on }
+    { label: "Max Rückgang (Absolut)", key: "maxDrop", sort: on }
     { label: "Nächstes Ereignis", key: "nextDate", sort: on }
     { label: "Einstieg (EoD)", key: "entryDate", sort: on }
     { label: "Ausstieg (EoD)", key: "exitDate", sort: on }
@@ -219,20 +219,20 @@ generateResultDetailsObject = (evaluation, evnt, trade) ->
     if evaluation.maxDropObj?
         detailsObj.maxDrop = 100.0 * evaluation.maxDropObj.maxDropF
         detailsObj.maxDropAba = evaluation.maxDropObj.entryCba * evaluation.maxDropObj.maxDropF
-        detailsObj.maxDropMissingF = evaluation.maxDropObj.missingSF
+        detailsObj.maxDropMissingSF = evaluation.maxDropObj.missingSF
     else
         detailsObj.maxDrop = 0.0
         detailsObj.maxDropAba = 0.0
-        detailsObj.maxDropMissingF = 1.0
+        detailsObj.maxDropMissingSF = 1.0
 
     if evaluation.maxRiseObj?
-        detailsObj.maxGain = 100.0 * evaluation.maxRiseObj.maxRiseF
-        detailsObj.maxGainAba = evaluation.maxRiseObj.entryCba * evaluation.maxRiseObj.maxRiseF
-        detailsObj.maxGainMissingF = evaluation.maxRiseObj.missingSF
+        detailsObj.maxRise = 100.0 * evaluation.maxRiseObj.maxRiseF
+        detailsObj.maxRiseAba = evaluation.maxRiseObj.entryCba * evaluation.maxRiseObj.maxRiseF
+        detailsObj.maxRiseMissingSF = evaluation.maxRiseObj.missingSF
     else
-        detailsObj.maxGain = 0.0
-        detailsObj.maxGainAba = 0.0
-        detailsObj.maxGainMissingF = 1.0
+        detailsObj.maxRise = 0.0
+        detailsObj.maxRiseAba = 0.0
+        detailsObj.maxRiseMissingSF = 1.0
 
     # all Results
     detailsObj.infoObjects = evaluation.runInfoObjects
@@ -273,11 +273,30 @@ generateResultSummaryObject = (evaluation, evnt) ->
     result.profitAvg = profitF * evaluation.avgChangeF
     result.profitMed = profitF * evaluation.medChangeF
 
-    if !evaluation.maxRiseObj? then result.maxGain = 0.0
-    else result.maxGain =  100.0 * evaluation.maxRiseObj.maxRiseF
+    # extremes
+    if evaluation.maxRiseObj?
+        result.maxRise = 100.0 * evaluation.maxRiseObj.maxRiseF
+        result.maxRiseAba = evaluation.maxRiseObj.entryCba * evaluation.maxRiseObj.maxRiseF
+        result.maxRiseMissingSF = evaluation.maxRiseObj.missingSF
+    else
+        result.maxRise = 0.0
+        result.maxRiseAba = 0.0
+        result.maxRiseMissingSF = 1.0
+
+    if evaluation.maxDropObj?
+        result.maxDrop = 100.0 * evaluation.maxDropObj.maxDropF
+        result.maxDropAba = evaluation.maxDropObj.entryCba * evaluation.maxDropObj.maxDropF
+        result.maxDropMissingSF = evaluation.maxDropObj.missingSF
+    else
+        result.maxDrop = 0.0
+        result.maxDropAba = 0.0
+        result.maxDropMissingSF = 1.0
+
+    # if !evaluation.maxRiseObj? then result.maxRise = 0.0
+    # else result.maxRise =  100.0 * evaluation.maxRiseObj.maxRiseF
     
-    if !evaluation.maxDropObj? then result.maxDrop = 0.0
-    else result.maxDrop =  100.0 * evaluation.maxDropObj.maxDropF
+    # if !evaluation.maxDropObj? then result.maxDrop = 0.0
+    # else result.maxDrop =  100.0 * evaluation.maxDropObj.maxDropF
     
     result.nextDate = nextDate
     result.entryDate = nextEntryDate
@@ -455,7 +474,7 @@ getSortFunction = (sortKey, isAscending) ->
         when "winrate" then return (el1, el2) -> numberCompare(el1.winrate, el2.winrate, f)
         when "profitAvg" then return (el1, el2) -> numberCompare(el1.profitAvg, el2.profitAvg, f)
         when "profitMed" then return (el1, el2) -> numberCompare(el1.profitMed, el2.profitMed, f)
-        when "maxGain" then return (el1, el2) -> numberCompare(el1.maxGain, el2.maxGain, f)
+        when "maxRise" then return (el1, el2) -> numberCompare(el1.maxRise, el2.maxRise, f)
         when "maxDrop" then return (el1, el2) -> negNumberCompare(el1.maxDrop, el2.maxDrop, f)
         when "nextDate" then return (el1, el2) -> stringCompare(el1.nextDate, el2.nextDate, f)
         when "entryDate" then return (el1, el2) -> stringCompare(el1.entryDate, el2.entryDate, f)

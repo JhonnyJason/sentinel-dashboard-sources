@@ -109,9 +109,9 @@ export filterResult = (result) ->
     if filters.longOnly.active and result.direction == "Short" then return false
     if filters.shortOnly.active and result.direction == "Long" then return false
 
-    if filters.minMaxRise.active and result.maxGain < filters.minMaxRise.value
+    if filters.minMaxRise.active and result.maxRise < filters.minMaxRise.value
         return false
-    if filters.maxMaxRise.active and result.maxGain > filters.maxMaxRise.value
+    if filters.maxMaxRise.active and result.maxRise > filters.maxMaxRise.value
         return false
     if filters.minMaxDrop.active and -result.maxDrop < filters.minMaxDrop.value
         return false

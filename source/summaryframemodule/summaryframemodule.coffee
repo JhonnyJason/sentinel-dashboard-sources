@@ -29,7 +29,7 @@ export updateData = (data) ->
         # log key
         # olog d
         
-        if key == "_params" # digest global params 
+        if key == "_params" # digest global params
             setGlobalParams(d)
             continue
 

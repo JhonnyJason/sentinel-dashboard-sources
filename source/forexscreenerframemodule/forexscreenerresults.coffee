@@ -88,6 +88,8 @@ render = (results) ->
                     when "takeprofit1" then td.appendChild(getSpan("", d.toFixed(5)))
                     when "takeprofit2" then td.appendChild(getSpan("", d.toFixed(5)))
                     when "score" then addScoreSpan(td, d)
+                    when "cot6" then addCOTSpan(td, d.base, d.quote)
+                    when "cot36" then addCOTSpan(td, d.base, d.quote)
                     when "seasonality10P" then td.appendChild(getSpan("winrate", d.toFixed(1)))
                     when "seasonality15P" then td.appendChild(getSpan("winrate", d.toFixed(1)))
 
@@ -95,7 +97,7 @@ render = (results) ->
                     # when "winrate" then td.appendChild(getSpan("winrate", d.toFixed(1)))
                     # when "profitAvg" then td.appendChild(getSpan("profit", d.toFixed(1)))
                     # when "profitMed" then td.appendChild(getSpan("profit", d.toFixed(1)))
-                    # when "maxGain" then td.appendChild(getSpan("up", d.toFixed(1)))
+                    # when "maxRise" then td.appendChild(getSpan("up", d.toFixed(1)))
                     # when "maxDrop" then td.appendChild(getSpan("down", d.toFixed(1)))
                     # when "nextDate" then td.appendChild(getSpan("", formatDate(d)))
                     else console.error("Rendering TableBody: Unexpected key #{key}!")
@@ -170,6 +172,28 @@ addScoreSpan = (td, score) ->
     td.style.backgroundColor = color    
     
     td.appendChild(getSpan("", "#{text} #{score}"))
+    return 
+
+
+addCOTSpan = (td, cotBase, cotQuote) ->    
+    if typeof cotBase == "string" then cotBase = parseInt(cotBase)
+    if typeof cotQuote == "string" then cotQuote = parseInt(cotQuote)
+    
+    if cotBase >= 70
+        td.appendChild(getSpan("strong-cot", "#{Math.round(cotBase)}"))
+    else if cotBase <= 30
+        td.appendChild(getSpan("weak-cot", "#{Math.round(cotBase)}"))
+    else
+        td.appendChild(getSpan("neutral-cot", "#{Math.round(cotBase)}"))
+
+    td.appendChild(getSpan("", " / "))
+
+    if cotQuote >= 70
+        td.appendChild(getSpan("strong-cot", "#{Math.round(cotQuote)}"))
+    else if cotQuote <= 30
+        td.appendChild(getSpan("weak-cot", "#{Math.round(cotQuote)}"))
+    else
+        td.appendChild(getSpan("neutral-cot", "#{Math.round(cotQuote)}"))
     return 
 
 formatDate = (value) ->

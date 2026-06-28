@@ -132,7 +132,7 @@ updateRanking = ->
     ## TODO check if anything actually changed...
     pair.updateScore() for pair in shownCurrencyPairs
     renderFrame()
-    startScreening(shownCurrencyPairs.map(((el) -> [el.short, el.stScore])))
+    startScreening(shownCurrencyPairs)
     return
 
 

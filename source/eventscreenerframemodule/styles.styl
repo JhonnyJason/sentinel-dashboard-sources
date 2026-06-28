@@ -380,15 +380,37 @@
 
     span.profit
     span.up
+    .abs-up
         color cd-up-green
+        white-space: nowrap;
 
     span.profit:before
     span.up:before
+    .abs-up:before
         content "+"
         margin-right 2px
 
     span.down
+    .abs-down
         color cd-down-red
+    
+    span.missing-factor 
+        font-size 9pt
+        // color #faba01
+        color #caaa31
+        font-weight: normal
+
+    span.missing-factor:before
+        content: " x"
+    
+    .absolute
+        white-space: nowrap;
+    .absolute:before
+        content: "("
+        margin-right 2px
+    .absolute:after
+        content: ")"
+        margin-left 2px
 
     // symbol
     td:nth-child(1)
@@ -434,15 +456,15 @@
     // maxRise
     td:nth-child(7)
     th:nth-child(7)
-        width 95px
-        min-width 95px
-        max-width 95px
+        width 110px
+        min-width 110px
+        max-width 110px
     // maxDrop
     td:nth-child(8)
     th:nth-child(8)
-        width 95px
-        min-width 95px
-        max-width 95px
+        width 120px
+        min-width 120px
+        max-width 120px
     // next event
     td:nth-child(9)
     th:nth-child(9)

@@ -60,7 +60,7 @@ render = (results) ->
                 th.classList.add("sorted")
                 th.classList.add(if sortAscending then "asc" else "desc")
             th.addEventListener("click", onSortColumnClick)
-        th.textContent = label
+        th.innerHTML = label
         headerRow.appendChild(th)
     thead.appendChild(headerRow)
     eventscreenerResult.appendChild(thead)
@@ -89,10 +89,14 @@ render = (results) ->
                 when "eventLabel" then td.appendChild(getSpan("", d))
                 when "direction" then td.appendChild(getSpan(d.toLowerCase(), d))
                 when "winrate" then td.appendChild(getSpan("winrate", d.toFixed(1)))
+
                 when "profitAvg" then td.appendChild(getSpan("profit", d.toFixed(1)))
                 when "profitMed" then td.appendChild(getSpan("profit", d.toFixed(1)))
-                when "maxGain" then td.appendChild(getSpan("up", d.toFixed(1)))
-                when "maxDrop" then td.appendChild(getSpan("down", d.toFixed(1)))
+
+                when "maxRise" then td.appendChild(getMaxRiseElement(result))
+                when "maxDrop" then td.appendChild(getMaxDropElement(result))
+               
+                
                 when "nextDate" then td.appendChild(getSpan("", formatDate(d)))
                 when "entryDate" then td.appendChild(getSpan("", formatDate(d)))
                 when "exitDate" then td.appendChild(getSpan("", formatDate(d)))
@@ -149,6 +153,10 @@ formatDate = (value) ->
     monthStr = if month < 10 then "0#{month}" else "#{month}"
     return "#{dayStr}.#{monthStr}.#{year}"
 
+formatAbsolutePrice = (value, missingSF) ->
+    if missingSF > 1 then return "#{value.toFixed(2)}<span class='missing-factor' title='Fehlender Faktor zum exakten historischen Wert.'>#{missingSF.toFixed(2)}</span>"
+    else return "#{value.toFixed(2)}"
+
 ############################################################
 getSpan = (cls, txt) ->
     span = document.createElement("SPAN")
@@ -156,5 +164,55 @@ getSpan = (cls, txt) ->
     span.textContent = txt
     return span
 
+getMaxRiseElement = (result) ->
+    log "getMaxRiseElement"
+    olog result
 
+    abs = result.maxRiseAba 
+    p = result.maxRise
+    missingSF = result.maxRiseMissingSF
+    olog { p, abs, missingSF }
+
+    el = document.createElement("div")
+    top = document.createElement("div")
+    bottom = document.createElement("div")
+    absEl = document.createElement("span")
+
+    bottom.classList.add("absolute")
+    absEl.classList.add("abs-up")
+
+    el.appendChild(top)
+    el.appendChild(bottom)
+    
+    top.appendChild(getSpan("up", p.toFixed(1)))
+    
+    absEl.innerHTML = formatAbsolutePrice(abs, missingSF)
+    bottom.appendChild(absEl)
+    return el
+
+getMaxDropElement = (result) ->
+    log "getMaxDropElement"
+    abs = result.maxDropAba 
+    p = result.maxDrop
+    missingSF = result.maxDropMissingSF
+    olog { p, abs, missingSF }
+
+    el = document.createElement("div")
+    top = document.createElement("div")
+    bottom = document.createElement("div")
+    absEl = document.createElement("span")
+    
+    bottom.classList.add("absolute")
+    absEl.classList.add("abs-down")
+
+    el.appendChild(top)
+    el.appendChild(bottom)
+
+    top.appendChild(getSpan("down", p.toFixed(1)))
+    
+    absEl.innerHTML = formatAbsolutePrice(abs, missingSF)
+    bottom.appendChild(absEl)
+    return el
+
+#
 #endregion

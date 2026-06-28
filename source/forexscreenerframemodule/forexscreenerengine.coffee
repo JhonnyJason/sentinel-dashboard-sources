@@ -23,17 +23,20 @@ export resultStructure = [
     { label: "TP1", key: "takeprofit1", sort: off }
     { label: "TP2", key: "takeprofit2", sort: off }
     { label: "Scoring", key: "score", sort: on }
+    { label: "COT 6m", key: "cot6", sort: on }
+    { label: "COT 36m", key: "cot36", sort: on }
     { label: "Saisonale TQ 10J", key: "seasonality10P", sort: on }
     { label: "Saisonale TQ 15J", key: "seasonality15P", sort: on }
 ]
 
 ############################################################
 symbolToInfo = Object.create(null)
-symbolToScore = Object.create(null)
+symbolToPairObj = Object.create(null)
 symbolToSaisonality10J = Object.create(null)
 symbolToSaisonality15J = Object.create(null)
 # relevantSymbols = []
-latestForexPairList = null
+forexPairList = null
+
 ############################################################
 maxBusyTimeMS = 5
 
@@ -58,12 +61,12 @@ setResultsReady = null
 resultsReady = new Promise((rslv) -> setResultsReady = rslv)
 
 ############################################################
-export startScreening = (forexPairsWithScore) ->
+export startScreening = (forexPairs) ->
     log "startScreening"
-    return unless Array.isArray(forexPairsWithScore)
+    return unless Array.isArray(forexPairs)
     await liveD.pricesReceived()
     
-    latestForexPairList = forexPairsWithScore
+    forexPairList = forexPairs
     
     if !setResultsReady? # instanciate new Promise if the last one had been resolved already.
         resultsReady = new Promise((rslv) -> setResultsReady = rslv)
@@ -76,12 +79,9 @@ export startScreening = (forexPairsWithScore) ->
     currentYear = (new Date()).getFullYear()
     currentYearIsLeap = utl.isLeapYear(currentYear)
     
-    ## Get current score for fxPair sym
-    for el in latestForexPairList
-        symbol = el[0]
-        score = el[1]
-        symbolToScore[symbol] = score
-    
+    ## Store mapped ForexPair Objects -> they carry all relevant info ;-)
+    symbolToPairObj[el.short] = el for el in forexPairList
+
     try
         ## Get Saisonality Composite for fxPair sym
         await getRelevantSaisonalityComposites()
@@ -89,6 +89,8 @@ export startScreening = (forexPairsWithScore) ->
         start = performance.now()
         for sym,i in allForexSymbols
             log "evaluating #{sym} @#{i}"
+            info = Object.create(null)
+
             sc15 = symbolToSaisonality15J[sym]
             sc10 = symbolToSaisonality10J[sym]
             if !sc10? or !sc15?
@@ -96,24 +98,35 @@ export startScreening = (forexPairsWithScore) ->
                 log "This symbol has a seasonal composite missing... continue!"
                 continue
             
-            score = symbolToScore[sym]
-            if score > 0 then isLong = true
-            else isLong = false
+            info.score = symbolToPairObj[sym].stScore # use short term score here
+            info.isLong = info.score > 0
+            info.signal = "Long" if info.isLong
+            info.signal = "Short" if !info.isLong
+            # olog info
+            
 
-            range = getSeasonalBestFitRangeFromToday(sc15, isLong, 90)
+            info.cot6 = {
+                base: symbolToPairObj[sym].baseArea.getCOT6()
+                quote: symbolToPairObj[sym].quoteArea.getCOT6()
+            }
+            info.cot36 = {
+                base: symbolToPairObj[sym].baseArea.getCOT36()
+                quote: symbolToPairObj[sym].quoteArea.getCOT36()
+            } 
+            olog info            
+
+            range = getSeasonalBestFitRangeFromToday(sc15, info.isLong, 90)
             if !range?
                 symbolToInfo[sym] = Object.create(null)
                 log "This symbol has no matching seasonal pattern... continue!"
                 continue 
             # olog range
 
-            entryDate = utl.leapNormToYYYYMMDD(range.startIdx, currentYear)
-            exitDate = utl.leapNormToYYYYMMDD(range.endIdx, currentYear)
-
-            # olog { entryDate, exitDate }
+            info.entryDate = utl.leapNormToYYYYMMDD(range.startIdx, currentYear)
+            info.exitDate = utl.leapNormToYYYYMMDD(range.endIdx, currentYear)
+            # olog info
 
             hlc = await dataC.getHistoryHLC(sym, 1)
-
             if hlc.length == 2 then hlc = [...hlc[1], ...hlc[0]].filter((el) -> el?)
             else throw new Error("retrieved HLC data per year was not for 2 years! Should be for this and the year before.")
             # olog hlc
@@ -122,27 +135,21 @@ export startScreening = (forexPairsWithScore) ->
             atr14 = getATR14(hlc)
             
             ## calculate SL and TP values
-            if isLong then f = 1.0
-            else f = -1.0
+            f = 1.0 if info.isLong
+            f = -1.0 if !info.isLong
 
-            livePrice = liveD.getLatestPrice(sym)
-            if livePrice? then entryPrice = livePrice
-            else 
+            info.entryPrice = liveD.getLatestPrice(sym)
+            if !info.entryPrice?
                 lastHLC = hlc[hlc.length - 1]
                 lastC = lastHLC[lastHLC.length - 1]
                 if typeof lastC == "string" then lastC = parseFloat(lastC)
+                
                 console.log("Using lastClose")
-                entryPrice = lastC
+                info.entryPrice = lastC
 
-            ## calc SL
-            stoploss = entryPrice - f * atr14
-            ## calc TP1
-            takeprofit1 = entryPrice + f * 1.5 * atr14
-            ## calc TP2
-            takeprofit2 = entryPrice + f * 3.0 * atr14
-
-            if isLong then signal = "Long"
-            else signal = "Short"
+            info.stoploss = info.entryPrice - f * atr14
+            info.takeprofit1 = info.entryPrice + f * 1.5 * atr14
+            info.takeprofit2 = info.entryPrice + f * 3.0 * atr14
             
             ## Get and check success rates
             minSuccessRate = 0.7
@@ -156,7 +163,7 @@ export startScreening = (forexPairsWithScore) ->
                 backtester10Y.addBacktestRun(year, range.startIdx, range.endIdx, "#{sym}:10Y@#{year}")
 
             backtest10YRes = backtester10Y.runEvaluationSync()
-            if backtest10YRes.isLong != isLong # our trade direction was not optimal... so not relevant
+            if backtest10YRes.isLong != info.isLong # our trade direction was not optimal... so not relevant
                 symbolToInfo[sym] = Object.create(null)
                 log "10Y Backtesting revealed different preferrable trade direction - continue!"
                 continue
@@ -164,6 +171,7 @@ export startScreening = (forexPairsWithScore) ->
                 symbolToInfo[sym] = Object.create(null)
                 log "10Y Range was too often untradable - continue!"
                 continue
+            
             winrate10Y = backtest10YRes.winTrades / backtest10YRes.totalTrades
             if winrate10Y < minSuccessRate
                 symbolToInfo[sym] = Object.create(null)
@@ -183,7 +191,7 @@ export startScreening = (forexPairsWithScore) ->
                 backtester15Y.addBacktestRun(year, range.startIdx, range.endIdx, "#{sym}:15Y@#{year}")
 
             backtest15YRes = backtester15Y.runEvaluationSync()
-            if backtest15YRes.isLong != isLong # our trade direction was not optimal... so not relevant
+            if backtest15YRes.isLong != info.isLong # our trade direction was not optimal... so not relevant
                 symbolToInfo[sym] = Object.create(null)
                 log "15Y Backtesting revealed different preferrable trade direction - continue!"
                 continue
@@ -191,6 +199,7 @@ export startScreening = (forexPairsWithScore) ->
                 symbolToInfo[sym] = Object.create(null)
                 log "15Y Range was too often untradable - continue!"
                 continue            
+            
             winrate15Y = backtest15YRes.winTrades / backtest15YRes.totalTrades
             if winrate15Y < minSuccessRate
                 symbolToInfo[sym] = Object.create(null)
@@ -201,10 +210,10 @@ export startScreening = (forexPairsWithScore) ->
             log "totalTrades15Y: #{backtest15YRes.totalTrades}"
             log "winrate15Y: #{winrate15Y}"
 
-            seasonality10P = 100.0 * winrate10Y
-            seasonality15P = 100.0 * winrate15Y
+            info.seasonality10P = 100.0 * winrate10Y
+            info.seasonality15P = 100.0 * winrate15Y
             
-            symbolToInfo[sym] = { signal, stoploss, entryPrice, takeprofit1, takeprofit2, entryDate, exitDate, score, seasonality10P, seasonality15P }
+            symbolToInfo[sym] = info
             
             ## DONOT freeze the UI Thread if calculation takes too much time...
             if performance.now() - start > maxBusyTimeMS
@@ -285,8 +294,8 @@ getRelevantSaisonalityComposites = ->
     symbolToSaisonality10J = Object.create(null)
     symbolToSaisonality15J = Object.create(null)
 
-    relevantSymbols = Object.keys(symbolToScore).filter(
-        (el) -> Math.round(Math.abs(symbolToScore[el])) > 4
+    relevantSymbols = Object.keys(symbolToPairObj).filter(
+        (el) -> Math.round(Math.abs(symbolToPairObj[el].stScore)) > 4
     )
     # olog relevantSymbols
 
@@ -584,6 +593,8 @@ getSortFunction = (sortKey, isAscending) ->
         # when "takeprofit1" then return (el1, el2) -> numberCompare(el1.takeprofit1, el2.takeprofit1, f)
         # when "takeprofit2" then return (el1, el2) -> numberCompare(el1.takeprofit2, el2.takeprofit2, f)
         when "score" then return (el1, el2) -> numberCompare(el1.score, el2.score, f)
+        when "cot6" then return (el1, el2) -> numberCompare(el1.cot6, el2.cot6, f)
+        when "cot36" then return (el1, el2) -> numberCompare(el1.cot36, el2.cot36, f)
         when "seasonality10P" then return (el1, el2) -> stringCompare(el1.sasonalityP, el2.sasonality10P, f)
         when "seasonality15P" then return (el1, el2) -> stringCompare(el1.sasonalityP, el2.sasonality10P, f)
         else throw new Error("No sort Function for #{sortKey}!")

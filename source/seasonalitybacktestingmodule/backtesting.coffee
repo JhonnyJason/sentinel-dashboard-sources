@@ -39,7 +39,7 @@ evaluateResults = (results, opts) ->
     log "evaluateResults"
     { startIdx, endIdx, tradingDaysPerYear } = opts
     { avgChangeF, medChangeF } = getAverageAndMedianChanges(results)
-    { maxDropF, maxDropP, maxDropA, maxDropAba, maxDropMissingF, maxRiseF, maxRiseP, maxRiseA, maxRiseAba, maxRiseMissingF } = getMaxRiseAndMaxDrop(results)
+    { maxDropF, maxDropP, maxDropA, maxDropAba, maxDropMissingSF, maxRiseF, maxRiseP, maxRiseA, maxRiseAba, maxRiseMissingF } = getMaxRiseAndMaxDrop(results)
 
     isLong = avgChangeF > 1
     { winTrades, totalTrades } = countTradeResults(results, isLong)
@@ -75,7 +75,7 @@ evaluateResults = (results, opts) ->
         exitDate: indexToDate(endIdx)
         daysInTrade: (endIdx - startIdx) % 365
         
-        maxDropF, maxDropP, maxDropA, maxDropAba, maxDropMissingF
+        maxDropF, maxDropP, maxDropA, maxDropAba, maxDropMissingSF
         maxRiseF, maxRiseP, maxRiseA, maxRiseAba, maxRiseMissingF 
 
         averageProfit: profitF * (avgChangeF - 1)
@@ -88,7 +88,7 @@ evaluateYearsResult = (result, year) ->
     log "evaluateYearsResult"
     { 
         startA, startAr, startAba, deltaF, maxRiseF, 
-        maxDropF, corrF, missingF, lastF, warn 
+        maxDropF, corrF, missingSF, lastF, warn 
     } = result
 
     changeP = (deltaF - 1) * 100
@@ -98,7 +98,7 @@ evaluateYearsResult = (result, year) ->
     
     return {
         year, deltaF, changeP, maxRiseF, maxRiseP, maxDropF, maxDropP, 
-        startA, startAr, startAba, corrF, missingF, lastF, warn 
+        startA, startAr, startAba, corrF, missingSF, lastF, warn 
     }
 
 #endregion
@@ -128,7 +128,7 @@ addSplitsInfo = (results, splitFactors, startIdx, endIdx) ->
         el.corrF = corrF
         el.startAr = el.startA / corrF
         el.startAba = el.startA / lastF
-        el.missingF = 1.0 * lastF / corrF
+        el.missingSF = 1.0 * lastF / corrF
         day = day.getDayPrevYear() # for further iteration
     return
 
@@ -231,17 +231,17 @@ getMaxRiseAndMaxDrop = (results, ignoreWithWarning = true) ->
     maxDropP = (maxDropF - 1) * 100
     maxDropA = maxDropEl.startA * (maxDropEl.maxDropF - 1)
     maxDropAba = maxDropEl.startAba * (maxDropEl.maxDropF - 1)
-    maxDropMissingF = maxDropEl.missingF
+    maxDropMissingSF = maxDropEl.missingSF
     
     ## get relevant props from maxRiseEl
     maxRiseF = maxRiseEl.maxRiseF
     maxRiseP = (maxRiseF - 1) * 100
     maxRiseA = maxRiseEl.startA * (maxRiseEl.maxRiseF - 1)
     maxRiseAba = maxRiseEl.startAba * (maxRiseEl.maxRiseF - 1)
-    maxRiseMissingF = maxRiseEl.missingF
+    maxRiseMissingF = maxRiseEl.missingSF
 
     return { 
-        maxDropF, maxDropP, maxDropA, maxDropAba, maxDropMissingF,
+        maxDropF, maxDropP, maxDropA, maxDropAba, maxDropMissingSF,
         maxRiseF, maxRiseP, maxRiseA, maxRiseAba, maxRiseMissingF 
     }
 

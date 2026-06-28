@@ -69,13 +69,13 @@ renderBacktestingTable = ->
 
         # Start price column
         td = document.createElement("td")
-        td.innerHTML = formatAbsolutePrice(result.startAba, result.missingF)
+        td.innerHTML = formatAbsolutePrice(result.startAba, result.missingSF)
         row.appendChild(td)
 
         # End price column
         td = document.createElement("td")
         endPriceAba = result.startAba * (1.0 + result.deltaF) 
-        td.innerHTML = formatAbsolutePrice(endPriceAba, result.missingF)
+        td.innerHTML = formatAbsolutePrice(endPriceAba, result.missingSF)
         row.appendChild(td)
 
         # End date column
@@ -94,7 +94,7 @@ renderBacktestingTable = ->
         # Profit Abs column
         td = document.createElement("td")
         profitAbs = result.startAba * profit / 100
-        td.innerHTML = formatAbsoluteDelta(profitAbs, result.missingF)
+        td.innerHTML = formatAbsoluteDelta(profitAbs, result.missingSF)
         td.classList.add(if profitAbs >= 0 then "positive" else "negative")
         row.appendChild(td)
 
@@ -106,7 +106,7 @@ renderBacktestingTable = ->
         # Max Rise Abs column
         td = document.createElement("td")
         maxRiseAbs = result.startAba * result.maxRiseP / 100
-        td.innerHTML = formatAbsoluteDelta(maxRiseAbs, result.missingF)
+        td.innerHTML = formatAbsoluteDelta(maxRiseAbs, result.missingSF)
         row.appendChild(td)
 
         # Max Drop column
@@ -117,7 +117,7 @@ renderBacktestingTable = ->
         # Max Drop Abs column
         td = document.createElement("td")
         maxDropAbs = result.startAba * result.maxDropP / 100
-        td.innerHTML = formatAbsoluteDelta(maxDropAbs, result.missingF)
+        td.innerHTML = formatAbsoluteDelta(maxDropAbs, result.missingSF)
         row.appendChild(td)
 
         tbody.appendChild(row)
@@ -173,13 +173,13 @@ formatPercent = (value) ->
     sign = if value >= 0 then "+" else ""
     return "#{sign}#{value.toFixed(1)}%"
 
-formatAbsoluteDelta = (value, missingF) ->
+formatAbsoluteDelta = (value, missingSF) ->
     sign = if value >= 0 then "+" else ""
-    html = formatAbsolutePrice(value, missingF)
+    html = formatAbsolutePrice(value, missingSF)
     return "#{sign}#{html}"
 
-formatAbsolutePrice = (value, missingF) ->
-    if missingF > 1 then return "#{value.toFixed(2)}<span class='missing-factor' title='Fehlender Faktor zum exakten historischen Wert.'>#{missingF.toFixed(2)}</span>"
+formatAbsolutePrice = (value, missingSF) ->
+    if missingSF > 1 then return "#{value.toFixed(2)}<span class='missing-factor' title='Fehlender Faktor zum exakten historischen Wert.'>#{missingSF.toFixed(2)}</span>"
     else return "#{value.toFixed(2)}"
 
 formatDate = (value) ->
@@ -237,7 +237,7 @@ transformToYearlyResults = (summary) ->
         resObj.startAba = runObj.entryCba 
 
         resObj.corrF = runObj.corrSF 
-        resObj.missingF = runObj.missingSF 
+        resObj.missingSF = runObj.missingSF 
 
         resObj.warn = runObj.warn
     

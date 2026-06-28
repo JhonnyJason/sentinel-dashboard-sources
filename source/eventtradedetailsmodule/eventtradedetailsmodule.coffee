@@ -258,11 +258,11 @@ displaySummary = (summaryResult) ->
     averageProfitDisplay.textContent = formatPercent(summaryResult.profitAvg)
     medianProfitDisplay.textContent = formatPercent(summaryResult.profitMed)
 
-    maxRiseDisplay.textContent = formatPercent(summaryResult.maxGain)
+    maxRiseDisplay.textContent = formatPercent(summaryResult.maxRise)
     maxDropDisplay.textContent = formatPercent(summaryResult.maxDrop)
     
-    absMaxDropDisplay.innerHTML = formatAbsoluteDelta(summaryResult.maxDropAba, summaryResult.maxDropMissingF)
-    absMaxRiseDisplay.innerHTML = formatAbsoluteDelta(summaryResult.maxGainAba, summaryResult.maxGainMissingF)
+    absMaxDropDisplay.innerHTML = formatAbsoluteDelta(summaryResult.maxDropAba, summaryResult.maxDropMissingSF)
+    absMaxRiseDisplay.innerHTML = formatAbsoluteDelta(summaryResult.maxRiseAba, summaryResult.maxRiseMissingSF)
 
     daysInTradeDisplay.textContent = "#{getNrTradeDays()} Tage"
 
@@ -295,12 +295,12 @@ renderDetailsTable = ->
 
         ## start price: entryAr or entryAba
         td = document.createElement("td")
-        td.innerHTML = formatAbsolutePrice(result.entryAba, result.missingF)
+        td.innerHTML = formatAbsolutePrice(result.entryAba, result.missingSF)
         tr.appendChild(td)
 
         ## end price: startPrice * deltaF
         td = document.createElement("td")
-        td.innerHTML = formatAbsolutePrice(result.exitAba, result.missingF)
+        td.innerHTML = formatAbsolutePrice(result.exitAba, result.missingSF)
         tr.appendChild(td)
 
         ## end date: exitD
@@ -310,48 +310,31 @@ renderDetailsTable = ->
 
         ## profit: profit?
         td = document.createElement("td")
-        if direction == "Long" then profit = 100.0 * result.deltaF
-        if direction == "Short" then profit = -100.0 * result.deltaF
-        td.textContent = formatPercent(profit)
-        if profit > 0 then cls = "positive"
-        if profit < 0 then cls = "negative"
-        td.classList.add(cls) unless profit == 0
+        td.appendChild(getProfitElemet(result))
         tr.appendChild(td)
         
         ## profit abs: profitAr?
         
         ## Max Anstieg: maxGainF -> maxGainP
         td = document.createElement("td")
-        maxGainP = 100.0 * result.maxGainF
-        if direction == "Long" and maxGainP > 0 then cls = "positive"
-        if direction == "Short" and maxGainP < 0 then cls = "positive"
-        if direction == "Long" and maxGainP < 0 then cls = "negative"
-        if direction == "Short" and maxGainP > 0 then cls = "negative"
-        td.textContent = formatPercent(maxGainP)
-        td.classList.add(cls) unless maxGainP == 0
+        td.appendChild(getMaxRiseElement(result))
         tr.appendChild(td)
 
         ## Max Anstieg Abs: maxRiseA?
         # td = document.createElement("td")
         # maxGainAbs = result.entryAba * result.maxGainF
-        # td.innerHTML = formatAbsoluteDelta(maxGainAbs, result.missingF)
+        # td.innerHTML = formatAbsoluteDelta(maxGainAbs, result.missingSF)
         # tr.appendChild(td)
 
         ## Max Rückgang: maxDrop
         td = document.createElement("td")
-        maxDropP = 100.0 * result.maxDropF
-        if direction == "Long" and maxDropP > 0 then cls = "positive"
-        if direction == "Short" and maxDropP < 0 then cls = "positive"
-        if direction == "Long" and maxDropP < 0 then cls = "negative"
-        if direction == "Short" and maxDropP > 0 then cls = "negative"
-        td.textContent = formatPercent(maxDropP)
-        td.classList.add(cls) unless maxDropP == 0
+        td.appendChild(getMaxDropElement(result))
         tr.appendChild(td)
         
         ## Max Rückgang Abs: maxDropA?
         # td = document.createElement("td")
         # maxDropAbs = result.entryAba * result.maxDropF
-        # td.innerHTML = formatAbsoluteDelta(maxDropAbs, result.missingF)
+        # td.innerHTML = formatAbsoluteDelta(maxDropAbs, result.missingSF)
         # tr.appendChild(td)
 
         tbody.appendChild(tr)
@@ -373,11 +356,11 @@ renderDetailTableHead = ->
         { label: "Startkurs"} # key: "entryC"
         { label: "Endkurs"} # key: "exitC"
         { label: "Ende" } # key: "exitD"
-        { label: "Profit", key: "profit" }
+        { label: "Profit (Absolut)", key: "profit" }
         # { label: "Profit Abs", key: "profitA" }
-        { label: "Max Anstieg", key: "maxRise" }
+        { label: "Max Anstieg (Absolut)", key: "maxRise" }
         # { label: "Max Anstieg Abs", key: "maxRiseA" }
-        { label: "Max Rückgang", key: "maxDrop" }
+        { label: "Max Rückgang (Absolut)", key: "maxDrop" }
         # { label: "Max Rückgang Abs", key: "maxDropA" }
     ]
 
@@ -458,12 +441,20 @@ transformRunObjToDetailsResult = (runObj) ->
     detailsRes.entryD = runObj.entryDate
     detailsRes.eventD = eventDate 
     detailsRes.exitD = runObj.exitDate
+    
     detailsRes.entryAba = runObj.entryCba
     detailsRes.exitAba = runObj.entryCba * (runObj.deltaF + 1.0)
-    detailsRes.missinF = runObj.missingSF
+    detailsRes.missingSF = runObj.missingSF
+
     detailsRes.deltaF = runObj.deltaF
-    detailsRes.maxGainF = runObj.maxRiseF
+    
+    detailsRes.maxRiseF = runObj.maxRiseF
+    detailsRes.maxRiseAba = runObj.entryCba * runObj.maxRiseF
+    detailsRes.maxRiseMissingSF = runObj.maxRiseMissingSF
+    
     detailsRes.maxDropF = runObj.maxDropF
+    detailsRes.maxDropAba = runObj.entryCba * runObj.maxDropF
+    detailsRes.maxDropMissingSF = runObj.maxDropMissingSF
 
     return detailsRes
 
@@ -473,15 +464,10 @@ formatPercent = (value) ->
     sign = if value >= 0 then "+" else ""
     return "#{sign}#{value.toFixed(1)}%"
 
-formatAbsoluteDelta = (value, missingF) ->
+formatAbsoluteDelta = (value, missingSF) ->
     sign = if value >= 0 then "+" else ""
-    html = formatAbsolutePrice(value, missingF)
+    html = formatAbsolutePrice(value, missingSF)
     return "#{sign}#{html}"
-
-formatAbsolutePrice = (value, missingF) ->
-    value = 1.0 * value
-    if missingF > 1 then return "#{value.toFixed(2)}<span class='missing-factor' title='Fehlender Faktor zum exakten historischen Wert.'>#{missingF.toFixed(2)}</span>"
-    else return "#{value.toFixed(2)}"
 
 # formatDate = (value) ->
 #     date = new Date(value)
@@ -492,6 +478,118 @@ formatAbsolutePrice = (value, missingF) ->
 #     dayStr = if day < 10 then "0#{day}" else "#{day}"
 #     monthStr = if month < 10 then "0#{month}" else "#{month}"
 #     return "#{dayStr}.#{monthStr}.#{year}"
+
+
+############################################################
+formatAbsolutePrice = (value, missingSF) ->
+    if missingSF > 1 then return "#{value.toFixed(2)}<span class='missing-factor' title='Fehlender Faktor zum exakten historischen Wert.'>#{missingSF.toFixed(2)}</span>"
+    else return "#{value.toFixed(2)}"
+
+
+############################################################
+getSpan = (cls, txt) ->
+    span = document.createElement("SPAN")
+    span.className = cls
+    span.textContent = txt
+    return span
+
+
+############################################################
+getProfitElemet = (result) ->
+    log "getProfitElemet"
+    olog result
+ 
+    if _direction == "Long" then f = 1.0
+    if _direction == "Short" then f = -1.0
+
+    abs = result.entryAba * result.deltaF 
+    p = f * 100.0 * result.deltaF
+    missingSF = result.missingSF
+    olog { p, abs, missingSF }
+
+    el = document.createElement("div")
+    top = document.createElement("div")
+    bottom = document.createElement("div")
+    absEl = document.createElement("span")
+
+    if p > 0 then cls = "positive"
+    if p < 0 then cls = "negative"
+    if p == 0 then cls = ""
+
+    bottom.classList.add("absolute")
+    absEl.classList.add(cls) unless p == 0
+
+    el.appendChild(top)
+    el.appendChild(bottom)
+    
+    top.appendChild(getSpan(cls, formatPercent(p)))
+    
+    absEl.innerHTML = formatAbsoluteDelta(abs, missingSF)
+    bottom.appendChild(absEl)
+    return el
+
+############################################################
+getMaxRiseElement = (result) ->
+    log "getMaxRiseElement"
+
+    abs = result.maxRiseAba 
+    p = 100.0 * result.maxRiseF
+    missingSF = result.missingSF
+    olog { p, abs, missingSF }
+    
+    el = document.createElement("div")
+    top = document.createElement("div")
+    bottom = document.createElement("div")
+    absEl = document.createElement("span")
+
+    if _direction == "Long" and p > 0 then cls = "positive"
+    if _direction == "Short" and p < 0 then cls = "positive"
+    if _direction == "Long" and p < 0 then cls = "negative"
+    if _direction == "Short" and p > 0 then cls = "negative"
+    if p == 0 then cls = ""
+    
+    bottom.classList.add("absolute")
+    absEl.classList.add(cls) unless p == 0
+
+    el.appendChild(top)
+    el.appendChild(bottom)
+    
+    top.appendChild(getSpan(cls, formatPercent(p)))
+    
+    absEl.innerHTML = formatAbsoluteDelta(abs, missingSF)
+    bottom.appendChild(absEl)
+    return el
+
+getMaxDropElement = (result) ->
+    log "getMaxDropElement"
+
+    abs = result.maxDropAba 
+    p = 100.0 * result.maxDropF 
+    missingSF = result.missingSF
+    olog { p, abs, missingSF }
+
+    if _direction == "Long" and p > 0 then cls = "positive"
+    if _direction == "Short" and p < 0 then cls = "positive"
+    if _direction == "Long" and p < 0 then cls = "negative"
+    if _direction == "Short" and p > 0 then cls = "negative"
+    if p == 0 then cls = ""
+
+    el = document.createElement("div")
+    top = document.createElement("div")
+    bottom = document.createElement("div")
+    absEl = document.createElement("span")
+    
+    bottom.classList.add("absolute")
+    absEl.classList.add(cls) unless p == 0
+
+    el.appendChild(top)
+    el.appendChild(bottom)
+
+    top.appendChild(getSpan(cls, formatPercent(p)))
+    
+    absEl.innerHTML = formatAbsoluteDelta(abs, missingSF)
+    bottom.appendChild(absEl)
+    return el
 
 
 ############################################################
