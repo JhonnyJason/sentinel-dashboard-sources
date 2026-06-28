@@ -18,13 +18,13 @@ export resultStructure = [
     { label: "Ereignis", key: "eventLabel", sort: on}
     { label: "", key: "direction", sort: on }
     { label: "Trefferquote", key: "winrate", sort: on }
-    { label: "Profit (Dur.)", key: "profitAvg", sort: on }
-    { label: "Profit (Med.)", key: "profitMed", sort: on }
+    { label: "Profit Dur.", key: "profitAvg", sort: on }
+    { label: "Profit Med.", key: "profitMed", sort: on }
     { label: "Max Anstieg (Absolut)", key: "maxRise", sort: on }
     { label: "Max Rückgang (Absolut)", key: "maxDrop", sort: on }
     { label: "Nächstes Ereignis", key: "nextDate", sort: on }
-    { label: "Einstieg (EoD)", key: "entryDate", sort: on }
-    { label: "Ausstieg (EoD)", key: "exitDate", sort: on }
+    { label: "Einstieg EoD", key: "entryDate", sort: on }
+    { label: "Ausstieg EoD", key: "exitDate", sort: on }
 ]
 
 ############################################################
