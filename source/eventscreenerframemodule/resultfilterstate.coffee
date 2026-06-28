@@ -17,9 +17,18 @@ filters = null
 FILTERS_KEY = "eventscreener-result-filter"
 ############################################################
 defaultFilters = {
-    winrate: { active: true, value: 60.0 },
+    winrate: { active: true, value: 69.0 },
     profitAvg: { active: true, value: 1.0 },
     profitMed: { active: false, value: 1.0 },
+    maxDuration: {active: false, value: 14 },
+    minDuration: {active: true, value: 3 },
+    
+    ignoreConflicts: { active: false },
+    preponeEntry: { active: false },
+    postponeEntry: { active: true },
+    preponeExit: { active: true},
+    postponeExit: { active: false},
+
     longOnly: {active: false },
     shortOnly: {active: false },
     minMaxRise: { active: false, value: 5.0 },
@@ -58,13 +67,23 @@ export initialize = ->
     el = profitMedFilter.querySelector("input.prop-value")
     el.addEventListener("change", profitMedValueChanged)
 
+    el = maxDurationFilter.querySelector("input.prop-active")
+    el.addEventListener("change", maxDurationActiveChanged)
+    el = maxDurationFilter.querySelector("input.prop-value")
+    el.addEventListener("change", maxDurationValueChanged)
+
+    el = minDurationFilter.querySelector("input.prop-active")
+    el.addEventListener("change", minDurationActiveChanged)
+    el = minDurationFilter.querySelector("input.prop-value")
+    el.addEventListener("change", minDurationValueChanged)
+
+
 
     el = longOnlyFilter.querySelector("input.prop-active")
     el.addEventListener("change", longOnlyActiveChanged)
 
     el = shortOnlyFilter.querySelector("input.prop-active")
     el.addEventListener("click", shortOnlyActiveChanged)
-
 
     el = minMaxRiseFilter.querySelector("input.prop-active")
     el.addEventListener("change", minMaxRiseActiveChanged)
@@ -85,6 +104,22 @@ export initialize = ->
     el.addEventListener("change", maxMaxDropActiveChanged)
     el = maxMaxDropFilter.querySelector("input.prop-value")
     el.addEventListener("change", maxMaxDropValueChanged)
+
+
+    el = ignoreHolidayConflictsFilter.querySelector("input.prop-active")
+    el.addEventListener("click", ignoreHolidayConflictsActiveChanged)
+
+    el = preponeHolidayEntryFilter.querySelector("input.prop-active")
+    el.addEventListener("click", preponeHolidayEntryActiveChanged)
+
+    el = postponeHolidayEntryFilter.querySelector("input.prop-active")
+    el.addEventListener("click", postponeHolidayEntryActiveChanged)
+
+    el = preponeHolidayExitFilter.querySelector("input.prop-active")
+    el.addEventListener("click", preponeHolidayExitActiveChanged)
+
+    el = postponeHolidayExitFilter.querySelector("input.prop-active")
+    el.addEventListener("click", postponeHolidayExitActiveChanged)
 
     inputs = filterPropertiesRow.querySelectorAll("input.prop-value")
     el.addEventListener("keydown", inputKeyDowned) for el in inputs
@@ -124,7 +159,8 @@ export filterResult = (result) ->
 updateFilterUI = ->
     log "updateFilterUI"
 
-    # winrate: { active: true, value: 60.0 },
+    # winrate: { active: true, value: 69.0 },
+    if !filters.winrate? then filters.winrate = { active: true, value: 69.0 } # set default
     if filters.winrate.active then winrateFilter.classList.add("active")
     else winrateFilter.classList.remove("active")
     activeEl = winrateFilter.querySelector("input.prop-active")
@@ -133,6 +169,7 @@ updateFilterUI = ->
     valueEl.value = parseFloat(filters.winrate.value.toFixed(1))
 
     # profitAvg: { active: true, value: 1.0 },
+    if !filters.profitAvg? then filters.profitAvg = { active: true, value: 1.0 } # set default
     if filters.profitAvg.active then profitAvgFilter.classList.add("active")
     else profitAvgFilter.classList.remove("active")
     activeEl = profitAvgFilter.querySelector("input.prop-active")
@@ -141,6 +178,7 @@ updateFilterUI = ->
     valueEl.value = parseFloat(filters.profitAvg.value.toFixed(1))
 
     # profitMed: { active: true, value: 1.0 },
+    if !filters.profitMed? then filters.profitMed = { active: true, value: 1.0 } # set default
     if filters.profitMed.active then profitMedFilter.classList.add("active")
     else profitMedFilter.classList.remove("active")
     activeEl = profitMedFilter.querySelector("input.prop-active")
@@ -148,8 +186,26 @@ updateFilterUI = ->
     valueEl = profitMedFilter.querySelector("input.prop-value")
     valueEl.value = parseFloat(filters.profitMed.value.toFixed(1))
 
+    # maxDuration: { active: false, value: 14 },
+    if !filters.maxDuration? then filters.maxDuration = { active: false, value: 14 } # set default
+    else maxDurationFilter.classList.remove("active")
+    activeEl = maxDurationFilter.querySelector("input.prop-active")
+    activeEl.checked =  filters.maxDuration.active
+    valueEl = maxDurationFilter.querySelector("input.prop-value")
+    valueEl.value = parseInt(filters.maxDuration.value.toFixed(0))
+
+    # minDuration: { active: true, value: 3 },
+    if !filters.minDuration? then filters.minDuration = { active: true, value: 3 } # set default
+    if filters.minDuration.active then minDurationFilter.classList.add("active")
+    else minDurationFilter.classList.remove("active")
+    activeEl = minDurationFilter.querySelector("input.prop-active")
+    activeEl.checked =  filters.minDuration.active
+    valueEl = minDurationFilter.querySelector("input.prop-value")
+    valueEl.value = parseInt(filters.minDuration.value.toFixed(0))
+
 
     # longOnly: {active: false },
+    if !filters.longOnly? then filters.longOnly = { active: false } # set default
     if filters.longOnly.active 
         longOnlyFilter.classList.add("active")
         filterPropertiesRow.classList.add("long-only")
@@ -160,6 +216,7 @@ updateFilterUI = ->
     activeEl.checked =  filters.longOnly.active
 
     # shortOnly: {active: false },
+    if !filters.shortOnly? then filters.shortOnly = { active: false } # set default
     if filters.shortOnly.active
         shortOnlyFilter.classList.add("active")
         filterPropertiesRow.classList.add("short-only")
@@ -169,8 +226,8 @@ updateFilterUI = ->
     activeEl = shortOnlyFilter.querySelector("input.prop-active")
     activeEl.checked =  filters.shortOnly.active
 
-
     # minMaxRise: { active: false, value: 5.0 },
+    if !filters.minMaxRise? then filters.minMaxRise = { active: false, value: 5.0 } # set default
     if filters.minMaxRise.active then minMaxRiseFilter.classList.add("active")
     else minMaxRiseFilter.classList.remove("active")
     activeEl = minMaxRiseFilter.querySelector("input.prop-active")
@@ -179,6 +236,7 @@ updateFilterUI = ->
     valueEl.value = parseFloat(filters.minMaxRise.value.toFixed(1))
 
     # maxMaxRise: { active: false, value: 5.0 },
+    if !filters.maxMaxRise? then filters.maxMaxRise = { active: false, value: 5.0 } # set default
     if filters.maxMaxRise.active then maxMaxRiseFilter.classList.add("active")
     else maxMaxRiseFilter.classList.remove("active")
     activeEl = maxMaxRiseFilter.querySelector("input.prop-active")
@@ -187,6 +245,7 @@ updateFilterUI = ->
     valueEl.value = parseFloat(filters.maxMaxRise.value.toFixed(1))
 
     # minMaxDrop: { active: false, value: 5.0 },
+    if !filters.minMaxDrop? then filters.minMaxDrop = { active: false, value: 5.0 } # set default
     if filters.minMaxDrop.active then minMaxDropFilter.classList.add("active")
     else minMaxDropFilter.classList.remove("active")
     activeEl = minMaxDropFilter.querySelector("input.prop-active")
@@ -195,12 +254,60 @@ updateFilterUI = ->
     valueEl.value = parseFloat(filters.minMaxDrop.value.toFixed(1))
 
     # maxMaxDrop: { active: false, value: 5.0 },
+    if !filters.maxMaxDrop? then filters.maxMaxDrop = { active: false, value: 5.0 } # set default
     if filters.maxMaxDrop.active then maxMaxDropFilter.classList.add("active")
     else maxMaxDropFilter.classList.remove("active")
     activeEl = maxMaxDropFilter.querySelector("input.prop-active")
     activeEl.checked =  filters.maxMaxDrop.active
     valueEl = maxMaxDropFilter.querySelector("input.prop-value")
     valueEl.value = parseFloat(filters.maxMaxDrop.value.toFixed(1))
+
+    
+
+    # ignoreConflicts: {active: false }, #ignore-holiday-conflicts-filter
+    if !filters.ignoreConflicts? then filters.ignoreConflicts = { active: false } # set default
+    if filters.ignoreConflicts.active 
+        ignoreHolidayConflictsFilter.classList.add("active")
+    else
+        ignoreHolidayConflictsFilter.classList.remove("active")
+    activeEl = ignoreHolidayConflictsFilter.querySelector("input.prop-active")
+    activeEl.checked =  filters.ignoreConflicts.active
+
+    # preponeEntry: {active: false }, #prepone-holiday-entry-filter
+    if !filters.preponeEntry? then filters.preponeEntry = { active: false } # set default
+    if filters.preponeEntry.active 
+        preponeHolidayEntryFilter.classList.add("active")
+    else
+        preponeHolidayEntryFilter.classList.remove("active")
+    activeEl = preponeHolidayEntryFilter.querySelector("input.prop-active")
+    activeEl.checked =  filters.preponeEntry.active
+
+    # postponeEntry: {active: true }, #postpone-holiday-entry-filter
+    if !filters.postponeEntry? then filters.postponeEntry = { active: true} # set default
+    if filters.postponeEntry.active 
+        postponeHolidayEntryFilter.classList.add("active")
+    else
+        postponeHolidayEntryFilter.classList.remove("active")
+    activeEl = postponeHolidayEntryFilter.querySelector("input.prop-active")
+    activeEl.checked =  filters.postponeEntry.active
+
+    # preponeExit: {active: true }, #prepone-holiday-entry-filter
+    if !filters.preponeExit? then filters.preponeExit = { active: true} # set default
+    if filters.preponeExit.active 
+        preponeHolidayExitFilter.classList.add("active")
+    else
+        preponeHolidayExitFilter.classList.remove("active")
+    activeEl = preponeHolidayExitFilter.querySelector("input.prop-active")
+    activeEl.checked = filters.preponeExit.active
+
+    # postponeExit: {active: false }, #postpone-holiday-exit-filter
+    if !filters.postponeExit? then filters.postponeExit = { active: false} # set default
+    if filters.postponeExit.active 
+        postponeHolidayExitFilter.classList.add("active")
+    else
+        postponeHolidayExitFilter.classList.remove("active")
+    activeEl = postponeHolidayExitFilter.querySelector("input.prop-active")
+    activeEl.checked =  filters.postponeExit.active
 
     return
 
@@ -364,6 +471,51 @@ profitMedValueChanged = (evnt) ->
 
 
 ############################################################
+maxDurationActiveChanged = (evnt) ->
+    log "maxDurationActiveChanged"
+    isActive = evnt.target.checked
+    olog { isActive }
+    filters.maxDuration.active = isActive
+    
+    onChange()
+    return
+
+maxDurationValueChanged = (evnt) ->
+    log "maxDurationValueChanged"
+    oldValue = filters.maxDuration.value
+    newValue = parseInt(evnt.target.value)
+    olog { newValue }
+    if isNaN(newValue) then newValue = oldValue
+    else filters.maxDuration.value = newValue
+    evnt.target.value = newValue
+
+    if oldValue != newValue then onChange()
+    return
+
+############################################################
+minDurationActiveChanged = (evnt) ->
+    log "minDurationActiveChanged"
+    isActive = evnt.target.checked
+    olog { isActive }
+    filters.minDuration.active = isActive
+    
+    onChange()
+    return
+
+minDurationValueChanged = (evnt) ->
+    log "minDurationValueChanged"
+    oldValue = filters.minDuration.value
+    newValue = parseInt(evnt.target.value)
+    olog { newValue }
+    if isNaN(newValue) then newValue = oldValue
+    else filters.minDuration.value = newValue
+    evnt.target.value = newValue
+
+    if oldValue != newValue then onChange()
+    return
+
+
+############################################################
 longOnlyActiveChanged = (evnt) ->
     log "longOnlyActiveChanged"
     isActive = evnt.target.checked
@@ -472,5 +624,74 @@ maxMaxDropValueChanged = (evnt) ->
     
     if oldValue != newValue then onChange()
     return
+
+
+
+############################################################
+ignoreHolidayConflictsActiveChanged = (evnt) ->
+    log "ignoreHolidayConflictsActiveChanged"
+    isActive = evnt.target.checked
+    olog { isActive }
+    filters.ignoreConflicts.active = isActive
+    if isActive # disable all adjustments
+        filters.preponeEntry.active = false 
+        filters.postponeEntry.active = false 
+        filters.preponeExit.active = false 
+        filters.postponeExit.active = false 
+    else    # set to defautl adjustment
+        filters.postponeEntry.active = true 
+        filters.preponeExit.active = true 
+        
+    onChange()
+    return
+
+############################################################
+preponeHolidayEntryActiveChanged = (evnt) ->
+    log "preponeHolidayEntryActiveChanged"
+    isActive = evnt.target.checked
+    olog { isActive }
+    filters.preponeEntry.active = isActive
+    # if isActive # TODO decide what needs to be done here :-)
+    # else    
+        
+    onChange()
+    return
+
+############################################################
+postponeHolidayEntryActiveChanged = (evnt) ->
+    log "postponeHolidayEntryActiveChanged"
+    isActive = evnt.target.checked
+    olog { isActive }
+    filters.postponeEntry.active = isActive
+    # if isActive # TODO decide what needs to be done here :-)
+    # else    
+        
+    onChange()
+    return
+
+############################################################
+preponeHolidayExitActiveChanged = (evnt) ->
+    log "preponeHolidayExitActiveChanged"
+    isActive = evnt.target.checked
+    olog { isActive }
+    filters.preponeExit.active = isActive
+    # if isActive # TODO decide what needs to be done here :-)
+    # else    
+        
+    onChange()
+    return
+
+############################################################
+postponeHolidayExitActiveChanged = (evnt) ->
+    log "postponeHolidayExitActiveChanged"
+    isActive = evnt.target.checked
+    olog { isActive }
+    filters.postponeExit.active = isActive
+    # if isActive # TODO decide what needs to be done here :-)
+    # else    
+        
+    onChange()
+    return
+
 
 #endregion

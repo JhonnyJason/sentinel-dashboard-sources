@@ -9,17 +9,33 @@
             svg: use(href="#svg-edit-icon")
     #profit-avg-filter.filter-element 
         input.prop-active(type="checkbox")
-        .prop-title Profit (Dur.) ab:
+        .prop-title Profit Dur. ab:
         .edit-group
             input.prop-value(type="text")
             .prop-unit %
             svg: use(href="#svg-edit-icon")
     #profit-med-filter.filter-element 
         input.prop-active(type="checkbox")
-        .prop-title Profit (Med.) ab:
+        .prop-title Profit Med. ab:
         .edit-group
             input.prop-value(type="text")
             .prop-unit %
+            svg: use(href="#svg-edit-icon")
+
+    #max-duration-filter.filter-element 
+        input.prop-active(type="checkbox")
+        .prop-title Tage im Trade bis:
+        .edit-group
+            input.prop-value(type="text")
+            .prop-unit d
+            svg: use(href="#svg-edit-icon")
+
+    #min-duration-filter.filter-element 
+        input.prop-active(type="checkbox")
+        .prop-title Tage im Trade ab: 
+        .edit-group
+            input.prop-value(type="text")
+            .prop-unit d
             svg: use(href="#svg-edit-icon")
 
 #center-properties 
@@ -30,7 +46,6 @@
         input.prop-active(type="checkbox")
         .prop-title Ausschließlich Short-Trades
 
-#right-properties
     #min-max-rise-filter.filter-element.for-long
         input.prop-active(type="checkbox")
         .prop-title Max Anstieg ab:
@@ -38,6 +53,7 @@
             input.prop-value(type="text")
             .prop-unit %
             svg: use(href="#svg-edit-icon")
+            
     #max-max-drop-filter.filter-element.for-long
         input.prop-active(type="checkbox")
         .prop-title Max Rückgang bis:
@@ -45,6 +61,7 @@
             input.prop-value(type="text")
             .prop-unit %
             svg: use(href="#svg-edit-icon")
+
     #min-max-drop-filter.filter-element.for-short
         input.prop-active(type="checkbox")
         .prop-title Max Rückgang ab:
@@ -59,3 +76,25 @@
             input.prop-value(type="text")
             .prop-unit %
             svg: use(href="#svg-edit-icon")
+
+
+#right-properties
+    #ignore-holiday-conflicts-filter.filter-element 
+        input.prop-active(type="checkbox")
+        .prop-title Ein-und Ausstiege auf Feiertage ignorieren
+
+    #prepone-holiday-entry-filter.filter-element 
+        input.prop-active(type="checkbox")
+        .prop-title Einstieg auf Feiertag vorverlegen
+
+    #postpone-holiday-entry-filter.filter-element
+        input.prop-active(type="checkbox")
+        .prop-title Einstieg auf Feiertag nachverlegen
+
+    #prepone-holiday-exit-filter.filter-element 
+        input.prop-active(type="checkbox")
+        .prop-title Ausstieg auf Feiertag vorverlegen
+
+    #postpone-holiday-exit-filter.filter-element 
+        input.prop-active(type="checkbox")
+        .prop-title Austtieg auf Feiertag nachverlegen

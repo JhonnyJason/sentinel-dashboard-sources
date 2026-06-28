@@ -30,7 +30,7 @@ export modulesToDebug = {
     # livedatamodule: true
     # marketdatamodule: true
     # navtriggers: true
-    # resultfilterstate: true
+    resultfilterstate: true
     # sampledata: true
     # scimodule: true
     # scorehelper: true
