@@ -30,6 +30,11 @@ export setForexscreenerState = ->
     content.className = "forexscreener"
     return
 
+export setOptionscreenerState = ->
+    log "setOptionscreenerState"
+    content.className = "optionscreener"
+    return
+
 export setTrafficlightState = ->
     log "setTrafficlightState"
     content.className = "trafficlight"

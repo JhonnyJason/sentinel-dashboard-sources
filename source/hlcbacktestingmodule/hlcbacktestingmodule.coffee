@@ -10,19 +10,20 @@ import * as dCache from "./datacache.js"
 
 ############################################################
 export class SymbolBacktester
-    constructor: (@symbol, @key) ->
+    constructor: (@symbol, @key, @tdc = Object.create(null)) ->
+        ## eval data
         @runInfoObjects = []
         @summary = null
-        ##
+        ## date state
         @currentDateObj = new Date()
         @currentYear = @currentDateObj.getFullYear()
-        ##
+        ## data store
         @rawData = null
         @metaData = null
-        ##
+        ## misc states
         @ready = false
         @evaluated = false
-
+    
     ############################################################
     loadData: =>
         if @ready then throw new Error("Symbol Backtester #{@symbol}:#{@key} illegal loadData when  being in ready state!")
@@ -93,17 +94,35 @@ export class SymbolBacktester
         dataStartIdx = utl.dateDifDays(zeroDateObj, entryDateObj) # real index
         dataEndIdx = utl.dateDifDays(zeroDateObj, exitDateObj) # real index
         # olog { dataStartIdx, dataEndIdx }
-        dataStartIdx = getTradableStartIndex(@rawData, dataStartIdx) # real index
-        dataEndIdx = getTradableEndIndex(@rawData, dataEndIdx) # real index
-        # olog { dataStartIdx, dataEndIdx }
+
+        if !@tdc.ignoreConflicts # only adjust when trad day config exits
+            log "adjusting to @tdc..."
+            if @tdc.preponeEntry or @tdc.postponeEntry
+                dataStartIdx = getTradableStartIndex(@rawData, dataStartIdx, @tdc.preponeEntry)
+            if @tdc.preponeExit or @tdc.postponeExit
+                dataEndIdx = getTradableEndIndex(@rawData, dataEndIdx, @tdc.postponeExit)
+
+            # olog { dataStartIdx, dataEndIdx }
         
         ## Donot add the Backtest Run if it does not result in a tradable range
         tradable = true
+
         if dataStartIdx < 0 or dataEndIdx < 0 then tradable = false
+        if !Array.isArray(@rawData[dataStartIdx]) then tradable = false
+        if !Array.isArray(@rawData[dataEndIdx]) then tradable = false
         if dataEndIdx - dataStartIdx < 1 then tradable = false
-        
+
+        # ignore trade when @tdc.ignoreConflicts is set and entry or exit is a non-trading day
+        if tradable and @tdc.ignoreConflicts and @rawData[dataStartIdx].length != 3 then tradable = false
+        if tradable and @tdc.ignoreConflicts and @rawData[dataEndIdx].length != 3 then tradable = false
+
+        tradeLength = (dataEndIdx - dataStartIdx)
+        if typeof @tdc.minLength == "number" and tradeLength < @tdc.minLength then tradable = false
+        if typeof @tdc.maxLength == "number" and tradeLength > @tdc.maxLength then tradable = false
+
         infoObj.tradable = tradable
         if !infoObj.tradable then return
+        # log "Is tradable!"
 
         # exctract traded sequence
         infoObj.seq = @rawData.slice(dataStartIdx, dataEndIdx + 1) # including exit data point
@@ -165,6 +184,7 @@ export class SymbolBacktester
         # olog infoObj
         # alert("Stoping Execution -> debug!")
         # # throw new Error("Death on Purpose!")
+        # log "added new BacktestRun!"
         return
 
     ############################################################
@@ -346,7 +366,7 @@ evaluateTradableRun = (runObj) ->
 
 
 ############################################################
-getTradableStartIndex = (data, idx) ->
+getTradableStartIndex = (data, idx, prepone) ->
     # log "getTradableStartIndex"
     safetyCount = 32
     loop
@@ -356,12 +376,14 @@ getTradableStartIndex = (data, idx) ->
         
         if !Array.isArray(data[idx]) then return -1
         if data[idx].length  > 1 then return idx
-        idx++
-    
+        
+        if prepone then idx--
+        else idx++
+
     return -1
 
 ############################################################
-getTradableEndIndex = (data, idx) ->
+getTradableEndIndex = (data, idx, postpone) ->
     # log "getTradableEndIndex"
     safetyCount = 32
     loop
@@ -371,6 +393,8 @@ getTradableEndIndex = (data, idx) ->
 
         if !Array.isArray(data[idx]) then return -1
         if data[idx].length  > 1 then return idx
-        idx--
+        
+        if postpone then idx++
+        else idx--
 
     return idx

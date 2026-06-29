@@ -9,7 +9,7 @@ import * as utl from "./utilsmodule.js"
 import * as dCache from "./datacache.js"
 
 import { SymbolBacktester } from "./hlcbacktestingmodule.js"
-import { filterResult } from "./resultfilterstate.js"
+import { filterResult, getTradeDayConfig } from "./resultfilterstate.js"
 
 ############################################################
 export resultStructure = [
@@ -162,7 +162,8 @@ evaluateEventTrades = (sym, evnt, trade) ->
         key = "#{sym}:#{evnt.id}:#{trade}"
         dates = evnt.datesToScreen
 
-        backtester = new SymbolBacktester(sym, key)
+        tdc = getTradeDayConfig()
+        backtester = new SymbolBacktester(sym, key, tdc)
         await backtester.loadData()
 
         for date in dates

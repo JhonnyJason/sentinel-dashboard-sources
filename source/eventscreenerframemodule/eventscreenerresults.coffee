@@ -214,5 +214,4 @@ getMaxDropElement = (result) ->
     bottom.appendChild(absEl)
     return el
 
-#
 #endregion

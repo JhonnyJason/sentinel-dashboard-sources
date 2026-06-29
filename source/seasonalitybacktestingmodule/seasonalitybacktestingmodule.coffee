@@ -183,7 +183,8 @@ export run = (symbol, startIdx, endIdx, years) ->
     else lastStartYear = (new Date()).getFullYear()
 
     backtestKey = "#{symbol}:#{years}:#{startIdx}:#{endIdx}"
-    backtester = new SymbolBacktester(symbol, backtestKey)
+    tdc = { postponeEntry: true, preponeExit: true }
+    backtester = new SymbolBacktester(symbol, backtestKey, tdc)
     ## Data should be cached already - still could take time loading an throw Errors
     await backtester.loadData()
     

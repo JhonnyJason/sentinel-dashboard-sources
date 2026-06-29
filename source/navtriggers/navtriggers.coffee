@@ -28,6 +28,10 @@ export toForexscreener = ->
     log "toForexscreener"
     return nav.toBase("forexscreener")
 
+export toOptionscreener = ->
+    log "toOptionscreener"
+    return nav.toBase("optionscreener")
+
 export toTrafficlight = ->
     log "toTrafficlight"
     return nav.toBase("trafficlight")

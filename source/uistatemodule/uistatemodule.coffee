@@ -13,6 +13,7 @@ import * as dataModule from "./datamodule.js"
 import * as trafficlight from "./trafficlightframemodule.js"
 import * as eventscreener from "./eventscreenerframemodule.js"
 import * as forexscreener from "./forexscreenerframemodule.js"
+import * as optionscreener from "./optionscreenerframemodule.js"
 
 #endregion
 
@@ -71,6 +72,15 @@ applyBaseState["forexscreener"] = ->
     header.className = "logged-in"
     eventscreener.activate()
     forexscreener.activate()
+    return
+
+applyBaseState["optionscreener"] = ->
+    content.setOptionscreenerState()
+    sideNav.setOptionscreenerState()
+    noAccount.hide()
+    header.className = "logged-in"
+    eventscreener.activate()
+    optionscreener.activate()
     return
 
 applyBaseState["trafficlight"] = ->

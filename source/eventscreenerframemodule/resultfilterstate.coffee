@@ -156,6 +156,37 @@ export filterResult = (result) ->
     return true
 
 ############################################################
+export getTradeDayConfig = ->
+    log "getTradeDayConfig"
+    tdc = Object.create(null)
+    
+    if filters.ignoreConflicts? then tdc.ignoreConflicts = filters.ignoreConflicts.active
+    else tdc.ignoreConflicts = false
+    
+
+    if filters.preponeEntry? then tdc.preponeEntry = filters.preponeEntry.active
+    else tdc.preponeEntry = false
+
+    if filters.postponeEntry? then tdc.postponeEntry = filters.postponeEntry.active
+    else tdc.postponeEntry = false
+
+
+    if filters.preponeExit? then tdc.preponeExit = filters.preponeExit.active
+    else tdc.preponeExit = false
+
+    if filters.postponeExit? then tdc.postponeExit = filters.postponeExit.active
+    else tdc.postponeExit = false
+
+    
+    if filters.minDuration? and filters.minDuration.active 
+        tdc.minLength = filters.minDuration.value
+    
+    if filters.maxDuration? and filters.maxDuration.active 
+        tdc.maxLength = filters.maxDuration.value
+    
+    return tdc
+
+############################################################
 updateFilterUI = ->
     log "updateFilterUI"
 
@@ -626,7 +657,6 @@ maxMaxDropValueChanged = (evnt) ->
     return
 
 
-
 ############################################################
 ignoreHolidayConflictsActiveChanged = (evnt) ->
     log "ignoreHolidayConflictsActiveChanged"
@@ -651,8 +681,16 @@ preponeHolidayEntryActiveChanged = (evnt) ->
     isActive = evnt.target.checked
     olog { isActive }
     filters.preponeEntry.active = isActive
-    # if isActive # TODO decide what needs to be done here :-)
+    if isActive # TODO decide what needs to be done here :-)
+        filters.ignoreConflicts.active = false
+        # filters.preponeEntry.active = false 
+        filters.postponeEntry.active = false 
     # else    
+    #     filters.ignoreConflicts.active = false
+    #     # filters.preponeEntry.active = false 
+    #     filters.postponeEntry.active = false 
+    #     filters.preponeExit.active = false 
+    #     filters.postponeExit.active = false 
         
     onChange()
     return
@@ -663,8 +701,16 @@ postponeHolidayEntryActiveChanged = (evnt) ->
     isActive = evnt.target.checked
     olog { isActive }
     filters.postponeEntry.active = isActive
-    # if isActive # TODO decide what needs to be done here :-)
+    if isActive # TODO decide what needs to be done here :-)
+        filters.ignoreConflicts.active = false
+        filters.preponeEntry.active = false 
+        # filters.postponeEntry.active = false 
     # else    
+    #     filters.ignoreConflicts.active = false
+    #     # filters.preponeEntry.active = false 
+    #     filters.postponeEntry.active = false 
+    #     filters.preponeExit.active = false 
+    #     filters.postponeExit.active = false 
         
     onChange()
     return
@@ -675,8 +721,16 @@ preponeHolidayExitActiveChanged = (evnt) ->
     isActive = evnt.target.checked
     olog { isActive }
     filters.preponeExit.active = isActive
-    # if isActive # TODO decide what needs to be done here :-)
+    if isActive # TODO decide what needs to be done here :-)
+        filters.ignoreConflicts.active = false
+        # filters.preponeExit.active = false 
+        filters.postponeExit.active = false 
     # else    
+    #     filters.ignoreConflicts.active = false
+    #     # filters.preponeEntry.active = false 
+    #     filters.postponeEntry.active = false 
+    #     filters.preponeExit.active = false 
+    #     filters.postponeExit.active = false 
         
     onChange()
     return
@@ -687,8 +741,16 @@ postponeHolidayExitActiveChanged = (evnt) ->
     isActive = evnt.target.checked
     olog { isActive }
     filters.postponeExit.active = isActive
-    # if isActive # TODO decide what needs to be done here :-)
+    if isActive # TODO decide what needs to be done here :-)
+        filters.ignoreConflicts.active = false
+        filters.preponeExit.active = false 
+        # filters.postponeExit.active = false 
     # else    
+    #     filters.ignoreConflicts.active = false
+    #     # filters.preponeEntry.active = false 
+    #     filters.postponeEntry.active = false 
+    #     filters.preponeExit.active = false 
+    #     filters.postponeExit.active = false 
         
     onChange()
     return

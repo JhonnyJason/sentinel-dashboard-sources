@@ -172,7 +172,7 @@ onScreenDataUpdate = ->
 
     if !dataChanged or newDataStrings.symbols == "[]" or newDataStrings.events == "[]"
         eventscreenerScreenButton.classList.add("not-screenable")
-    else 
+    else
         eventscreenerScreenButton.classList.remove("not-screenable")
     return
 
