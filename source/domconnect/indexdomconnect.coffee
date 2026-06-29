@@ -28,6 +28,7 @@ indexdomconnect.initialize = () ->
     global.profitMedFilter = document.getElementById("profit-med-filter")
     global.maxDurationFilter = document.getElementById("max-duration-filter")
     global.minDurationFilter = document.getElementById("min-duration-filter")
+    global.minNumTradesFilter = document.getElementById("min-num-trades-filter")
     global.longOnlyFilter = document.getElementById("long-only-filter")
     global.shortOnlyFilter = document.getElementById("short-only-filter")
     global.minMaxRiseFilter = document.getElementById("min-max-rise-filter")

@@ -22,6 +22,7 @@ defaultFilters = {
     profitMed: { active: false, value: 1.0 },
     maxDuration: {active: false, value: 14 },
     minDuration: {active: true, value: 3 },
+    minNumTrades: {active: false, value: 6 },
     
     ignoreConflicts: { active: false },
     preponeEntry: { active: false },
@@ -76,6 +77,11 @@ export initialize = ->
     el.addEventListener("change", minDurationActiveChanged)
     el = minDurationFilter.querySelector("input.prop-value")
     el.addEventListener("change", minDurationValueChanged)
+
+    el = minNumTradesFilter.querySelector("input.prop-active")
+    el.addEventListener("change", minNumTradesActiveChanged)
+    el = minNumTradesFilter.querySelector("input.prop-value")
+    el.addEventListener("change", minNumTradesValueChanged)
 
 
 
@@ -136,6 +142,8 @@ export filterResult = (result) ->
 
     if filters.winrate.active and result.winrate < filters.winrate.value
         return false
+    if filters.minNumTrades.active and result.totalTrades < filters.minNumTrades.value
+        return false 
     if filters.profitAvg.active and result.profitAvg < filters.profitAvg.value
         return false
     if filters.profitMed.active and result.profitMed < filters.profitMed.value
@@ -233,6 +241,15 @@ updateFilterUI = ->
     activeEl.checked =  filters.minDuration.active
     valueEl = minDurationFilter.querySelector("input.prop-value")
     valueEl.value = parseInt(filters.minDuration.value.toFixed(0))
+
+    # minNumTrades: {active: false, value: 6 },
+    if !filters.minNumTrades? then filters.minNumTrades = { active: false, value: 6 } # set default
+    if filters.minNumTrades.active then minNumTradesFilter.classList.add("active")
+    else minNumTradesFilter.classList.remove("active")
+    activeEl = minNumTradesFilter.querySelector("input.prop-active")
+    activeEl.checked =  filters.minNumTrades.active
+    valueEl = minNumTradesFilter.querySelector("input.prop-value")
+    valueEl.value = parseInt(filters.minNumTrades.value.toFixed(0))
 
 
     # longOnly: {active: false },
@@ -540,6 +557,28 @@ minDurationValueChanged = (evnt) ->
     olog { newValue }
     if isNaN(newValue) then newValue = oldValue
     else filters.minDuration.value = newValue
+    evnt.target.value = newValue
+
+    if oldValue != newValue then onChange()
+    return
+
+############################################################
+minNumTradesActiveChanged = (evnt) ->
+    log "minNumTradesActiveChanged"
+    isActive = evnt.target.checked
+    olog { isActive }
+    filters.minNumTrades.active = isActive
+    
+    onChange()
+    return
+
+minNumTradesValueChanged = (evnt) ->
+    log "minNumTradesValueChanged"
+    oldValue = filters.minNumTrades.value
+    newValue = parseInt(evnt.target.value)
+    olog { newValue }
+    if isNaN(newValue) then newValue = oldValue
+    else filters.minNumTrades.value = newValue
     evnt.target.value = newValue
 
     if oldValue != newValue then onChange()

@@ -271,6 +271,8 @@ generateResultSummaryObject = (evaluation, evnt) ->
     if evaluation.totalTrades == 0 then result.winrate = 0
     else result.winrate = 100.0 * evaluation.winTrades / evaluation.totalTrades 
     
+    result.totalTrades = evaluation.totalTrades
+
     result.profitAvg = profitF * evaluation.avgChangeF
     result.profitMed = profitF * evaluation.medChangeF
 
