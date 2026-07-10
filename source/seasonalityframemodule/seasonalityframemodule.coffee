@@ -15,6 +15,12 @@ import { SymbolSelect } from "./symbolselectmodule.js"
 import * as backtesting from "./seasonalitybacktestingmodule.js"
 import * as charting from "./seasonalitychartmodule.js"
 
+
+############################################################
+letMainThreadRun = ->
+    if window.scheduler? and window.scheduler.yield? then return scheduler.yield()
+    return new Promise((reslv) -> setTimeout(reslv, 0));
+
 ############################################################
 symbolSelect = null
 
@@ -288,3 +294,56 @@ getNormalizedSelectionIndices = ->
         startIdx = startIdx - 366
 
     return { startIdx, endIdx }
+
+getBacktestingRegionFromDates = (startDate, endDate) ->
+    log "getBacktestingRegionFromDates"
+    cfg = utl.getLeapYearConfig()
+    
+    lastYearDays = cfg.lastYearDays
+    if typeof startDate == "string" then startDate = new Date(startDate+"T12:00Z")
+    if typeof endDate == "string" then endDate = new Date(endDate+"T12:00Z")
+
+    if startDate.getTime() > endDate.getTime() then throw new Error("Invalid startDate - endDate configuration!")
+
+    today = new Date()
+    currentYear = today.getFullYear()
+    lastYear = currentYear - 1
+
+    if startDate.getFullYear() == currentYear
+        startIdx = lastYearDays + utl.getDayOfYear(startDate)
+    else if startDate.getFullYear() == lastYear
+        startIdx = utl.getDayOfYear(startDate)
+    else throw new Error("startDate was noth within the possible backtesting region!")
+
+    if endDate.getFullYear() == currentYear
+        endIdx = lastYearDays + utl.getDayOfYear(endDate)
+    else if endDate.getFullYear() == lastYear
+        endIdx = utl.getDayOfYear(endDate)
+    else throw new Error("endDate was noth within the possible backtesting region!")
+
+
+    return { startIdx, endIdx }
+
+
+############################################################
+export setSeasonalityBacktestingState = (symbol, years, startDate, endDate) ->
+    log "setSeasonalityBacktestingState"
+    try
+        symbolSelect.resetSearch()
+        await onStockSelected(symbol)
+        await letMainThreadRun()
+
+        timeframeSelect.value = ""+years
+        backtestingRegion = null
+        await timeframeSelected()
+        await letMainThreadRun()
+        
+        region = getBacktestingRegionFromDates(startDate, endDate)
+        console.log(JSON.stringify(backtestingRegion, null, 4))
+        charting.setSelectedRegion(region, true)
+
+    catch err
+        console.error(err)
+        symbolSelect.setError("Fehler in der Datenanfrage für #{selectedSymbol}!")
+        clearSelection()
+    return

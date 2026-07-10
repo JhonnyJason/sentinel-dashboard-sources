@@ -339,7 +339,7 @@ getLeapNormIndicesForTrade = (date, trade) ->
     relEntry = entrIdx - evntIdx
     relExit = exitIdx - evntIdx
 
-    tradeDate = new Date(date+"T12:00:00")
+    tradeDate = new Date(date+"T12:00Z")
     isLeap = utl.isLeapYear(tradeDate.getFullYear())
     idxR = utl.getDayOfYear(tradeDate) # real index of trade date
     idxLN = utl.realToLeapNormIdx(idxR, isLeap) # Leap normed index of trade date
@@ -377,7 +377,7 @@ getNextTradeDates = (trade, evnt) ->
         dates = evnt.nextDates
         todayDate = (new Date()).toISOString().slice(0, 10)
         for date in dates # dates are YYYY-MM-DD strings
-            dateObj = new Date(date+"T12:00:00")
+            dateObj = new Date(date+"T12:00Z")
             idxR = utl.getDayOfYear(dateObj)
             entryIdxR = idxR + relEntry
             exitIdxR = idxR + relExit
@@ -419,7 +419,7 @@ getAverageDailyReturnSeq = (infoObjects, key) ->
     rawData = dCache.getCurrentRawData(sym)
     metaData = dCache.getCurrentMetaData(sym)
 
-    zeroDateObj = new Date(metaData.startDate + "T12:00:00")
+    zeroDateObj = new Date(metaData.startDate + "T12:00Z")
     count = 0
     sums = new Array(fullLen - 1).fill(0)
     # log zeroDateObj
@@ -448,7 +448,7 @@ getAverageDailyReturnSeq = (infoObjects, key) ->
 getCorrespondingDateObj = (runObj) ->
     date = runObj.key.split("@")[1]
     # log date
-    return new Date(date + "T12:00:00")
+    return new Date(date + "T12:00Z")
     
 #endregion
 

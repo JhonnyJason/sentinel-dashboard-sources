@@ -12,6 +12,10 @@ import * as screener from "./forexscreenerengine.js"
 import { setUIState } from "./forexscreenerframemodule.js"
 
 ############################################################
+import * as seasonalityframe from "./seasonalityframemodule.js"
+import * as triggers from "./navtriggers.js"
+
+############################################################
 sortColumn = "symbol"
 sortAscending = false
 
@@ -77,7 +81,7 @@ render = (results) ->
             try
                 d = result[key]
                 if !d? then td.appendChild(getSpan("empty", "-"))
-                else switch key    
+                else switch key
     
                     when "symbol" then addSymbolSpan(td, result)
                     when "signal" then td.appendChild(getSpan(d.toLowerCase(), d))
@@ -102,12 +106,35 @@ render = (results) ->
                     # when "nextDate" then td.appendChild(getSpan("", formatDate(d)))
                     else console.error("Rendering TableBody: Unexpected key #{key}!")
 
+                if key == "seasonality10P" and result[key]? then td.addEventListener(
+                    "click", 
+                    (evnt) -> 
+                        openSeasonalityBacktest(
+                            lettedResult.symbol, 10, lettedResult.entryDate, lettedResult.exitDate
+                        )
+                )
+
+                if key == "seasonality15P" and result[key]? then td.addEventListener(
+                    "click", 
+                    (evnt) -> 
+                        openSeasonalityBacktest(
+                            lettedResult.symbol, 15, lettedResult.entryDate, lettedResult.exitDate
+                        )
+                )
+
                 row.appendChild(td)
             catch err then console.error("@key #{key}: #{err.message}")
 
         tbody.appendChild(row)
             
     forexscreenerResult.appendChild(tbody)
+    return
+
+############################################################
+openSeasonalityBacktest = (symbol, years, startDate, endDate) ->
+    log "openSeasonalityBacktest"
+    seasonalityframe.setSeasonalityBacktestingState(symbol, years, startDate, endDate)
+    triggers.toSeasonality()
     return
 
 ############################################################

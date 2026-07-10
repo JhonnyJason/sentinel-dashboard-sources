@@ -22,6 +22,7 @@ export getLeapYearConfig = ->
     today = new Date()
     currentYear = today.getFullYear()
     lastYear = currentYear - 1
+    
     return {
         currentYearIsLeap: isLeapYear(currentYear)
         lastYearIsLeap: isLeapYear(lastYear)

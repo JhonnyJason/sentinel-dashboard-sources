@@ -226,12 +226,15 @@ export render = ->
     return
 
 ############################################################
-export setSelectedRegion = (selReg) ->
+export setSelectedRegion = (selReg, force) ->
     log "setSelectedRegion"
-    return unless selReg? or selection?
+    return unless selReg? 
+    if !force then return unless selection?
+    if !selection? then selection = Object.create(null)
+
     { startIdx, endIdx, isDelta } = selReg
 
-    if !isDelta and selection.startIdx == startIdx and selection.endIdx == endIdx 
+    if !isDelta and selection.startIdx == startIdx and selection.endIdx == endIdx
         return ## nothing to update
     else if !isDelta # at least one new value to set
         selection.startIdx = startIdx

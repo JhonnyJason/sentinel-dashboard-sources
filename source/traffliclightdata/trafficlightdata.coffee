@@ -83,8 +83,8 @@ processData = (spyResult, hygResult) ->
     return unless spyData?.length and hygData?.length
 
     # Align by start date
-    spyStart = new Date(spyResult.meta.startDate + "T12:00:00")
-    hygStart = new Date(hygResult.meta.startDate + "T12:00:00")
+    spyStart = new Date(spyResult.meta.startDate + "T12:00Z")
+    hygStart = new Date(hygResult.meta.startDate + "T12:00Z")
 
     if hygStart > spyStart
         offset = Math.round((hygStart - spyStart) / 86400000)

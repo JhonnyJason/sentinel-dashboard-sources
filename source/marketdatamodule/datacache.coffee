@@ -132,14 +132,14 @@ digestRemoteData = (dataKey, result) ->
     {meta, data} = result
     return unless data?.length
 
-    startDate = new Date(meta.startDate + "T12:00:00")
+    startDate = new Date(meta.startDate + "T12:00Z")
     endDate = new Date(meta.endDate)
     keyToMetaData[dataKey] = meta
     keyToRawData[dataKey] = data
 
     ## TODO update parsing logic
     # Parse start date (noon to avoid timezone edge cases)
-    currentDate = new Date(meta.startDate + "T12:00:00")
+    currentDate = new Date(meta.startDate + "T12:00Z")
 
     # Bucket data by year
     yearBuckets = Object.create(null)

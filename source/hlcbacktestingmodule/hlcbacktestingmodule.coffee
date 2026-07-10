@@ -83,13 +83,13 @@ export class SymbolBacktester
 
         ## targeted start/end dates  
         entryDate = utl.leapNormToYYYYMMDD(startIdxLN, startYear)
-        entryDateObj = new Date(entryDate + "T12:00:00")
+        entryDateObj = new Date(entryDate + "T12:00Z")
         exitDate = utl.leapNormToYYYYMMDD(endIdxLN, endYear)
-        exitDateObj = new Date(exitDate + "T12:00:00")
+        exitDateObj = new Date(exitDate + "T12:00Z")
         # olog { entryDate, exitDate }
 
         ## get effectively tradable start/end index
-        zeroDateObj = new Date(@metaData.startDate + "T12:00:00")
+        zeroDateObj = new Date(@metaData.startDate + "T12:00Z")
         # log zeroDateObj.toISOString()
         dataStartIdx = utl.dateDifDays(zeroDateObj, entryDateObj) # real index
         dataEndIdx = utl.dateDifDays(zeroDateObj, exitDateObj) # real index
