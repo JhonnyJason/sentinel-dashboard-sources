@@ -185,7 +185,7 @@ export startScreening = (forexPairs) ->
             ## Get success Rate 15Y            
             backtester15Y = new SymbolBacktester(sym, "#{sym}:15Y")
             await backtester15Y.loadData()
-            count = 15
+            count = 16
             while count--
                 year = currentYear - count
                 backtester15Y.addBacktestRun(year, range.startIdx, range.endIdx, "#{sym}:15Y@#{year}")
@@ -209,6 +209,9 @@ export startScreening = (forexPairs) ->
             log "winTrades15Y: #{backtest15YRes.winTrades}"
             log "totalTrades15Y: #{backtest15YRes.totalTrades}"
             log "winrate15Y: #{winrate15Y}"
+
+            ## TODO Check Discrepancy: Why is this result for the 15J different from the result calculated from seasonality Backtesting???
+            ## From the calculation it seems that there is a trade missing - backtesting to only 14
 
             info.seasonality10P = 100.0 * winrate10Y
             info.seasonality15P = 100.0 * winrate15Y
@@ -526,8 +529,8 @@ hasPositiveTrend = (seq) ->
     if s0 < end then return true
 
     ## check general positive seasonal trends from entry in 1 month
-    if s30 < s60 then return true
-    if s30 < end then return true
+    # if s30 < s60 then return true
+    # if s30 < end then return true
     
     return false
  
