@@ -102,7 +102,7 @@ onCloseChart = ->
     chartData = null
     charting.reset()
     backtestingRegion = null
-    backtesting.reset()
+    # backtesting.reset()
     return
 
 

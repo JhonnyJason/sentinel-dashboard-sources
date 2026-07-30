@@ -6,7 +6,8 @@ import { createLogFunctions } from "thingy-debug"
 
 ############################################################
 import * as utl from "./utilsmodule.js"
-import * as FFT from "fft.js"
+# import * as FFT from "fft.js"
+import FFT from "fft.js"
 
 ############################################################
 #region Interface
