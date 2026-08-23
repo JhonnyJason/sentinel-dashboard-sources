@@ -1,10 +1,17 @@
 // content styles
 #content
     background-color transparent
-    padding-top: header-height
-    margin-left side-nav-width
-    width = calc(100% - side-nav-width)
-    
+    padding-top: mobile-header-height
+    margin-left 15px
+    width = calc(100% - 15px)
+
+@media desktopscreen
+    #content
+        padding-top: header-height
+        margin-left side-nav-width
+        width = calc(100% - side-nav-width)
+
+
 #content > *
     display none 
 

@@ -19,7 +19,7 @@
     box-sizing: border-box
     background-color cd-dark-blue
     border-radius: 3px
-    margin-top 36px
+    // margin-top 36px
     font-size 11pt
 
 #forexscreener-result
@@ -97,10 +97,15 @@
         color cd-dark-blue
 
     td.sym-long
+        background-color alpha(cd-up-green, 0.3)
+    td.confirmed.sym-long
         background-color cd-up-green
         color cd-dark-blue
 
     td.sym-short
+        background-color alpha(cd-down-red, 0.3)
+    
+    td.confirmed.sym-short
         background-color cd-down-red
         color cd-dark-blue
 
@@ -133,15 +138,18 @@
         content "%"
         margin-left 2px
 
+    span.positive
     span.profit
     span.up
         color cd-up-green
 
+    span.positive:before
     span.profit:before
     span.up:before
         content "+"
         margin-right 2px
 
+    span.negative
     span.down
         color cd-down-red
 

@@ -34,11 +34,18 @@
     #account-btn
         background-color #dde
 
+#sidenav.folded
+    transform: translateX(-100%)
+    #show-button
+        display block
+    #hide-button
+        display none
+
 #sidenav
     position fixed
     top 0
     left 0
-    padding 135px 5px 20px 5px
+    padding (mobile-header-height + 25px) 5px 20px 5px // top-paddingh of 122 is centerd with control button
     box-sizing: border-box
     
     width side-nav-width
@@ -46,6 +53,9 @@
     z-index 2
 
     box-shadow: 0 0 7px #777
+    transition: transform 0.3s
+    transform translateX(0)
+    background-color #fff
 
     .nav-btn
         display flex
@@ -68,4 +78,27 @@
         line-height 30px
         font-size: 12pt
 
+    #show-button
+        display none
+    #hide-button
+        display block
+    #sidenav-controls
+        position: absolute
+        top mobile-header-height
+        z-index 3
+        right -27px
+        border-radius: 0 50% 50% 0
+        padding 10px 0
+        background-color #fff
+        box-shadow: 3px 0 3px #aaa // #777
+        cursor pointer
+        button
+            pointer-events: none
 
+@media desktopscreen
+    #sidenav
+        padding (header-height + 20px)  5px 20px 5px
+        #sidenav-controls
+            display none
+    #sidenav.folded
+         transform: translateX(0) !important

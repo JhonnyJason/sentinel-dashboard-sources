@@ -84,7 +84,9 @@ render = (results) ->
                 else switch key
     
                     when "symbol" then addSymbolSpan(td, result)
+                    when "sma18Count" then td.appendChild(getColoredNumSpan(d))
                     when "signal" then td.appendChild(getSpan(d.toLowerCase(), d))
+                    when "carry" then td.appendChild(getColoredPercentSpan(d, 1))
                     when "entryDate" then td.appendChild(getSpan("", formatDate(d)))
                     when "exitDate" then td.appendChild(getSpan("", formatDate(d)))
                     when "entryPrice" then td.appendChild(getSpan("", d.toFixed(5)))
@@ -178,14 +180,20 @@ formatPercent = (value) ->
 addSymbolSpan = (td, result) ->
     symbol = result.symbol
     signal = result.signal
-    if !symbol? then throw new Error("Result had no symbol defined!")#
+    sma18Count = result.sma18Count
+
+    if !symbol? then throw new Error("Result had no symbol defined!")
     td.appendChild(getSpan("symbol", symbol))
     if !signal? then return 
-    
-    td.classList.add("sym-#{signal.toLowerCase()}")
+
+    clsPostfix = signal.toLowerCase()
+    td.classList.add("sym-#{clsPostfix}")
+
+    if (clsPostfix == "short" and sma18Count == -2) or (clsPostfix == "long" and sma18Count == 2)
+        td.classList.add("confirmed")
     return
 
-addScoreSpan = (td, score) ->    
+addScoreSpan = (td, score) ->
     if typeof score == "string" then score = parseFloat(score)
     { color, text } = getTrendForScore(score)
 
@@ -240,5 +248,20 @@ getSpan = (cls, txt) ->
     span.textContent = txt
     return span
 
+getColoredPercentSpan = (num, dec = 0) ->
+    if num > 0 then cls = "up"
+    if num < 0 then cls = "down"
+    span = document.createElement("SPAN")
+    span.className = cls
+    span.textContent = num.toFixed(dec)
+    return span
+
+getColoredNumSpan = (num, dec = 0) ->
+    if num > 0 then cls = "positive"
+    if num < 0 then cls = "negative"
+    span = document.createElement("SPAN")
+    span.className = cls
+    span.textContent = num.toFixed(dec)
+    return span
 
 #endregion

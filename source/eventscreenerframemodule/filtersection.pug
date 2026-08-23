@@ -29,6 +29,10 @@ include ../preloader/preloader-mixins.pug
                     label(for="range-date-input") Ereignisse ab
                     input#range-date-input(type="date") 
 
+                th: #range-date-to-head 
+                    label(for="range-date-to-input") Ereignisse bis
+                    input#range-date-to-input(type="date") 
+
             tbody#event-choice-content
                 template#event-choice-row-template: tr(data-id="i")
                     td: input.choose(type="checkbox" checked)    
@@ -37,6 +41,7 @@ include ../preloader/preloader-mixins.pug
                         input.nr-range(type="text" data-range-nr="c" )
                         svg: use(href="#svg-edit-icon")
                     td: input.date-range(data-range-date="c" type="date")
+                    td: input.date-range-to(data-range-to-date="c" type="date")
 
     #filtersymbolchoice
         #symbol-choice-list

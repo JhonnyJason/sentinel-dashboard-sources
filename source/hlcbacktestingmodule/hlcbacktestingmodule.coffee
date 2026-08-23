@@ -174,7 +174,7 @@ export class SymbolBacktester
         # our raw data is all virtual values in this way (forward adjusted)
         # get the real value: Cr(=Cpost) = Cv / fx
         # other plattforms use backwards adjusted values: Cba = Cpre / fx
-        # TODO document actual formuals being used here to graps the logic
+        # TODO document actual formuals being used here to grasp the logic
 
         infoObj.corrSF = corrSF
         infoObj.missingSF = 1.0 * lastSF / corrSF 
@@ -218,6 +218,9 @@ export class SymbolBacktester
             res = getMaxRiseAndMaxDrop(runObjects)
             @summary.maxRiseObj = res.maxRiseEl
             @summary.maxDropObj = res.maxDropEl
+
+            @summary.absMaxRiseObj = res.absMaxRiseEl
+            @summary.absMaxDropObj = res.absMaxDropEl
         else
             @summary.noTrades = true
             @summary.avgChangeF = 0.0
@@ -229,6 +232,9 @@ export class SymbolBacktester
 
             @summary.maxRiseObj = null
             @summary.maxDropObj = null
+            
+            @summary.absMaxRiseEl = null
+            @summary.absMaxDropEl = null
 
         @evaluated = true
         return @summary
@@ -298,12 +304,18 @@ getMaxRiseAndMaxDrop = (infoObjs, ignoreWithWarning = true) ->
     maxRiseEl = { maxRiseF: -0.1 }
     maxDropEl = { maxDropF: 0.1 }
 
+    absMaxRiseEl = { maxRiseAr: -0.1 }
+    absMaxDropEl = { maxDropAr: 0.1 }
+
     for el in infoObjs
         if ignoreWithWarning and el.warn then continue        
         if el.maxRiseF > maxRiseEl.maxRiseF then maxRiseEl = el
         if el.maxDropF < maxDropEl.maxDropF then maxDropEl = el
+        
+        if el.maxRiseAr > absMaxRiseEl.maxRiseAr then absMaxRiseEl = el
+        if el.maxDropAr < absMaxDropEl.maxDropAr then absMaxDropEl = el
 
-    return { maxRiseEl, maxDropEl }
+    return { maxRiseEl, maxDropEl, absMaxRiseEl, absMaxDropEl }
 
     # ## TODO remove after replacement
     # ## get relevant props from maxDropEl
@@ -333,6 +345,8 @@ evaluateTradableRun = (runObj) ->
 
     # We start at end of day of the first trade and we leave at end of day of the last Tradeday
     startA = seq[0][seq[0].length - 1] # start price is close of day 0
+    if startA != runObj.entryCv then console.error("startA (#{startA}) != entryCv (=#{runObj.entryCv})")
+
     endA = seq[seq.length - 1][seq[seq.length - 1].length - 1] # end price is close of the last day
 
     maxRiseA = startA # day 0 entry as initial maxRise
@@ -356,11 +370,17 @@ evaluateTradableRun = (runObj) ->
         warn = (warn or closeDeltaF > 0.429 or closeDeltaF < -0.3)   
         lastClose = close
 
-    # Calculate facors to easily get the percentages
+    # Calculate facors to easily get the percentages deltas
     runObj.deltaF = (1.0 * endA / startA) - 1.0
     runObj.maxRiseF = (1.0 * maxRiseA / startA) - 1.0
     runObj.maxDropF = (1.0 * maxDropA / startA) - 1.0
     
+    # also for the absolut values wes use the deltas of the real absolute values
+    runObj.maxRiseAr = 1.0 * (maxRiseA - startA) / runObj.corrSF
+    runObj.maxDropAr = 1.0 * (maxDropA - startA) / runObj.corrSF 
+
+    # Notice: for now we donot consider the case when the split-factor changed during the sequence - we simply take the split-factor at the start of the sequence
+
     runObj.warn = warn
     return 
 

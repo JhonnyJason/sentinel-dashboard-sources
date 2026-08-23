@@ -1,6 +1,9 @@
 // eventscreenerframe styles
 @import 'visibility.styl'
 
+top-filters-left-width = 72%
+top-filters-right-width = 38%
+
 #eventscreenerframe
     width 100%
     height "calc(100vh - %s)" % header-height
@@ -45,7 +48,11 @@
         padding 0 20px
         box-sizing: border-box
         // width 180px
-        width 50%
+
+    #filter-event-choice-head
+        width top-filters-left-width
+    #filter-symbol-choice-head
+        width top-filters-right-width
 
     #choose-all-symbols-button
     #add-event-button
@@ -83,9 +90,12 @@
 
 #eventchoice
 #filtersymbolchoice
-    width 50%
     height 320px
     overflow-y auto
+#eventchoice
+    width: top-filters-left-width
+#filtersymbolchoice
+    width top-filters-right-width
 
 .edit-group
     display flex

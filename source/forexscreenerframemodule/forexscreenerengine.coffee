@@ -15,7 +15,9 @@ import { SymbolBacktester } from "./hlcbacktestingmodule.js"
 ############################################################
 export resultStructure = [
     { label: "FX Paar", key: "symbol", sort: on }
+    { label: "Trend", key: "sma18Count", sort: on }
     { label: "Signal", key: "signal", sort: on}
+    { label: "Carry", key: "carry", sort: on }
     { label: "Startdatum", key: "entryDate", sort: off }
     { label: "Enddatum", key: "exitDate", sort: off }
     { label: "Einstiegskurs", key: "entryPrice", sort: off }
@@ -104,6 +106,10 @@ export startScreening = (forexPairs) ->
             info.signal = "Short" if !info.isLong
             # olog info
             
+            ## add carry information
+            baseRate = symbolToPairObj[sym].baseArea.data.mrr
+            quoteRate = symbolToPairObj[sym].quoteArea.data.mrr
+            info.carry = 0.1 * Math.round(10 * baseRate - 10 * quoteRate)            
 
             info.cot6 = {
                 base: symbolToPairObj[sym].baseArea.getCOT6()
@@ -113,7 +119,7 @@ export startScreening = (forexPairs) ->
                 base: symbolToPairObj[sym].baseArea.getCOT36()
                 quote: symbolToPairObj[sym].quoteArea.getCOT36()
             } 
-            olog info            
+            # olog info            
 
             range = getSeasonalBestFitRangeFromToday(sc15, info.isLong, 90)
             if !range?
@@ -125,31 +131,6 @@ export startScreening = (forexPairs) ->
             info.entryDate = utl.leapNormToYYYYMMDD(range.startIdx, currentYear)
             info.exitDate = utl.leapNormToYYYYMMDD(range.endIdx, currentYear)
             # olog info
-
-            hlc = await dataC.getHistoryHLC(sym, 1)
-            if hlc.length == 2 then hlc = [...hlc[1], ...hlc[0]].filter((el) -> el?)
-            else throw new Error("retrieved HLC data per year was not for 2 years! Should be for this and the year before.")
-            # olog hlc
-
-            ## calc ATR14
-            atr14 = getATR14(hlc)
-            
-            ## calculate SL and TP values
-            f = 1.0 if info.isLong
-            f = -1.0 if !info.isLong
-
-            info.entryPrice = liveD.getLatestPrice(sym)
-            if !info.entryPrice?
-                lastHLC = hlc[hlc.length - 1]
-                lastC = lastHLC[lastHLC.length - 1]
-                if typeof lastC == "string" then lastC = parseFloat(lastC)
-                
-                console.log("Using lastClose")
-                info.entryPrice = lastC
-
-            info.stoploss = info.entryPrice - f * atr14
-            info.takeprofit1 = info.entryPrice + f * 1.5 * atr14
-            info.takeprofit2 = info.entryPrice + f * 3.0 * atr14
             
             ## Get and check success rates
             minSuccessRate = 0.7
@@ -178,9 +159,9 @@ export startScreening = (forexPairs) ->
                 log "10Y Successrate was too low - continue!"
                 continue
 
-            log "winTrades10Y: #{backtest10YRes.winTrades}"
-            log "totalTrades10Y: #{backtest10YRes.totalTrades}"
-            log "winrate10Y: #{winrate10Y}"
+            # log "winTrades10Y: #{backtest10YRes.winTrades}"
+            # log "totalTrades10Y: #{backtest10YRes.totalTrades}"
+            # log "winrate10Y: #{winrate10Y}"
 
             ## Get success Rate 15Y            
             backtester15Y = new SymbolBacktester(sym, "#{sym}:15Y")
@@ -206,16 +187,64 @@ export startScreening = (forexPairs) ->
                 log "15Y Successrate was too low - continue!"
                 continue
 
-            log "winTrades15Y: #{backtest15YRes.winTrades}"
-            log "totalTrades15Y: #{backtest15YRes.totalTrades}"
-            log "winrate15Y: #{winrate15Y}"
+            # log "winTrades15Y: #{backtest15YRes.winTrades}"
+            # log "totalTrades15Y: #{backtest15YRes.totalTrades}"
+            # log "winrate15Y: #{winrate15Y}"
 
             ## TODO Check Discrepancy: Why is this result for the 15J different from the result calculated from seasonality Backtesting???
             ## From the calculation it seems that there is a trade missing - backtesting to only 14
 
             info.seasonality10P = 100.0 * winrate10Y
             info.seasonality15P = 100.0 * winrate15Y
+
+            hlc = await dataC.getHistoryHLC(sym, 1)
+            if hlc.length == 2 then hlc = [...hlc[1], ...hlc[0]].filter((el) -> el?)
+            else throw new Error("retrieved HLC data per year was not for 2 years! Should be for this and the year before.")
+            # olog hlc
+
+            ## calc ATR14
+            atr14 = getATR14(hlc)
             
+            ## calculate SL and TP values
+            f = 1.0 if info.isLong
+            f = -1.0 if !info.isLong
+            
+
+            
+            ## add trend information
+            livePrice = liveD.getLatestPrice(sym)
+            if !livePrice?
+                lastHLC = hlc[hlc.length - 1]
+                lastC = lastHLC[lastHLC.length - 1]
+                if typeof lastC == "string" then lastC = parseFloat(lastC)
+                
+                console.log("Using lastClose")
+                livePrice = lastC
+
+            info.sma18Count = getSma18Count(hlc, livePrice)
+            ## does current sma18 count match our indication? 
+            trendMatch = (info.sma18Count >= 2 and info.isLong) or (info.sma18Count <= -2 and !info.isLong)
+
+            if !trendMatch then info.entryPrice = livePrice
+            else
+                revIdx = Math.abs(info.sma18Count)
+                reversal0 = hlc[hlc.length - revIdx] 
+                reversal1 = hlc[hlc.length - revIdx + 1]
+                olog { reversal0, reversal1 }
+                if info.isLong
+                    high0 = reversal0[0]
+                    high1 = reversal1[0]
+                    info.entryPrice = Math.max(high0, high1)
+                else
+                    low0 = reversal0[1]
+                    low1 = reversal1[1]
+                    info.entryPrice = Math.min(low0, low1)
+
+            ## add trend information
+            info.stoploss = info.entryPrice - f * atr14
+            info.takeprofit1 = info.entryPrice + f * 1.5 * atr14
+            info.takeprofit2 = info.entryPrice + f * 3.0 * atr14
+
             symbolToInfo[sym] = info
             
             ## DONOT freeze the UI Thread if calculation takes too much time...
@@ -290,6 +319,49 @@ getATR14 = (hlc) -> ## average true range of last 14 hlc
         latestClose = c
         
     return sum / 14.0
+
+getSma18Count = (hlc,liveP) ->
+    # log "getSma18Count"
+    count = 0
+
+    last37 = hlc.slice(-37)
+    idx = 0 
+    
+    range = 18
+    sum = 0
+    avg = 0
+    
+    # olog last37
+    while idx < range
+        el = last37[idx]
+        sum += el[el.length - 1] # sum the closes
+        idx++
+
+    while idx < last37.length
+        el = last37[idx]
+        c = el[el.length - 1]
+        avg = sum / range
+        isAbove = c > avg
+        isBelow = c < avg
+
+        if !isAbove and !isBelow then count = 0
+        if isAbove and count < 0 then count = 0
+        if isBelow and count > 0 then count = 0
+
+        count += isAbove
+        count -= isBelow
+
+        # olog { idx, c, sum, avg, count }        
+
+        frontEdge = last37[idx - range]
+        frontEdgeC = frontEdge[frontEdge.length - 1]
+        sum -= frontEdgeC
+        sum += c
+        # olog { c, frontEdgeC, sum }
+        idx++
+
+    # TODO: do something with the liveP to confirm or disprove?
+    return count
 
 ############################################################
 getRelevantSaisonalityComposites = ->
@@ -546,8 +618,8 @@ hasNegativeTrend = (seq) ->
     if s0 > end then return true
 
     ## check general negative seasonal trends from entry in 1 month
-    if s30 > s60 then return true
-    if s30 > end then return true
+    # if s30 > s60 then return true
+    # if s30 > end then return true
     
     return false
 
@@ -588,7 +660,9 @@ getSortFunction = (sortKey, isAscending) ->
 
     switch sortKey
         when "symbol" then return (el1, el2) -> stringCompare(el1.symbol, el2.symbol, f)
+        when "sma18Count" then return (el1, el2) -> numberCompare(el1.sma18Count, el2.sma18Count, f)
         when "signal" then return (el1, el2) -> stringCompare(el1.signal, el2.signal, f)
+        when "carry" then return (el1, el2) -> numberCompare(el1.carry, el2.carry, f)
         when "entryDate" then return (el1, el2) -> stringCompare(el1.entryDate, el2.entryDate, f)
         # when "exitDate" then return (el1, el2) -> stringCompare(el1.exitDate, el2.exitDate, f)
         # when "entryPrice" then return (el1, el2) -> numberCompare(el1.entryPrice, el2.entryPrice, f)

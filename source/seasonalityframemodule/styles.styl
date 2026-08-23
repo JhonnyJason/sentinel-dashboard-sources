@@ -75,12 +75,15 @@
     margin-top 20px
     display flex
     gap 5px
+    flex-wrap: wrap
+    align-items: stretch
 
 #chart-container
+    flex 10 1 600px
     position relative
     background-color cd-dark-blue
     // background-color #999
-    width 100%
+    // width 100%
     box-sizing: border-box
     // padding 15px
     height 500px
@@ -99,17 +102,18 @@
 
 
 #chart-side-container
+    flex 1 0 280px
     position relative
     // background-color cd-dark-blue
     // background-color #999
-    width 30%
     box-sizing: border-box
-    // padding 15px
-    height 500px
+    // height 500px
+    // height 100%
     // color white
     border-radius: 3px
     opacity 0.5
-
+    h2
+        padding 0 5px
 #components-backtesting-tabs
     background-color cd-dark-blue
     border-radius: 3px 3px 0 0
@@ -131,10 +135,10 @@
         cursor pointer
         
 #tab-content-container
-    height 450px
+    height calc(100% - 50px)
     background-color cd-dark-blue
     border-radius: 0 0 3px 3px
-    padding 10px 0
+    padding 10px
     box-sizing: border-box
 
 .backtesting

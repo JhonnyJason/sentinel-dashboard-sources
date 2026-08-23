@@ -2,7 +2,7 @@
 #header
     background-color cd-dark-blue
     color #fff
-    padding 15px 0 15px 15px
+    padding 15px
     width 100%
     box-sizing: border-box
     position fixed
@@ -12,23 +12,26 @@
     display flex
     justify-content: flex-start
     align-items: center
-    gap 15px
+    gap 10px
 
     h1
         font-size 18pt
-        line-height: 45px
+        overflow: hidden
+        text-overflow: ellipsis
+        white-space: nowrap
         span
-            font-size 14pt
+            font-size 12pt
 
 #header-logo
     width: 45px
     height 45px
     color cd-light-blue
-    svg
+    img
         width inherit
         height inherit
 
 #beta-banner
+    display none
     background-color rgba(255, 165, 0, 0.15)
     color #ffa500
     border-left 3px solid #ffa500
@@ -52,18 +55,14 @@
 #logout-button
     display none
     margin-left auto
-    margin-right 15px
+    width 33px
+    min-width 33px
+    height 33px
     svg
         color #c21
         vertical-align: middle
-        width 33px
-        height 33px
-    span
-        color white
-        vertical-align: middle
-        line-height: 36px
-        font-size 16pt
-        margin-left 5px
+        width: inherit
+        height inherit
 
 .logged-in
     #logout-button
@@ -78,9 +77,9 @@
             width inherit
             
     #logout-button
-        svg
-            width 42px
-            height 42px
+        width 42px
+        min-width 42px
+        height 42px
 
 
     #header
@@ -92,5 +91,6 @@
             line-height: 60px
 
     #beta-banner
+        display block
         font-size 13pt
         padding 6px 16px

@@ -1,5 +1,9 @@
 //- sidenav structure
 nav#sidenav.hidden
+    #sidenav-controls.click-button
+        button#show-button: .nav-icn: svg: use(href="#svg-right-icon")
+        button#hide-button: .nav-icn: svg: use(href="#svg-left-icon")
+
     button#summary-btn.nav-btn.click-button
         .nav-icn: svg: use(href="#svg-flags-collection")
         //- .nav-lbl Alle Basisdaten

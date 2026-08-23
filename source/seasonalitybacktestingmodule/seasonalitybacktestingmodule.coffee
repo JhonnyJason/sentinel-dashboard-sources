@@ -136,32 +136,35 @@ renderSummary = (results) ->
     medianChangeValue.textContent = "#{val.toFixed(1)}%"
     daysInTradeValue.textContent = "#{results.daysInTrade} Tage"
 
+
     if !results.maxRiseObj? or !results.maxDropObj? 
         # protect from acessing null.maxRiseF etc. 
         maxRiseValue.textContent = "0.0%"
-        maxRiseAbsValue.textContent = "0.00"
         maxDropValue.textContent = "0.0%"
+    else
+        val = factorToPercent(results.maxRiseObj.maxRiseF)
+        maxRiseValue.textContent = "#{val.toFixed(1)}%"
+
+        val = factorToPercent(results.maxDropObj.maxDropF)
+        maxDropValue.textContent = "#{val.toFixed(1)}%"
+
+
+    if !results.absMaxRiseObj? or !results.absMaxDropObj? 
+        # protect from acessing null.maxRiseF etc. 
+        maxRiseAbsValue.textContent = "0.00"
         maxDropAbsValue.textContent = "0.00"
         return
-    
-    # val = factorToDeltaPercent(results.maxRiseObj.maxRiseF)
-    val = factorToPercent(results.maxRiseObj.maxRiseF)
-    maxRiseValue.textContent = "#{val.toFixed(1)}%"
+    log "maxDropObj:"
+    olog results.absMaxDropObj
 
-    # val = factorToDeltaPercent(results.maxDropObj.maxDropF)
-    val = factorToPercent(results.maxDropObj.maxDropF)
-    maxDropValue.textContent = "#{val.toFixed(1)}%"
-    
-    missingSF = results.maxRiseObj.missingSF 
-    # val = factorToBackwardsAdjustedAbsoluteDeltaValue(results.maxRiseObj.maxRiseF, results.maxRiseObj)
-    val = factorToBackwardsAdjustedAbsoluteValue(results.maxRiseObj.maxRiseF, results.maxRiseObj)
+    missingSF = results.absMaxRiseObj.missingSF 
+    val = factorToBackwardsAdjustedAbsoluteValue(results.absMaxRiseObj.maxRiseF, results.absMaxRiseObj)
     if missingSF > 1
         maxRiseAbsValue.innerHTML = "#{val.toFixed(2)}<span class='missing-factor' title='Fehlender Faktor zum exakten historischen Wert.'>#{missingSF.toFixed(2)}</span>"
     else maxRiseAbsValue.textContent = "#{val.toFixed(2)}"
 
-    missingSF = results.maxDropObj.missingSF
-    # val = factorToBackwardsAdjustedAbsoluteDeltaValue(results.maxDropObj.maxDropF, results.maxDropObj)
-    val = factorToBackwardsAdjustedAbsoluteValue(results.maxDropObj.maxDropF, results.maxDropObj)
+    missingSF = results.absMaxDropObj.missingSF
+    val = factorToBackwardsAdjustedAbsoluteValue(results.absMaxDropObj.maxDropF, results.absMaxDropObj)
     if  missingSF > 1
         maxDropAbsValue.innerHTML = "#{val.toFixed(2)}<span class='missing-factor' title='Fehlender Faktor zum exakten historischen Wert.'>#{missingSF.toFixed(2)}</span>"
     else maxDropAbsValue.textContent = "#{val.toFixed(2)}"

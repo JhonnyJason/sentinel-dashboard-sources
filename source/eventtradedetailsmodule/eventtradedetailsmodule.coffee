@@ -389,6 +389,7 @@ onSortColumnClick = (evnt) ->
     else
         sortColumn = key
         sortAscending = false  # New column: start descending
+    olog { sortColumn, sortAscending }
     renderDetailsTable()
     return
 
@@ -417,7 +418,7 @@ sortAllResults = (results) ->
         #     (a, b) -> a.entryAr * a.deltaF - b.entryAr * b.deltaF ## TODO adjust to what we actually have available
         when "maxRise"
             log "sorting maxRise"
-            (a, b) -> a.maxGainF - b.maxGainF
+            (a, b) -> a.maxRiseF - b.maxRiseF
         # when "maxRiseA"
         #     (a, b) -> (a.startAr * a.maxRiseP) - (b.startAr * b.maxRiseP)
         when "maxDrop"
@@ -449,10 +450,12 @@ transformRunObjToDetailsResult = (runObj) ->
     detailsRes.deltaF = runObj.deltaF
     
     detailsRes.maxRiseF = runObj.maxRiseF
+    detailsRes.maxRiseAr = runObj.maxRiseAr
     detailsRes.maxRiseAba = runObj.entryCba * runObj.maxRiseF
     detailsRes.maxRiseMissingSF = runObj.maxRiseMissingSF
     
     detailsRes.maxDropF = runObj.maxDropF
+    detailsRes.masDropAr = runObj.maxDropAr
     detailsRes.maxDropAba = runObj.entryCba * runObj.maxDropF
     detailsRes.maxDropMissingSF = runObj.maxDropMissingSF
 

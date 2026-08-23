@@ -219,19 +219,26 @@ generateResultDetailsObject = (evaluation, evnt, trade) ->
     # extremes
     if evaluation.maxDropObj?
         detailsObj.maxDrop = 100.0 * evaluation.maxDropObj.maxDropF
-        detailsObj.maxDropAba = evaluation.maxDropObj.entryCba * evaluation.maxDropObj.maxDropF
-        detailsObj.maxDropMissingSF = evaluation.maxDropObj.missingSF
     else
         detailsObj.maxDrop = 0.0
+
+    if evaluation.absMaxDropObj?
+        detailsObj.maxDropAba = evaluation.absMaxDropObj.entryCba * evaluation.absMaxDropObj.maxDropF
+        detailsObj.maxDropMissingSF = evaluation.absMaxDropObj.missingSF
+    else
         detailsObj.maxDropAba = 0.0
         detailsObj.maxDropMissingSF = 1.0
 
+
     if evaluation.maxRiseObj?
         detailsObj.maxRise = 100.0 * evaluation.maxRiseObj.maxRiseF
-        detailsObj.maxRiseAba = evaluation.maxRiseObj.entryCba * evaluation.maxRiseObj.maxRiseF
-        detailsObj.maxRiseMissingSF = evaluation.maxRiseObj.missingSF
     else
         detailsObj.maxRise = 0.0
+
+    if evaluation.absMaxRiseObj?
+        detailsObj.maxRiseAba = evaluation.absMaxRiseObj.entryCba * evaluation.absMaxRiseObj.maxRiseF
+        detailsObj.maxRiseMissingSF = evaluation.absMaxRiseObj.missingSF
+    else
         detailsObj.maxRiseAba = 0.0
         detailsObj.maxRiseMissingSF = 1.0
 
@@ -279,19 +286,28 @@ generateResultSummaryObject = (evaluation, evnt) ->
     # extremes
     if evaluation.maxRiseObj?
         result.maxRise = 100.0 * evaluation.maxRiseObj.maxRiseF
-        result.maxRiseAba = evaluation.maxRiseObj.entryCba * evaluation.maxRiseObj.maxRiseF
-        result.maxRiseMissingSF = evaluation.maxRiseObj.missingSF
     else
         result.maxRise = 0.0
+
+
+    if evaluation.absMaxRiseObj?
+        result.maxRiseAba = evaluation.absMaxRiseObj.entryCba * evaluation.absMaxRiseObj.maxRiseF
+        result.maxRiseMissingSF = evaluation.absMaxRiseObj.missingSF
+    else
         result.maxRiseAba = 0.0
         result.maxRiseMissingSF = 1.0
 
+
     if evaluation.maxDropObj?
         result.maxDrop = 100.0 * evaluation.maxDropObj.maxDropF
-        result.maxDropAba = evaluation.maxDropObj.entryCba * evaluation.maxDropObj.maxDropF
-        result.maxDropMissingSF = evaluation.maxDropObj.missingSF
     else
         result.maxDrop = 0.0
+
+
+    if evaluation.absMaxDropObj?
+        result.maxDropAba = evaluation.absMaxDropObj.entryCba * evaluation.absMaxDropObj.maxDropF
+        result.maxDropMissingSF = evaluation.absMaxDropObj.missingSF
+    else
         result.maxDropAba = 0.0
         result.maxDropMissingSF = 1.0
 
