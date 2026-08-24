@@ -266,6 +266,8 @@ retrieveAllEventDates = ->
 ############################################################
 updateEventDatesToScreen = (evnt) ->
     # log "updateEventDatesToScreen"
+    # return unless evnt.id == "e001"
+
     eventState = localState[evnt.id]
     if !eventState? then throw new Error("Event with id: #{evnt.id} did not have a localState!")
 
@@ -278,23 +280,29 @@ updateEventDatesToScreen = (evnt) ->
     else throw new Error("Event with id: #{evnt.id} did neither have a dateRange nor a numRange!")
 
     ## TODO do this somewhere else - it makes a difference to power users (tab open for days)
-    { datesToScreen, nextDates } = extractRelevantDates(num, evnt.dates, isWeekly)
+    { datesToScreen, nextDates } = extractRelevantDates(num, eventState.dateRangeTo, evnt.dates, isWeekly)
     evnt.datesToScreen = datesToScreen
     evnt.nextDates = nextDates
     return
     
 ############################################################
-extractRelevantDates = (num, dates, isWeekly = false) ->
+extractRelevantDates = (num, dateTo, dates, isWeekly = false) ->
     if dates.length == 0 then return {}
 
-    today = (new Date()).toISOString().slice(0, 10)
     if isWeekly then halfTimeFrameD = 4
     else halfTimeFrameD = 14
+    
+    today = (new Date()).toISOString().slice(0, 10)
+    if !dateTo? then dateTo = today
 
-
+    ## We cannot backtest event which has not completed the TimeFrame for backtesting
     d = new Date()
     d.setDate(d.getDate() - halfTimeFrameD)
-    lastRelevantDate = d.toISOString().slice(0, 10) 
+    lastPossibleDate = d.toISOString().slice(0, 10) 
+
+    ## If our chosen dateTo is later then the last Possible date then take last possible date
+    if lastPossibleDate < dateTo then lastRelevantDate = lastPossibleDate
+    else lastRelevantDate = dateTo
 
     i = 0
     d = dates[i]
@@ -305,9 +313,13 @@ extractRelevantDates = (num, dates, isWeekly = false) ->
             return {}
             
     ## last num relevant dates are screened for
-    j = i - num
-    if j < 0 then j = 0    
+    ## Aha! So this is why many times num is off...
+    j = i - num 
+    if j < 0 then j = 0
+
+
     datesToScreen = dates.slice(j, i)
+    olog { dates, datesToScreen, num, i, j }
 
     while d < today
         d = dates[++i]
@@ -316,6 +328,9 @@ extractRelevantDates = (num, dates, isWeekly = false) ->
             return {}
 
     nextDates = dates.slice(i)
+    
+    log nextDates
+
     return { datesToScreen, nextDates }
 
 ############################################################

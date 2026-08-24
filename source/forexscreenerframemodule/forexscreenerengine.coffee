@@ -90,9 +90,10 @@ export startScreening = (forexPairs) ->
         
         start = performance.now()
         for sym,i in allForexSymbols
+            # if !(sym == "CADJPY") then continue
             log "evaluating #{sym} @#{i}"
             info = Object.create(null)
-
+            
             sc15 = symbolToSaisonality15J[sym]
             sc10 = symbolToSaisonality10J[sym]
             if !sc10? or !sc15?
@@ -109,7 +110,8 @@ export startScreening = (forexPairs) ->
             ## add carry information
             baseRate = symbolToPairObj[sym].baseArea.data.mrr
             quoteRate = symbolToPairObj[sym].quoteArea.data.mrr
-            info.carry = 0.1 * Math.round(10 * baseRate - 10 * quoteRate)            
+            info.carry = 0.01 * Math.round(100 * baseRate - 100 * quoteRate)            
+            if !    info.isLong then info.carry *= -1.0
 
             info.cot6 = {
                 base: symbolToPairObj[sym].baseArea.getCOT6()
@@ -118,18 +120,21 @@ export startScreening = (forexPairs) ->
             info.cot36 = {
                 base: symbolToPairObj[sym].baseArea.getCOT36()
                 quote: symbolToPairObj[sym].quoteArea.getCOT36()
-            } 
+            }
             # olog info            
 
             range = getSeasonalBestFitRangeFromToday(sc15, info.isLong, 90)
-            if !range?
-                symbolToInfo[sym] = Object.create(null)
-                log "This symbol has no matching seasonal pattern... continue!"
-                continue 
-            # olog range
-
+            # if !range?
+            #     info.entryDate = newD
+            #     info.exitDate = null
+            #     # symbolToInfo[sym] = Object.create(null)
+            #     # log "This symbol has no matching seasonal pattern... continue!"
+            #     # continue 
+            # # olog range
+            # else
             info.entryDate = utl.leapNormToYYYYMMDD(range.startIdx, currentYear)
             info.exitDate = utl.leapNormToYYYYMMDD(range.endIdx, currentYear)
+
             # olog info
             
             ## Get and check success rates
@@ -144,20 +149,20 @@ export startScreening = (forexPairs) ->
                 backtester10Y.addBacktestRun(year, range.startIdx, range.endIdx, "#{sym}:10Y@#{year}")
 
             backtest10YRes = backtester10Y.runEvaluationSync()
-            if backtest10YRes.isLong != info.isLong # our trade direction was not optimal... so not relevant
-                symbolToInfo[sym] = Object.create(null)
-                log "10Y Backtesting revealed different preferrable trade direction - continue!"
-                continue
-            if backtest10YRes.totalTrades < 8
-                symbolToInfo[sym] = Object.create(null)
-                log "10Y Range was too often untradable - continue!"
-                continue
+            # if backtest10YRes.isLong != info.isLong # our trade direction was not optimal... so not relevant
+            #     symbolToInfo[sym] = Object.create(null)
+            #     log "10Y Backtesting revealed different preferrable trade direction - continue!"
+            #     continue
+            # if backtest10YRes.totalTrades < 8
+            #     symbolToInfo[sym] = Object.create(null)
+            #     log "10Y Range was too often untradable - continue!"
+            #     continue
             
             winrate10Y = backtest10YRes.winTrades / backtest10YRes.totalTrades
-            if winrate10Y < minSuccessRate
-                symbolToInfo[sym] = Object.create(null)
-                log "10Y Successrate was too low - continue!"
-                continue
+            # if winrate10Y < minSuccessRate
+            #     symbolToInfo[sym] = Object.create(null)
+            #     log "10Y Successrate was too low - continue!"
+            #     continue
 
             # log "winTrades10Y: #{backtest10YRes.winTrades}"
             # log "totalTrades10Y: #{backtest10YRes.totalTrades}"
@@ -172,20 +177,20 @@ export startScreening = (forexPairs) ->
                 backtester15Y.addBacktestRun(year, range.startIdx, range.endIdx, "#{sym}:15Y@#{year}")
 
             backtest15YRes = backtester15Y.runEvaluationSync()
-            if backtest15YRes.isLong != info.isLong # our trade direction was not optimal... so not relevant
-                symbolToInfo[sym] = Object.create(null)
-                log "15Y Backtesting revealed different preferrable trade direction - continue!"
-                continue
-            if backtest15YRes.totalTrades < 13
-                symbolToInfo[sym] = Object.create(null)
-                log "15Y Range was too often untradable - continue!"
-                continue            
+            # if backtest15YRes.isLong != info.isLong # our trade direction was not optimal... so not relevant
+            #     symbolToInfo[sym] = Object.create(null)
+            #     log "15Y Backtesting revealed different preferrable trade direction - continue!"
+            #     continue
+            # if backtest15YRes.totalTrades < 13
+            #     symbolToInfo[sym] = Object.create(null)
+            #     log "15Y Range was too often untradable - continue!"
+            #     continue            
             
             winrate15Y = backtest15YRes.winTrades / backtest15YRes.totalTrades
-            if winrate15Y < minSuccessRate
-                symbolToInfo[sym] = Object.create(null)
-                log "15Y Successrate was too low - continue!"
-                continue
+            # if winrate15Y < minSuccessRate
+            #     symbolToInfo[sym] = Object.create(null)
+            #     log "15Y Successrate was too low - continue!"
+            #     continue
 
             # log "winTrades15Y: #{backtest15YRes.winTrades}"
             # log "totalTrades15Y: #{backtest15YRes.totalTrades}"
@@ -198,6 +203,7 @@ export startScreening = (forexPairs) ->
             info.seasonality15P = 100.0 * winrate15Y
 
             hlc = await dataC.getHistoryHLC(sym, 1)
+            olog hlc
             if hlc.length == 2 then hlc = [...hlc[1], ...hlc[0]].filter((el) -> el?)
             else throw new Error("retrieved HLC data per year was not for 2 years! Should be for this and the year before.")
             # olog hlc
@@ -331,7 +337,7 @@ getSma18Count = (hlc,liveP) ->
     sum = 0
     avg = 0
     
-    # olog last37
+    olog last37
     while idx < range
         el = last37[idx]
         sum += el[el.length - 1] # sum the closes
@@ -351,13 +357,13 @@ getSma18Count = (hlc,liveP) ->
         count += isAbove
         count -= isBelow
 
-        # olog { idx, c, sum, avg, count }        
+        olog { idx, c, sum, avg, count }        
 
         frontEdge = last37[idx - range]
         frontEdgeC = frontEdge[frontEdge.length - 1]
         sum -= frontEdgeC
         sum += c
-        # olog { c, frontEdgeC, sum }
+        olog { c, frontEdgeC, sum }
         idx++
 
     # TODO: do something with the liveP to confirm or disprove?
@@ -424,7 +430,9 @@ getSeasonalBestFitRangeFromToday = (composite, isLong, maxRange) ->
 
     if isLong then range = getBestExitForLong(composite)
     else range = getBestExitForShort(composite)
-    return null unless range? # no reliable positive seasonal pattern
+
+    # if !range? # no reliable positive seasonal pattern
+    # return null unless range? 
 
     ## shifting up the indices - 0 in the sliced composite is our startIdx
     range.startIdx = range.startIdx + startIdx
@@ -551,38 +559,40 @@ getBestRangeForShort = (seq) ->
 
 ############################################################
 getBestExitForLong = (seq) ->
-    log "getBestRangeForLong"
+    log "getBestExitForLong"
     # log seq.map((el) -> el.toFixed(2))
 
     ## If the full sequence is not positive -> no good range
-    if !hasPositiveTrend(seq) then return null
+    # if !hasPositiveTrend(seq) then return null
 
     startIdx = 0
-    startP = seq[0]
+    minRange = 3
+    startP = seq[startIdx]
 
-    deltaMax = 0
-    endIdxMax = 0
+    deltaMax = seq[minRange] - startP
+    endIdxMax = minRange
 
-    for p,i in seq when (p - startP) > deltaMax
+    for p,i in seq when (p - startP) > deltaMax and i > minRange
         deltaMax = p - startP
         endIdxMax = i
 
     return { startIdx, endIdx: endIdxMax }
 
 getBestExitForShort = (seq) ->
-    log "getBestRangeForShort"
+    log "getBestExitForShort"
     # log seq.map((el) -> el.toFixed(2))
 
     ## If the full sequence is not negative -> no good range
-    if !hasNegativeTrend(seq) then return null
+    # if !hasNegativeTrend(seq) then return null
 
     startIdx = 0
-    startP = seq[0]
+    minRange = 3
+    startP = seq[startIdx]
 
-    deltaMax = 0
-    endIdxMax = 0
+    deltaMax = startP - seq[minRange]
+    endIdxMax = minRange
 
-    for p,i in seq when (startP - p) > deltaMax
+    for p,i in seq when (startP - p) > deltaMax and i > minRange
         deltaMax = startP - p
         endIdxMax = i
 
