@@ -102,7 +102,7 @@
 
 
 #chart-side-container
-    flex 1 0 280px
+    flex 1 0 260px
     position relative
     // background-color cd-dark-blue
     // background-color #999
@@ -114,6 +114,7 @@
     opacity 0.5
     h2
         padding 0 5px
+
 #components-backtesting-tabs
     background-color cd-dark-blue
     border-radius: 3px 3px 0 0
@@ -163,3 +164,21 @@
         border-radius: 3px 0 3px 3px
     #components-backtesting-tabs
         background-color transparent
+
+
+
+@media screen and (max-width: 601px)
+    #seasonalityframe
+        padding 60px 5px 20px 0px
+    
+    #selection-row
+        flex-wrap: wrap-reverse
+
+@media screen and (max-width: 475px)
+    #chart-container
+        height auto
+        min-height: 500px
+
+@media miniscreen   
+    #chart-side-container
+        flex 1 1 240px

@@ -13,10 +13,9 @@
         font-weight: bold
 
 #forexscreener-result-row
-    width 100%
+    // width 100%
     min-height 20px
     padding 40px 20px
-    box-sizing: border-box
     background-color cd-dark-blue
     border-radius: 3px
     // margin-top 36px
@@ -25,11 +24,11 @@
 #forexscreener-result
     display: none
     width 100%
-    table-layout: fixed
-    box-sizing: border-box
+    border-collapse: collapse
     font-size 9pt
     color #fff
-    border-collapse collapse
+    overflow: hidden
+    overflow-x auto
 
     th, td
         padding 8px 20px
@@ -246,3 +245,8 @@
         width 50px
         height 50px
         color #fff
+
+
+@media screen and (max-width: 601px)
+    #forexscreenerframe
+        padding 60px 5px 20px 0px

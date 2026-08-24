@@ -13,8 +13,11 @@
 #tl-chart-row
     display flex
     gap 5px
+    align-items: stretch
+    flex-wrap: wrap-reverse
 
 #tl-chart-container
+    flex 10 1 500px
     position relative
     background-color cd-dark-blue
     width 100%
@@ -56,11 +59,12 @@ tl-blue = rgb(52, 152, 219)
 
 
 #tl-side-container
+    flex 1 1 240px
     background-color cd-dark-blue
     width 20%
     min-width 20%
     box-sizing border-box
-    height 500px
+    // height 500px
     border-radius 3px
     display flex
     flex-direction column
@@ -200,3 +204,23 @@ tl-blue = rgb(52, 152, 219)
     &.state-blue
         background-color tl-blue
         box-shadow 0 0 6px 2px rgba(tl-blue, 0.6)
+
+
+@media screen and (max-width: 601px)
+    #trafficlightframe
+        padding 60px 5px 20px 0px
+
+@media miniscreen
+    #tl-side-container
+
+        .tl-state-text
+            h3
+                font-size 16pt
+
+            p
+                font-size 11pt
+
+    #tl-controls-row
+        .select-wrapper
+        select
+            width 120px

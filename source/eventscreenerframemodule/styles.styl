@@ -1,9 +1,6 @@
 // eventscreenerframe styles
 @import 'visibility.styl'
 
-top-filters-left-width = 72%
-top-filters-right-width = 38%
-
 #eventscreenerframe
     width 100%
     height "calc(100vh - %s)" % header-height
@@ -14,6 +11,7 @@ top-filters-right-width = 38%
 
     h2
         font-weight: bold
+        padding-left 4px
     input[type="checkbox"]
         accent-color: cd-dark-blue
     input[type="checkbox"]:focus
@@ -25,9 +23,10 @@ top-filters-right-width = 38%
 #filter-properties-row
     display flex
     justify-content: space-between
-    align-items: center
+    flex-wrap: wrap
 
 #filter-head-row
+    gap: 10px
     margin-bottom 20px
     .click-button
         pointer-events none
@@ -43,16 +42,21 @@ top-filters-right-width = 38%
     #filter-symbol-choice-head 
     #filter-event-choice-head
         display flex
-        justify-content: space-between
-        align-items: center
-        padding 0 20px
+        // justify-content: space-between
+        // padding 0 20px
+        // padding 0 20px 0 0
         box-sizing: border-box
         // width 180px
 
     #filter-event-choice-head
-        width top-filters-left-width
+        flex: 10 1 120px
+        align-items: center
     #filter-symbol-choice-head
-        width top-filters-right-width
+        flex 1 1 260px
+        .symbol-select-container
+            min-width: 220px
+            // margin-right 5px
+            margin-left auto
 
     #choose-all-symbols-button
     #add-event-button
@@ -79,9 +83,9 @@ top-filters-right-width = 38%
             transform: translateY(-50%)
             color #888
 
-
 #filter-content-row
-    align-items: flex-start
+    align-items: stretch
+    flex-wrap: wrap-reverse
     gap 4px
     padding 4px
     border-radius: 3px
@@ -89,13 +93,13 @@ top-filters-right-width = 38%
     background-color #eee
 
 #eventchoice
-#filtersymbolchoice
-    height 320px
+    height 340px
+    flex 10 1 600px
     overflow-y auto
-#eventchoice
-    width: top-filters-left-width
 #filtersymbolchoice
-    width top-filters-right-width
+    flex 1 1 260px
+    min-height: 34px
+
 
 .edit-group
     display flex
@@ -224,12 +228,14 @@ top-filters-right-width = 38%
 
 
 #filter-properties-row
+    // max-width: 800px
     margin-top 20px
     padding 0 24px
     font-size 11pt
     justify-content: flex-start
     align-items: flex-start
     gap 50px
+    flex-wrap: wrap
 
 #center-properties
     min-width 220px
@@ -294,9 +300,11 @@ top-filters-right-width = 38%
    
 
 #eventscreener-result-row
-    width 100%
+    // width 100%
     min-height 20px
     padding 40px 20px
+    box-sizing: border-box
+    overflow-x: auto
     box-sizing: border-box
     background-color cd-dark-blue
     border-radius: 3px
@@ -305,12 +313,10 @@ top-filters-right-width = 38%
 
 #eventscreener-result
     display: none
-    width 100%
+    width: fit-content
     table-layout: fixed
-    box-sizing: border-box
     font-size 9pt
     color #fff
-    border-collapse collapse
 
     th, td
         padding 8px 20px
@@ -525,3 +531,20 @@ top-filters-right-width = 38%
         width 50px
         height 50px
         color #fff
+
+// @media screen and (max-width: 1000px)
+
+
+
+
+@media screen and (max-width: 601px)
+    #eventscreenerframe
+        padding 60px 5px 20px 0px
+    #eventscreener-button-row
+        #eventscreener-screen-button
+            width 220px
+    #filter-properties-row
+        padding: 0
+        margin-bottom 50px
+        .prop-title
+            font-size: 11pt

@@ -3,6 +3,7 @@ success-bg = alpha(#5b8, 1.0)
 // success-bg = #6d4
 error-bg = alpha(#d44, 0.6)
 form-bg = alpha(cd-light-blue, 0.2)
+top-gap = 35px
 
 #noaccountframe.hidden
     display none
@@ -15,8 +16,7 @@ form-bg = alpha(cd-light-blue, 0.2)
     max-width 1800px
     margin auto
     padding 15px
-    // padding-top mobile-header-height + 25px
-    padding-top 150px
+    padding-top mobile-header-height + top-gap
     box-sizing:  border-box
     text-align: left
     // gap 30px
@@ -43,6 +43,9 @@ form-bg = alpha(cd-light-blue, 0.2)
     // position relative
     display flex
     justify-content: space-between
+    flex-wrap: wrap
+    p
+        max-width: 400px
 #social-proof
     // padding 30px
     // margin-top 120px
@@ -254,7 +257,7 @@ ul#social-proof > li
 @media screen and (min-width: 1300px)
     #noaccountframe
         padding 50px
-        padding-top header-height + 50px
+        padding-top header-height + top-gap
         // grid-template-columns: 5fr 3fr
         grid-template-columns: 2fr 1fr
         gap 60px
@@ -266,3 +269,9 @@ ul#social-proof > li
     #login-register-section
         order 2
         padding-bottom 0
+
+
+@media screen and (max-width: 360px)
+    #noaccountframe
+        padding 5px
+        padding-top mobile-header-height + top-gap
