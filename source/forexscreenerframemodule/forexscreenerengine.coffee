@@ -15,11 +15,9 @@ import { SymbolBacktester } from "./hlcbacktestingmodule.js"
 ############################################################
 export resultStructure = [
     { label: "FX Paar", key: "symbol", sort: on }
-    { label: "Trend", key: "sma18Count", sort: on }
-    { label: "Signal", key: "signal", sort: on}
+    { label: "Richtung", key: "direction", sort: on}
+    { label: "Trend", key: "trend", sort: on }
     { label: "Carry", key: "carry", sort: on }
-    { label: "Startdatum", key: "entryDate", sort: off }
-    { label: "Enddatum", key: "exitDate", sort: off }
     { label: "Einstiegskurs", key: "entryPrice", sort: off }
     { label: "SL", key: "stoploss", sort: off }
     { label: "TP1", key: "takeprofit1", sort: off }
@@ -27,6 +25,9 @@ export resultStructure = [
     { label: "Scoring", key: "score", sort: on }
     { label: "COT 6m", key: "cot6", sort: on }
     { label: "COT 36m", key: "cot36", sort: on }
+    { label: "COT Signal", key: "cotSignal", sort: off}
+    { label: "Startdatum", key: "entryDate", sort: off }
+    { label: "Enddatum", key: "exitDate", sort: off }
     { label: "Saisonale TQ 10J", key: "seasonality10P", sort: on }
     { label: "Saisonale TQ 15J", key: "seasonality15P", sort: on }
 ]
@@ -103,8 +104,8 @@ export startScreening = (forexPairs) ->
             
             info.score = symbolToPairObj[sym].stScore # use short term score here
             info.isLong = info.score > 0
-            info.signal = "Long" if info.isLong
-            info.signal = "Short" if !info.isLong
+            info.direction = "Long" if info.isLong
+            info.direction = "Short" if !info.isLong
             # olog info
             
             ## add carry information
@@ -121,6 +122,13 @@ export startScreening = (forexPairs) ->
                 base: symbolToPairObj[sym].baseArea.getCOT36()
                 quote: symbolToPairObj[sym].quoteArea.getCOT36()
             }
+
+            if (info.cot36.base >= 70 and info.cot36.quote < 70 and info.cot6.base >= 70 and info.cot6.quote < 70) or (info.cot36.quote <= 30 and info.cot36.base > 30 and info.cot6.quote <= 30 and info.cot6.base > 30) 
+                info.cotSignal = "Long"
+
+            if (info.cot36.base <= 30 and info.cot36.quote > 30 and info.cot6.base <= 30 and info.cot6.quote > 30) or ((info.cot36.quote >= 70 and info.cot36.base < 70 and info.cot6.quote >= 70 and info.cot6.base < 70))
+                info.cotSignal = "Short"
+            
             # olog info            
 
             range = getSeasonalBestFitRangeFromToday(sc15, info.isLong, 90)
@@ -203,7 +211,7 @@ export startScreening = (forexPairs) ->
             info.seasonality15P = 100.0 * winrate15Y
 
             hlc = await dataC.getHistoryHLC(sym, 1)
-            olog hlc
+            # olog hlc
             if hlc.length == 2 then hlc = [...hlc[1], ...hlc[0]].filter((el) -> el?)
             else throw new Error("retrieved HLC data per year was not for 2 years! Should be for this and the year before.")
             # olog hlc
@@ -227,15 +235,13 @@ export startScreening = (forexPairs) ->
                 console.log("Using lastClose")
                 livePrice = lastC
 
-            info.sma18Count = getSma18Count(hlc, livePrice)
-            ## does current sma18 count match our indication? 
-            trendMatch = (info.sma18Count >= 2 and info.isLong) or (info.sma18Count <= -2 and !info.isLong)
-
-            if !trendMatch then info.entryPrice = livePrice
-            else
-                revIdx = Math.abs(info.sma18Count)
-                reversal0 = hlc[hlc.length - revIdx] 
-                reversal1 = hlc[hlc.length - revIdx + 1]
+            # trend is absolute number of Streaks in the right direction of the SMA18
+            info.trend = getTrend(hlc, livePrice, info.isLong)
+            
+            if info.trend == 0 then info.entryPrice = hlc[hlc.length - 1][0]
+            else if info.trend > 0
+                reversal1 = hlc[hlc.length - info.trend] 
+                reversal0 = hlc[hlc.length - (info.trend + 1)]
                 olog { reversal0, reversal1 }
                 if info.isLong
                     high0 = reversal0[0]
@@ -245,6 +251,7 @@ export startScreening = (forexPairs) ->
                     low0 = reversal0[1]
                     low1 = reversal1[1]
                     info.entryPrice = Math.min(low0, low1)
+            else info.entryPrice = livePrice
 
             ## add trend information
             info.stoploss = info.entryPrice - f * atr14
@@ -326,8 +333,8 @@ getATR14 = (hlc) -> ## average true range of last 14 hlc
         
     return sum / 14.0
 
-getSma18Count = (hlc,liveP) ->
-    # log "getSma18Count"
+getTrend = (hlc,liveP, isLong) ->
+    # log "getTrend"
     count = 0
 
     last37 = hlc.slice(-37)
@@ -337,7 +344,7 @@ getSma18Count = (hlc,liveP) ->
     sum = 0
     avg = 0
     
-    olog last37
+    # olog last37
     while idx < range
         el = last37[idx]
         sum += el[el.length - 1] # sum the closes
@@ -357,17 +364,29 @@ getSma18Count = (hlc,liveP) ->
         count += isAbove
         count -= isBelow
 
-        olog { idx, c, sum, avg, count }        
+        # olog { idx, c, sum, avg, count }        
 
         frontEdge = last37[idx - range]
         frontEdgeC = frontEdge[frontEdge.length - 1]
         sum -= frontEdgeC
         sum += c
-        olog { c, frontEdgeC, sum }
+        # olog { c, frontEdgeC, sum }
         idx++
+    
+    olog { isLong, count }
+    if !isLong then trend = -1.0 * count
+    else trend = count
+    if trend < 1 then return null
+    
+    avg = sum / range
+    
+    olog { isLong, liveP, avg, trend }
+    
+    if trend == 1 and isLong and liveP > avg then return 0
+    if trend == 1 and !isLong and liveP < avg then return 0
 
-    # TODO: do something with the liveP to confirm or disprove?
-    return count
+    if trend > 1 then return (trend - 1)
+    return null 
 
 ############################################################
 getRelevantSaisonalityComposites = ->
@@ -670,8 +689,8 @@ getSortFunction = (sortKey, isAscending) ->
 
     switch sortKey
         when "symbol" then return (el1, el2) -> stringCompare(el1.symbol, el2.symbol, f)
-        when "sma18Count" then return (el1, el2) -> numberCompare(el1.sma18Count, el2.sma18Count, f)
-        when "signal" then return (el1, el2) -> stringCompare(el1.signal, el2.signal, f)
+        when "trend" then return (el1, el2) -> numberCompare(el1.trend, el2.trend, f)
+        when "direction" then return (el1, el2) -> stringCompare(el1.direction, el2.direction, f)
         when "carry" then return (el1, el2) -> numberCompare(el1.carry, el2.carry, f)
         when "entryDate" then return (el1, el2) -> stringCompare(el1.entryDate, el2.entryDate, f)
         # when "exitDate" then return (el1, el2) -> stringCompare(el1.exitDate, el2.exitDate, f)
@@ -680,6 +699,7 @@ getSortFunction = (sortKey, isAscending) ->
         # when "takeprofit1" then return (el1, el2) -> numberCompare(el1.takeprofit1, el2.takeprofit1, f)
         # when "takeprofit2" then return (el1, el2) -> numberCompare(el1.takeprofit2, el2.takeprofit2, f)
         when "score" then return (el1, el2) -> numberCompare(el1.score, el2.score, f)
+        when "cotSignal" then return (el1, el2) -> stringCompare(el1.cotSignal, el2.cotSignal, f)
         when "cot6" then return (el1, el2) -> numberCompare(el1.cot6, el2.cot6, f)
         when "cot36" then return (el1, el2) -> numberCompare(el1.cot36, el2.cot36, f)
         when "seasonality10P" then return (el1, el2) -> stringCompare(el1.sasonalityP, el2.sasonality10P, f)

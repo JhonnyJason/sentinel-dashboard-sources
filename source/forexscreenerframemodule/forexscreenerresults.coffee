@@ -84,8 +84,8 @@ render = (results) ->
                 else switch key
     
                     when "symbol" then addSymbolSpan(td, result)
-                    when "sma18Count" then td.appendChild(getColoredNumSpan(d))
-                    when "signal" then td.appendChild(getSpan(d.toLowerCase(), d))
+                    when "direction" then td.appendChild(getSpan(d.toLowerCase(), d))
+                    when "trend" then td.appendChild(getSpan("", d))
                     when "carry" then td.appendChild(getColoredPercentSpan(d, 1))
                     when "entryDate" then td.appendChild(getSpan("", formatDate(d)))
                     when "exitDate" then td.appendChild(getSpan("", formatDate(d)))
@@ -94,6 +94,7 @@ render = (results) ->
                     when "takeprofit1" then td.appendChild(getSpan("", d.toFixed(5)))
                     when "takeprofit2" then td.appendChild(getSpan("", d.toFixed(5)))
                     when "score" then addScoreSpan(td, d)
+                    when "cotSignal" then td.appendChild(getSpan(d.toLowerCase(), d))
                     when "cot6" then addCOTSpan(td, d.base, d.quote)
                     when "cot36" then addCOTSpan(td, d.base, d.quote)
                     when "seasonality10P" then td.appendChild(getSpan("winrate", d.toFixed(1)))
@@ -179,17 +180,17 @@ formatPercent = (value) ->
 
 addSymbolSpan = (td, result) ->
     symbol = result.symbol
-    signal = result.signal
-    sma18Count = result.sma18Count
+    direction = result.direction
+    trend = result.trend
 
     if !symbol? then throw new Error("Result had no symbol defined!")
     td.appendChild(getSpan("symbol", symbol))
-    if !signal? then return 
+    if !direction? then return 
 
-    clsPostfix = signal.toLowerCase()
+    clsPostfix = direction.toLowerCase()
     td.classList.add("sym-#{clsPostfix}")
 
-    if (clsPostfix == "short" and sma18Count == -2) or (clsPostfix == "long" and sma18Count == 2)
+    if trend == 0 or (trend > 0 and trend < 6)
         td.classList.add("confirmed")
     return
 
@@ -210,7 +211,7 @@ addScoreSpan = (td, score) ->
     return 
 
 
-addCOTSpan = (td, cotBase, cotQuote) ->    
+addCOTSpan = (td, cotBase, cotQuote) ->
     if typeof cotBase == "string" then cotBase = parseInt(cotBase)
     if typeof cotQuote == "string" then cotQuote = parseInt(cotQuote)
     

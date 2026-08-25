@@ -144,6 +144,10 @@ digestRemoteData = (dataKey, result) ->
     # Bucket data by year
     yearBuckets = Object.create(null)
     for hlc in data
+
+        ## "workaround" for corrupted Data...
+        hlc = repairHLC(hlc) unless hlc.length == 1
+    
         year = currentDate.getFullYear()
         dayIndex = utl.getDayOfYear(currentDate)
 
@@ -165,6 +169,7 @@ digestRemoteData = (dataKey, result) ->
     keyToHistory[dataKey] = years.map((y) -> yearBuckets[y])
     return
 
+
 ############################################################
 extractRelevantHistory = (history, toAge) ->
     result = []
@@ -175,3 +180,32 @@ extractRelevantHistory = (history, toAge) ->
         result.push(history[age])
         age++
     return result
+
+
+############################################################
+repairHLC = (hlc) ->
+    switch
+        # case we got correct hlc
+        when hlc[0] >= hlc[2] and hlc[0] >= hlc[1] and hlc[2] >= hlc[1]
+            return hlc
+        
+        # case we got more something like hcl
+        when hlc[0] >= hlc[2] and hlc[0] >= hlc[1] and hlc[1] >= hlc[2]
+            return [hlc[0], hlc[2], hlc[1]]
+
+        # case we got more something like lhc
+        when hlc[1] >= hlc[2] and hlc[1] >= hlc[0] and hlc[2] >= hlc[0]
+            return [hlc[1], hlc[0], hlc[2]]
+        # case we got more something like lch
+        when hlc[2] >= hlc[1] and hlc[2] >= hlc[0] and hlc[1] >= hlc[0]
+            return [hlc[2], hlc[0], hlc[1]]
+
+        # case we got more something like chl
+        when hlc[1] >= hlc[2] and hlc[1] >= hlc[0] and hlc[0] >= hlc[2]
+            return [hlc[1], hlc[2], hlc[0]]
+        # case we got more something like clh
+        when hlc[2] >= hlc[1] and hlc[2] >= hlc[0] and hlc[0] >= hlc[1]
+            return [hlc[2], hlc[1], hlc[0]]
+
+        else console.error("repairHLC - impossible case for [#{hlc}]")
+    return hlc

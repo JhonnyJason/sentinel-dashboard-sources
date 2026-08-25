@@ -254,11 +254,14 @@ retrieveAllEventDates = ->
         
     for evnt,i in eventList
         try
-            dates = datesList[i]
+            dates = datesList[i]    
+            console.log "a"
             if !Array.isArray(dates) then throw new Error("Event #{evnt.id} had invalid response!")
             
             evnt.dates = dates.sort()
+            console.log "b"
             updateEventDatesToScreen(evnt)
+            console.log "c"
 
         catch err then console.error(err)
     return
