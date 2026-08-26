@@ -123,10 +123,10 @@ export startScreening = (forexPairs) ->
                 quote: symbolToPairObj[sym].quoteArea.getCOT36()
             }
 
-            if (info.cot36.base >= 70 and info.cot36.quote < 70 and info.cot6.base >= 70 and info.cot6.quote < 70)
+            if (info.cot36.base >= 80 and info.cot36.quote < 80 and info.cot6.base >= 80 and info.cot6.quote < 80)
                 info.cotSignal = "Long"
 
-            if (info.cot36.base <= 30 and info.cot36.quote > 30 and info.cot6.base <= 30 and info.cot6.quote > 30)
+            if (info.cot36.base <= 20 and info.cot36.quote > 20 and info.cot6.base <= 20 and info.cot6.quote > 20)
                 info.cotSignal = "Short"
             
             # olog info            

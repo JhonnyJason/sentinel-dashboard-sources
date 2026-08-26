@@ -133,16 +133,16 @@ export class EconomicArea
         @cot36El.textContent = "#{Math.round(@data.cot36)}%"
         @cot36El.classList.remove("strong")
         @cot36El.classList.remove("weak")
-        if @data.cot36 >= 70 then @cot36El.classList.add("strong")
-        if @data.cot36 <= 30 then @cot36El.classList.add("weak")
+        if @data.cot36 >= 80 then @cot36El.classList.add("strong")
+        if @data.cot36 <= 20 then @cot36El.classList.add("weak")
 
         if d.cot6? then @data.cot6 = parseFloat(d.cot6)
         else @data.cot6 = parseFloat(d.cotIndex6) 
         @cot6El.textContent = "#{Math.round(@data.cot6)}%"
         @cot6El.classList.remove("strong")
         @cot6El.classList.remove("weak")
-        if @data.cot6 >= 70 then @cot6El.classList.add("strong")
-        if @data.cot6 <= 30 then @cot6El.classList.add("weak")
+        if @data.cot6 >= 80 then @cot6El.classList.add("strong")
+        if @data.cot6 <= 20 then @cot6El.classList.add("weak")
 
         @params = d._params
 

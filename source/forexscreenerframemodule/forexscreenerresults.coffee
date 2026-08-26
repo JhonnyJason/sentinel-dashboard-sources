@@ -193,7 +193,7 @@ addSymbolSpan = (td, result) ->
     td.classList.add("sym-#{clsPostfix}")
 
     ## TODO add isSMA53 as additional condition 
-    if trend == 0 or (trend > 0) and cotSignal == direction and wsma52Aligned
+    if (trend == 0 or (trend > 0)) and cotSignal == direction and wsma52Aligned
         td.classList.add("confirmed")
     return
 
@@ -218,18 +218,18 @@ addCOTSpan = (td, cotBase, cotQuote) ->
     if typeof cotBase == "string" then cotBase = parseInt(cotBase)
     if typeof cotQuote == "string" then cotQuote = parseInt(cotQuote)
     
-    if cotBase >= 70
+    if cotBase >= 80
         td.appendChild(getSpan("strong-cot", "#{Math.round(cotBase)}"))
-    else if cotBase <= 30
+    else if cotBase <= 20
         td.appendChild(getSpan("weak-cot", "#{Math.round(cotBase)}"))
     else
         td.appendChild(getSpan("neutral-cot", "#{Math.round(cotBase)}"))
 
     td.appendChild(getSpan("", " / "))
 
-    if cotQuote >= 70
+    if cotQuote >= 80
         td.appendChild(getSpan("strong-cot", "#{Math.round(cotQuote)}"))
-    else if cotQuote <= 30
+    else if cotQuote <= 20
         td.appendChild(getSpan("weak-cot", "#{Math.round(cotQuote)}"))
     else
         td.appendChild(getSpan("neutral-cot", "#{Math.round(cotQuote)}"))
