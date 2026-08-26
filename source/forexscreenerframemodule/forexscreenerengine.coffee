@@ -123,10 +123,10 @@ export startScreening = (forexPairs) ->
                 quote: symbolToPairObj[sym].quoteArea.getCOT36()
             }
 
-            if (info.cot36.base >= 70 and info.cot36.quote < 70 and info.cot6.base >= 70 and info.cot6.quote < 70) or (info.cot36.quote <= 30 and info.cot36.base > 30 and info.cot6.quote <= 30 and info.cot6.base > 30) 
+            if (info.cot36.base >= 70 and info.cot36.quote < 70 and info.cot6.base >= 70 and info.cot6.quote < 70)
                 info.cotSignal = "Long"
 
-            if (info.cot36.base <= 30 and info.cot36.quote > 30 and info.cot6.base <= 30 and info.cot6.quote > 30) or ((info.cot36.quote >= 70 and info.cot36.base < 70 and info.cot6.quote >= 70 and info.cot6.base < 70))
+            if (info.cot36.base <= 30 and info.cot36.quote > 30 and info.cot6.base <= 30 and info.cot6.quote > 30)
                 info.cotSignal = "Short"
             
             # olog info            
@@ -258,6 +258,10 @@ export startScreening = (forexPairs) ->
             info.takeprofit1 = info.entryPrice + f * 1.5 * atr14
             info.takeprofit2 = info.entryPrice + f * 3.0 * atr14
 
+            aboveWSMA52 = isAboveWSMA52(hlc, livePrice)
+            if info.isLong and aboveWSMA52 then info.wsma52Aligned = true
+            if !info.isLong and !aboveWSMA52 then info.wsma52Aligned = true
+
             symbolToInfo[sym] = info
             
             ## DONOT freeze the UI Thread if calculation takes too much time...
@@ -385,8 +389,32 @@ getTrend = (hlc,liveP, isLong) ->
     if trend == 1 and isLong and liveP > avg then return 0
     if trend == 1 and !isLong and liveP < avg then return 0
 
-    if trend > 1 then return (trend - 1)
+    if trend > 1 then return (trend - 2)
     return null 
+
+isAboveWSMA52 = (hlc, liveP) ->
+    # log "isAboveWSMA52"
+    count = Math.min(364, hlc.length)
+    divisor = count / 7
+    # olog { count, divisor }
+
+    hlc = hlc.slice(-count)
+    wCSum = 0
+    c = 0
+    days = 0
+    for dp in hlc
+        c += parseFloat(dp[dp.length - 1]) # close is last position while dp can be length of 3 or 
+        # log c
+        if days == 6 # 0 - 6 is 7 days -> sum up on index 6
+            c /= 7
+            wCSum += c
+            c = 0
+            days = 0
+        else days++
+    
+    wsma52 = wCSum / divisor
+    # olog { liveP, wCSum, divisor, wsma52 }
+    return liveP > wsma52
 
 ############################################################
 getRelevantSaisonalityComposites = ->

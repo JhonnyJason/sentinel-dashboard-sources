@@ -182,6 +182,8 @@ addSymbolSpan = (td, result) ->
     symbol = result.symbol
     direction = result.direction
     trend = result.trend
+    cotSignal = result.cotSignal
+    wsma52Aligned = result.wsma52Aligned
 
     if !symbol? then throw new Error("Result had no symbol defined!")
     td.appendChild(getSpan("symbol", symbol))
@@ -190,7 +192,8 @@ addSymbolSpan = (td, result) ->
     clsPostfix = direction.toLowerCase()
     td.classList.add("sym-#{clsPostfix}")
 
-    if trend == 0 or (trend > 0 and trend < 6)
+    ## TODO add isSMA53 as additional condition 
+    if trend == 0 or (trend > 0) and cotSignal == direction and wsma52Aligned
         td.classList.add("confirmed")
     return
 
