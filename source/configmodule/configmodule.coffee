@@ -1,27 +1,37 @@
 ############################################################
-export appVersion = "v0.1.38"
+export appVersion = "v0.1.39"
 export heartbeatMS = 120_000 # ~2min
 
 ############################################################
-url = "https://sentinel-access-manager-dev.dotv.ee"
+#region service URLs
+############################################################
+# Access Manager URL
+# url = "https://sentinel-access-manager-dev.dotv.ee"
+url = "https://localhost:6111"
 if window.location.origin == "https://sentinel.ewag-handelssysteme.de"
     url = "https://sentinel-access-manager.dotv.ee"
 export urlAccessManager = url
 
-export urlWebsocketBackend = "https://sentinel-backend.dotv.ee"
-export urlDatahub = "https://sentinel-datahub.dotv.ee"
+############################################################
+# Backend URL
+# url = "https://sentinel-backend.dotv.ee"
+url = "https://localhost:6112"
+if window.location.origin == "https://sentinel.ewag-handelssysteme.de"
+    url = "https://sentinel-backend.dotv.ee"
+export urlWebsocketBackend = url
 
-# export urlWebsocketBackend = "wss://sentinel-backend.dotv.ee/"
+############################################################
+# Datahub URL
+# url = "https://sentinel-datahub.dotv.ee"
+url = "https://localhost:6113"
+if window.location.origin == "https://sentinel.ewag-handelssysteme.de"
+    url = "https://sentinel-datahub.dotv.ee"
+export urlDatahub = url
+
+#endregion
 
 ############################################################
 export uriAllSymbolsFile = "all_symbols.json"
-
-############################################################
-# local testing
-# export urlAccessManager = "https://localhost:6999"
-# export urlWebsocketBackend = "http://localhost:3333"
-# export urlWebsocketBackend = "wss://localhost:6999/"
-# export urlWebsocketBackend = "https://localhost:6999/"
 
 ############################################################
 export pwdSalt = "holderradio!...<3)()0981salty"
