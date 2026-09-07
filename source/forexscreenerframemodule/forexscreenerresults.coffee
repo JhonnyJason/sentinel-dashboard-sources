@@ -97,8 +97,8 @@ render = (results) ->
                     when "cotSignal" then td.appendChild(getSpan(d.toLowerCase(), d))
                     when "cot6" then addCOTSpan(td, d.base, d.quote)
                     when "cot36" then addCOTSpan(td, d.base, d.quote)
-                    when "seasonality10P" then td.appendChild(getSpan("winrate", d.toFixed(1)))
-                    when "seasonality15P" then td.appendChild(getSpan("winrate", d.toFixed(1)))
+                    when "seasonality10P" then addWinrateSpan(td, d)
+                    when "seasonality15P" then addWinrateSpan(td, d)
 
                     # when "direction" then td.appendChild(getSpan(d.toLowerCase(), d))
                     # when "winrate" then td.appendChild(getSpan("winrate", d.toFixed(1)))
@@ -234,6 +234,12 @@ addCOTSpan = (td, cotBase, cotQuote) ->
     else
         td.appendChild(getSpan("neutral-cot", "#{Math.round(cotQuote)}"))
     return 
+
+addWinrateSpan = (td, winrate) ->
+    cls = "winrate"
+    if winrate >= 70 then cls += " positive"
+    td.appendChild(getSpan(cls, winrate.toFixed(1)))
+    return
 
 formatDate = (value) ->
     date = new Date(value)
