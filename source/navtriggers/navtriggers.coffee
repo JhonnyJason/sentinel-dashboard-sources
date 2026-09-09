@@ -32,6 +32,10 @@ export toOptionscreener = ->
     log "toOptionscreener"
     return nav.toBase("optionscreener")
 
+export toSectorrotation = ->
+    log "toSectorrotation"
+    return nav.toBase("sectorrotation")
+
 export toTrafficlight = ->
     log "toTrafficlight"
     return nav.toBase("trafficlight")

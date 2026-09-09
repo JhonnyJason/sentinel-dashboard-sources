@@ -83,6 +83,14 @@ applyBaseState["optionscreener"] = ->
     optionscreener.activate()
     return
 
+applyBaseState["sectorrotation"] = ->
+    content.setSectorrationState()
+    sideNav.setSectorrationState()
+    noAccount.hide()
+    header.className = "logged-in"
+    eventscreener.activate()
+    return
+
 applyBaseState["trafficlight"] = ->
     content.setTrafficlightState()
     sideNav.setTrafficlightState()

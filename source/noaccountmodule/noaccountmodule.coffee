@@ -125,7 +125,7 @@ handleLoginRegisterSubmit = (evnt) ->
 ############################################################
 handleRegisterSubmit = (email) ->
     log "handleRegisterSubmit"
-    try await register(email)
+    try await register(email, globalThis.specialLinkName)
     catch err then return indicateRegisterError(err)
 
     setRegisterSuccess()

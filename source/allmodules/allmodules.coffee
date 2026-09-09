@@ -21,6 +21,7 @@ import * as scimodule from "./scimodule.js"
 import * as seasonalitybacktestingmodule from "./seasonalitybacktestingmodule.js"
 import * as seasonalitychartmodule from "./seasonalitychartmodule.js"
 import * as seasonalityframemodule from "./seasonalityframemodule.js"
+import * as sectorrotationframemodule from "./sectorrotationframemodule.js"
 import * as sidenavmodule from "./sidenavmodule.js"
 import * as statemodule from "./statemodule.js"
 import * as summaryframemodule from "./summaryframemodule.js"
@@ -54,6 +55,7 @@ Modules = {
     seasonalitybacktestingmodule,
     seasonalitychartmodule,
     seasonalityframemodule,
+    sectorrotationframemodule,
     sidenavmodule,
     statemodule,
     summaryframemodule,

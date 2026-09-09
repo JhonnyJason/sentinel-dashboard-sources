@@ -4,7 +4,7 @@ import { addModulesToDebug } from "thingy-debug"
 export modulesToDebug = {
 
     # accountmodule: true
-    # appcoremodule: true
+    appcoremodule: true
     # backtesting: true
     # chartfun: true
     # colorstates: true
@@ -22,8 +22,8 @@ export modulesToDebug = {
     # eventscreenerresults: true
     # eventscreeningengine: true
     # forexlivedata: true
-    # forexscreeningengine: true
-    # forexscreenerframemodule: true
+    forexscreeningengine: true
+    forexscreenerframemodule: true
     # forexscreenerresults: true
     # fouriermodule: true
     # hlcbacktestingmodule: true

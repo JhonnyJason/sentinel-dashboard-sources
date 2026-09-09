@@ -20,6 +20,7 @@ export initialize = ->
     eventscreenerBtn.addEventListener("click", triggers.toEventscreener)
     forexscreenerBtn.addEventListener("click", triggers.toForexscreener)
     optionscreenerBtn.addEventListener("click", triggers.toOptionscreener)
+    sectorrotationBtn.addEventListener("click", triggers.toSectorrotation)
     trafficlightBtn.addEventListener("click", triggers.toTrafficlight)
     accountBtn.addEventListener("click", triggers.toAccount)
     
@@ -81,6 +82,13 @@ export setOptionscreenerState = ->
     if folded then sidenav.classList.add("folded")
     return
 
+export setSectorrationState = ->
+    log "setSectorrationState"
+    sidenav.className = "sectorrotation"
+    folded = true
+    if folded then sidenav.classList.add("folded")
+    return
+    
 export setTrafficlightState = ->
     log "setTrafficlightState"
     sidenav.className = "trafficlight"

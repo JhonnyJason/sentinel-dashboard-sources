@@ -35,6 +35,11 @@ export setOptionscreenerState = ->
     content.className = "optionscreener"
     return
 
+export setSectorrationState = ->
+    log "setSectorrationState"
+    content.className = "sectorrotation"
+    return
+    
 export setTrafficlightState = ->
     log "setTrafficlightState"
     content.className = "trafficlight"

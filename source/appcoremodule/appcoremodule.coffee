@@ -20,6 +20,7 @@ defaultBaseState = "summary"
 appBaseState = "summary"
 appUIMod = "none"
 appContext = {}
+firstLoad = true
 
 ############################################################
 #region DOM Cache fix
@@ -63,6 +64,18 @@ export initialize = ->
     
 #     # if appBaseState == "no-code" then triggers.addCode()
 #     return
+############################################################
+collectLinkRoute = ->
+    log "collectLinkRoute"
+    firstLoad = false
+    path = location.pathname.slice(1)
+
+    if(path)
+        globalThis.specialLinkName = path
+        origin = location.origin
+        history.replaceState(null, "", origin)
+
+    return
 
 ############################################################
 setNavState = (navState) ->
@@ -70,6 +83,8 @@ setNavState = (navState) ->
     baseState = navState.base
     modifier = navState.modifier
     context = navState.context
+    
+    if firstLoad then collectLinkRoute()
 
     if !account.accountExists() and baseState != "noaccount"
         log "no accountData existed!"

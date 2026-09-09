@@ -6,7 +6,7 @@ import { createLogFunctions } from "thingy-debug"
 
 ############################################################
 import {
-    createValidator, getErrorMessage, 
+    createValidator, getErrorMessage, STRINGORNOTHING,
     STRINGHEX64, STRINGHEX32, STRINGEMAIL, NONEMPTYSTRING, 
     NUMBERORNOTHING, NUMBER
 } from "thingy-schema-validate"
@@ -37,6 +37,11 @@ validateEmail = createValidator(STRINGEMAIL)
 validateAuthCode = createValidator(STRINGHEX32)
 
 ############################################################
+validateRegisterArgs = createValidator({
+    email: STRINGEMAIL,
+    linkName: STRINGORNOTHING
+})
+
 validateLoginArgs = createValidator({
     email: STRINGEMAIL,
     passwordSH: STRINGHEX64
@@ -106,14 +111,15 @@ request  = (url, args) ->
     return
 
 ############################################################
-export register = (email) ->
+export register = (email, linkName) ->
     log "register"
     # throw new Error("Error on Purpose!") ## TODO remove
     # return ## TODO remove
-    
-    err = validateEmail(email)
+    args = {email, linkName}
+    # err = validateEmail(args)
+    err = validateRegisterArgs(args)
     if err then throw new Error("Invalid Email!")
-    await request(urlRegister, email)
+    await request(urlRegister, args)
     return
 
 

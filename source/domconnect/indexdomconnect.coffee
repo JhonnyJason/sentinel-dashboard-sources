@@ -65,6 +65,7 @@ indexdomconnect.initialize = () ->
     global.eventscreenerBtn = document.getElementById("eventscreener-btn")
     global.forexscreenerBtn = document.getElementById("forexscreener-btn")
     global.optionscreenerBtn = document.getElementById("optionscreener-btn")
+    global.sectorrotationBtn = document.getElementById("sectorrotation-btn")
     global.trafficlightBtn = document.getElementById("trafficlight-btn")
     global.accountBtn = document.getElementById("account-btn")
     global.noaccountframe = document.getElementById("noaccountframe")
