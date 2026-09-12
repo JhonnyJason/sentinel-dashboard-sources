@@ -4,6 +4,22 @@ import { createLogFunctions } from "thingy-debug"
 {log, olog} = createLogFunctions("utilsmodule")
 #endregion
 
+export minDecimalPrice = (flt) ->
+    if typeof flt != "number" then throw new Error("minDecimalPrice - flt must be a number!")
+    rounded = 0.01 * Math.round(100 * flt)
+    roundedStr = rounded.toFixed(2)
+    digits = roundedStr.split("")
+    
+    loop
+        d = digits.pop()
+        if d == '0' then continue
+        if d == '.' then break
+        digits.push(d)
+        break
+
+    return digits.join("")
+
+
 ############################################################
 #region year/leap year helpers
 export FEB29 = 59

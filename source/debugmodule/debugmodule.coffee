@@ -3,8 +3,9 @@ import { addModulesToDebug } from "thingy-debug"
 ############################################################
 export modulesToDebug = {
 
-    # accountmodule: true
-    appcoremodule: true
+    accountframemodule: true
+    accountmodule: true
+    # appcoremodule: true
     # backtesting: true
     # chartfun: true
     # colorstates: true
@@ -22,8 +23,8 @@ export modulesToDebug = {
     # eventscreenerresults: true
     # eventscreeningengine: true
     # forexlivedata: true
-    forexscreeningengine: true
-    forexscreenerframemodule: true
+    # forexscreeningengine: true
+    # forexscreenerframemodule: true
     # forexscreenerresults: true
     # fouriermodule: true
     # hlcbacktestingmodule: true
@@ -32,7 +33,7 @@ export modulesToDebug = {
     # navtriggers: true
     # resultfilterstate: true
     # sampledata: true
-    # scimodule: true
+    scimodule: true
     # scorehelper: true
     # scimodule: true
     # seasonality: true

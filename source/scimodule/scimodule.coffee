@@ -12,7 +12,7 @@ import {
 } from "thingy-schema-validate"
 
 ############################################################
-import { urlAccessManager, urlDatahub } from "./configmodule.js"
+import { urlAccessManager, urlDatahub, urlLinkGuardian } from "./configmodule.js"
 import { getAuthCode, assertAuthorization } from "./accountmodule.js"
 
 ############################################################
@@ -22,13 +22,16 @@ urlLogin = urlAccessManager+"/login"
 urlLoginX = urlAccessManager+"/loginX"
 urlLogout = urlAccessManager+"/logout"
 urlRefreshSession = urlAccessManager+"/refreshSession"
+urlGetSubscriptionData = urlAccessManager+"/getSubscriptionData"
 urlPasswordReset = urlAccessManager+"/requestPasswordReset"
 urlUpdateEmail = urlAccessManager+"/updateEmail"
 urlUpdatePasword = urlAccessManager+"/updatePassword"
 urlDeleteAccount = urlAccessManager+"/deleteAccount"
+urlGetCheckoutLink = urlAccessManager+"/getCheckoutLink"
 
 urlGetData = urlDatahub+"/getEODHLCData"
 
+urlDiscountForBadge = urlLinkGuardian+"/getDiscount"
 #endregion
 
 ############################################################
@@ -78,16 +81,24 @@ validateGetSymbolOptionsArgs = createValidator({
 #endregion
 
 ############################################################
-request  = (url, args) ->
-    log "request"
+requestToPromise = new Map()
 
-    options =
-        method: 'POST'
-        mode: 'cors'
-    
-        body: JSON.stringify(args)
-        headers: {'Content-Type': 'application/json'}
+############################################################
+deleteAfterAwait = (key, prom) ->
+    try
+        result = await prom
+        # log "deleteAfterAwait - resolved to result!"
+        # olog {result}
+    catch err
+        log "deleteAfterAwait - exception thrown!"
+        # olog {err}
 
+    requestToPromise.delete(key)
+    return
+
+
+############################################################
+requestExecute = (url, options, isRetry) ->
     try response = await fetch(url, options)
     catch err then throw new Error("Network Error: "+err.message)
 
@@ -102,13 +113,34 @@ request  = (url, args) ->
     if response.status == 401
         try await assertAuthorization()
         catch err then throw new Error("Authorization could not be established! #{err.message}")
-        throw new Error("Authorization issue, but refresshed session -> try again!")
+        return await requestExecute(url, options, true) unless isRetry
+        throw new Error("Authorization issue, but refresshed session, and retried :-(!")
 
     try errorMessage = await response.text()
     catch err then throw new Error("ErrorParsing Error: "+err.message)
 
     throw new Error(errorMessage)
     return
+
+############################################################
+request  = (url, args) ->
+    log "request "+url
+    bodyStr = JSON.stringify(args)
+    key = url+bodyStr
+
+    if requestToPromise.has(key) then return await requestToPromise.get(key)
+    
+    options =
+        method: 'POST'
+        mode: 'cors'    
+        body: bodyStr
+        headers: {'Content-Type': 'application/json'}
+    
+    prom = requestExecute(url, options)
+    requestToPromise.set(key, prom)
+    deleteAfterAwait(key, prom)
+    return await prom
+
 
 ############################################################
 export register = (email, linkName) ->
@@ -143,6 +175,12 @@ export refreshSession = (authCode) ->
     if err then throw new Error("Invalid authCode!")
     return await request(urlRefreshSession, authCode)
 
+export getSubscriptionData = (authCode) ->
+    log "getSubscriptionData"
+    err = validateAuthCode(authCode)
+    if err then throw new Error("Invalid authCode!")
+    return await request(urlGetSubscriptionData, authCode)
+
 export logout = (authCode) ->
     log "logout"
     err = validateAuthCode(authCode)
@@ -172,6 +210,11 @@ export updatePassword = (newPasswordSH, email, passwordSH) ->
     if err then throw new Error("Invalid updatePassword args!")
     return await request(urlUpdatePasword, args)
 
+export deleteAccount = (email, passwordSH) ->
+    args = { email, passwordSH }
+    err = validateLoginArgs(args)
+    if err then throw new Error("Invalid Deletion Arguments!")
+    return await request(urlDeleteAccount, args)
 
 ############################################################
 export getEodData = (dataKey, yearsBack) ->
@@ -191,3 +234,14 @@ export getEodData = (dataKey, yearsBack) ->
     #     },
     #     data: ARRAY
     # }
+
+
+############################################################
+export discountForBadge = (badge) ->
+    log "discountForBadge"
+    return await request(urlDiscountForBadge, badge)
+
+############################################################
+export getCheckoutLink = (isYearly, authCode) ->
+    log "getCheckoutLink"
+    return await request(urlGetCheckoutLink, {isYearly, authCode})

@@ -1,5 +1,5 @@
 ############################################################
-export appVersion = "v0.1.40"
+export appVersion = "v0.1.41"
 export heartbeatMS = 120_000 # ~2min
 
 ############################################################
@@ -27,6 +27,14 @@ url = "https://localhost:6113"
 if window.location.origin == "https://sentinel.ewag-handelssysteme.de"
     url = "https://sentinel-datahub.dotv.ee"
 export urlDatahub = url
+
+############################################################
+# Link Guardian URL
+# url = "https://link-guardian.dotv.ee"
+url = "https://localhost:6337"
+if window.location.origin == "https://sentinel.ewag-handelssysteme.de"
+    url = "https://link-guardian.dotv.ee"
+export urlLinkGuardian = url
 
 #endregion
 

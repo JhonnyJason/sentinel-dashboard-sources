@@ -1,0 +1,66 @@
+// accountframe visibility styles
+
+#coupon-element
+    display none
+
+.has-coupon
+    #coupon-element
+        display flex
+
+
+#account-status-tester
+#account-status-free-access
+#account-status-unlimited-access
+#account-status-limited-access
+    display none
+
+.tester-access
+    #account-status-tester
+        display block
+.free-access
+    #account-status-free-access
+        display block
+.unlimited-access
+    #account-status-unlimited-access
+        display block
+.limited-access
+    #account-status-limited-access
+        display block
+
+
+#account-status
+    .warning
+    .status-info
+        display none
+
+#account-status.tester-access
+    .status-info#tester-status-info
+        display block
+
+#account-status.free-access
+    .status-info#free-access-info
+        display block
+    .warning#free-access-warning
+        display block
+
+#account-status.unlimited-access
+    .status-info#paid-access-info
+        display block
+
+#account-status.limited-access
+    .status-info#limited-access-info
+        display block
+
+
+#abonnement-orders
+    display none
+
+#abonnement-orders.no-discount
+    .promotion-price-original
+    .promotion-discount
+        display none
+
+.limited-access
+.free-access
+    #abonnement-orders
+        display block

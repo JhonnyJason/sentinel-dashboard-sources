@@ -1,39 +1,105 @@
+include ../preloader/preloader-mixins.pug
+
 //- accountframe structure
 #accountframe
-    h1 Account
+    #top-line 
+        h1 Account    
+        #coupon-element 
+            //- div Coupons verfügbar:
+            div VIP Badge:
+            #coupon-display home
+
     
-    //- #account-status.inactive
-    //- #account-status.active-member
-    //- #account-status.active-once
-    
-    #account-status.beta-test
-        #account-status-inactive Kein Abonnement
-        #account-status-beta-tester Gratis Beta Testaccount
-        #account-status-active Abonnement Aktiv
-        #account-status-info Sie haben gratis Zugang zur Beta-Testversion erhalten. In Zukunft werden Sie hier ihr Abonnement bestellen, pausieren oder kündigen können.
-        //- #account-status-info Sie haben momentan kein gültiges Abonnement zum Erhalt der Daten. Bitte schließen Sie ein Abonnement ab um den Sentinel richtig nutzen zu können.
+    #account-status
+        
+        #account-status-tester Gratis Zugang für Tester
+        #account-status-free-access Gratis Zugang
+        #account-status-unlimited-access Unlimitierter Zugang
+        #account-status-limited-access Zugang Limitiert
+
+
+        p.status-info#tester-status-info Sie haben gratis Zugang als Tester erhalten. Solange Sie als Tester aktiv sind haben sie unlimitierten Zugang auf alle Funktionen.
+        p.status-info#free-access-info Sie wurden für eine Testperiode mit unlimitiertem Zugang zu allen Funktionen freigeschaltet.
+        p.status-info#paid-access-info Sie haben ein gültiges Abonnement. Vielen Dank und viel Erfolg!
+        p.status-info#limited-access-info Sie haben kein gültiges Abonnement. Bestimmte limitierte Funktionen stehen Ihnen trotzdem zur Verfügung.
+
+        p.warning#free-access-warning Ihre Testperiode ist gültig bis zum: 
+            span#free-access-end 01.10.2026
+
+        #abonnement-orders
+            h2 Jährliches Abonnement
+            .promotion-display
+                .promotion-price-original
+                    span#original-price-yearly
+                .promotion-discount
+                    .discount-badge#promotion-badge-yearly
+                    .discount-amount.promotion-off#promotion-percentage-off-yearly
+                    h3.discount-title Einmaliger Rabatt
+                .promotion-price-discount
+                    span#discount-price-yearly
+            button#order-yearly-button.click-button Jetzt Kaufen 
+            
+            h2 Monatliches Abonnement
+            .promotion-display
+                .promotion-price-original
+                    span#original-price-monthly
+                .promotion-discount
+                    .discount-badge#promotion-badge-monthly
+                    .discount-amount.promotion-off#promotion-percentage-off-monthly
+                    h3.discount-title Einmaliger Rabatt
+                .promotion-price-discount
+                    span#discount-price-monthly
+            button#order-monthly-button.click-button Jetzt kaufen 
+            //- button#renew-button.click-button Abonnement Erneuern 
+
+
         //- #account-status-info Ihr Abonnement läuft am 11.11.26 ab. Bitte erneuern Sie ihr Abonnement um den Sentinel darüberhinaus nutzen zu können.
         //- #account-status-info Ihr Abonnement wird am 11.11.26 automatisch erneuert. Vielen Dank!
 
-        #account-automatic-renewal 
-            input#renewal-checkbox(type="checkbox")
-            label#renewal-hint(for="renewal-checkbox") Automatisierte Erneuerungen ausschalten. 
+        //- #account-automatic-renewal 
+        //-     input#renewal-checkbox(type="checkbox")
+        //-     label#renewal-hint(for="renewal-checkbox") Automatisierte Erneuerungen ausschalten. 
             //- label#renewal-hint(for="renewal-checkbox") Automatisierte Erneuerungen einschalten. 
 
-        #abonnement-order-buttons 
-            button#order-button.click-button Abonnement Kaufen 
-            button#renew-button.click-button Abonnement Erneuern 
         
-    form#account-management
+    #account-management
         h2 Account Aktionen
-        p Hinweis: Sie können nur eine der Änderungen gleichzeitig durchführen.
-        label(for="new-email-input") Neue Emailadresse setzen:
-        input#new-email-input(type="email" placeholder="asd@ghg.oi" autocomplete="email")
-        label(for="new-password-input") Neues Passwort setzen:
-        input#new-password-input(type="password" placeholder="**********" autocomplete="new-password")
-        button#deletion-button.click-button Account Löschen
+        //- p Hinweis: Sie können nur eine der Änderungen gleichzeitig durchführen.
 
-        #approval-section
-            h2#confirm-action-head Bitte bestätigen Sie das Setzen von ggg@gmail.com als neue Emailadresse:
-            input#old-password-input(type="text" placeholder="Ihr altes Passwort" autocomplete="current-password")
-            button#confirmation-buttonn.click-button(type="submit") Bestätigen
+        #email-section.virgin
+            .change-block
+                label(for="new-email-input") Neue Emailadresse setzen:
+                input#new-email-input(type="email" placeholder="asd@ghg.oi" autocomplete="email")
+                label(for="old-password-email-input") Bitte Ihr momentanes Passwort zur Authentifizierung der Aktion:
+                input#old-password-email-input(type="password" placeholder="********" autocomplete="current-password")                
+            .button-block
+                button#change-email-button.click-button(type="submit") Jetzt ändern!
+                .feedback-line
+                    p#email-change-feedback Keine Emailadresse angegeben!
+                    +preloader("email-change-preloader", "spinner-1")
+
+        #password-section.virgin
+            .change-block
+                label(for="new-password-input") Neues Passwort setzen:
+                input#new-password-input(type="password" placeholder="**********" autocomplete="new-password")
+                label(for="repeaded-password-input") Passwort wiederholen:
+                input#repeated-password-input(type="password" placeholder="**********" autocomplete="new-password")
+                label(for="old-password-input") Bitte Ihr momentanes Passwort zur Authentifizierung der Aktion:
+                input#old-password-input(type="password" placeholder="********" autocomplete="current-password")
+            .button-block
+                button#change-password-button.click-button(type="submit") Jetzt ändern!
+                .feedback-line
+                    p#password-change-feedback
+                    +preloader("password-change-preloader", "spinner-1")
+
+        
+        #deletion-block.locked
+            .change-block
+                label(for="old-password-deletion-input") Bitte Ihr momentanes Passwort zur Authentifizierung der Aktion:
+                input#old-password-deletion-input(type="password" placeholder="********" autocomplete="current-password")
+                #deletion-hint
+                    p <b>Achtung!</b> Durch die Eingabe Ihres Passworts und Klicken auf "Account Löschen", wird Ihr Account unwiderruflich gelöscht.
+            button#deletion-button.click-button Account Löschen
+            .feedback-line
+                p#deletion-feedback
+                +preloader("deletion-preloader", "spinner-1")

@@ -17,7 +17,7 @@ import * as triggers from "./navtriggers.js"
 ############################################################
 import * as sci from "./scimodule.js"
 import * as cfg from "./configmodule.js"
-import { setAccountEmail } from "./accountframemodule.js"
+import { setAccountEmail, setSubscriptionState } from "./accountframemodule.js"
 import { heartbeat } from "./datamodule.js"
 
 #endregion
@@ -28,35 +28,34 @@ dataKey = "sentinel-account-data"
 accountData = null
 refreshMarginMS = 300_000 # ~5min
 
-############################################################
-validateLoginResult = null
-validateRefreshSessionResult = null
+# ############################################################
+# subscriptionData = null
 
-validateAccountData = null
+############################################################
+## validators
+validateLoginResult = createValidator({ 
+    authCode: STRINGHEX32, 
+    validUntil: NUMBER,
+    passwordSHX: STRINGHEX64  
+})
+validateRefreshSessionResult = createValidator({
+    authCode: STRINGHEX32,
+    validUntil: NUMBER
+})
+validateAccountData = createValidator({
+    email: STRINGEMAIL
+    passwordSHX: STRINGHEX64
+    session: {
+        authCode: STRINGHEX32
+        validUntil: NUMBER
+    }
+})
 
 #endregion
 
 ############################################################
 export initialize = ->
     log "initialize"
-    ## create validators
-    validateLoginResult = createValidator({ 
-        authCode: STRINGHEX32, 
-        validUntil: NUMBER,
-        passwordSHX: STRINGHEX64  
-    })
-    validateRefreshSessionResult = createValidator({
-        authCode: STRINGHEX32,
-        validUntil: NUMBER
-    })
-    validateAccountData = createValidator({
-        email: STRINGEMAIL
-        passwordSHX: STRINGHEX64
-        session: {
-            authCode: STRINGHEX32
-            validUntil: NUMBER
-        }
-    })
 
     ## Digest stored AccountData
     if logoutButton? then logoutButton.addEventListener("click", logoutClicked)
@@ -74,6 +73,7 @@ export initialize = ->
 
 ############################################################
 deleteAccountData = ->
+    log "deleteAccountData"
     accountData = null
     setAccountEmail("")
     localStorage.removeItem(dataKey)
@@ -90,7 +90,9 @@ saveAccountData = ->
 
 ############################################################
 checkSession = ->
+    log "checkSession"
     return unless accountData?
+    log "we have accountData available - thus should refresh session or reLogin..."
     now = Date.now()
     remainingValidMS = accountData.session.validUntil - now
 
@@ -113,7 +115,10 @@ checkSession = ->
                 console.error(err)
                 ## seems all is invalid we may just delete it
                 deleteAccountData()
-        
+
+    else ## it seems we have valid access then:)
+        onAquiredAccess(true) 
+
     resetSessionCheckTimeout()
     return
 
@@ -134,6 +139,7 @@ refreshSession = ->
     log "refreshSession"
     authCode = accountData.session.authCode
     if !authCode? then throw new Error("No autCode in session!")
+
     result = await sci.refreshSession(authCode)
 
     err = validateRefreshSessionResult(result)
@@ -142,7 +148,7 @@ refreshSession = ->
     accountData.session.authCode =  result.authCode
     accountData.session.validUntil =  result.validUntil
     saveAccountData()
-    heartbeat()
+    onAquiredAccess()
     return
 
 reLogin = ->
@@ -158,7 +164,20 @@ reLogin = ->
     accountData.session.authCode = result.authCode
     accountData.session.validUntil = result.validUntil
     saveAccountData()
-    heartbeat()
+    onAquiredAccess()
+    return
+
+############################################################
+onAquiredAccess = (refreshIfFail) ->
+    log "onAquiredAccess"
+    authCode = getAuthCode()
+    try
+        subscriptionData = await sci.getSubscriptionData(authCode)
+        setSubscriptionState(subscriptionData)
+    catch err then console.error(err)
+
+    if refreshIfFail and !subscriptionData? then assertAuthorization()
+    else heartbeat()
     return
 
 ############################################################
@@ -199,8 +218,29 @@ export executeLogin = ( email, password ) ->
             validUntil: result.validUntil
         }
     }
+
     saveAccountData()
+    onAquiredAccess()
     triggers.toSummary()
+    return
+
+export executeAccountDeletion = (password) ->
+    log "executeAccountDeletion"
+    passwordSH = await sha256(cfg.pwdSalt+password)
+    result = await sci.deleteAccount(accountData.email, passwordSH)
+    return
+
+export executeEmailUpdate = (newEmail, password) ->
+    log "executeEmailUpdate"
+    passwordSH = await sha256(cfg.pwdSalt+password)
+    result = await sci.updateEmail(newEmail, accountData.email, passwordSH)
+    return
+
+export executePasswordUpdate = (newPassword, password) ->
+    log "executePasswordUpdate"
+    passwordSH = await sha256(cfg.pwdSalt+password)
+    newPasswordSH = await sha256(cfg.pwdSalt+newPassword)
+    result = await sci.updatePassword(newPasswordSH, accountData.email, passwordSH)
     return
 
 export assertAuthorization = ->
