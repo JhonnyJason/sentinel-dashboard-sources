@@ -154,18 +154,12 @@ export register = (email, linkName) ->
     # return ## TODO remove
 
     args = { email }
+    if linkName then args.linkName = linkName
     olog args
-    err = validateOldRegisterArgs(args)
-    if err then console.error("ValidateOldRegisterArgs: "+getErrorMessage(err))
+    err = validateRegisterArgs(args)
+    if err then console.error("ValidateRegisterArgs: "+getErrorMessage(err))
     if err then throw new Error("Invalid Email!")
     await request(urlRegister, args)
-
-    # args = { email, linkName }
-    # olog args
-    # err = validateRegisterArgs(args)
-    # if err then console.error("ValidateRegisterArgs: "+getErrorMessage(err))
-    # if err then throw new Error("Invalid Email!")
-    # await request(urlRegister, args)    
     return
 
 
