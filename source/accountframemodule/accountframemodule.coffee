@@ -279,7 +279,7 @@ export setSubscriptionState = (state) ->
     ## test free-access state
     # state.freeAccessUntil = "2026-10-02"
 
-    if state.badge?
+    if state.badge
         couponDisplay.textContent = state.badge
         accountframe.classList.add("has-coupon")
         retrievePrices()

@@ -143,15 +143,26 @@ request  = (url, args) ->
 
 
 ############################################################
-export register = (email, linkName) ->
+export register = (email, linkName = "") ->
     log "register"
     # throw new Error("Error on Purpose!") ## TODO remove
     # return ## TODO remove
-    args = {email, linkName}
-    # err = validateEmail(args)
-    err = validateRegisterArgs(args)
-    if err then throw new Error("Invalid Email!")
-    await request(urlRegister, args)
+
+    ## Need to use empty string for now to mitigate error in validatio funtion
+    ## to just omit the validation does not help, as serverside we also do it
+
+    ## commented out due to shiet    
+    # args = { email, linkName }
+    # olog args
+    # # err = validateEmail(args)
+    # err = validateRegisterArgs(args)
+    # if err then throw new Error("Invalid Email!")
+    # await request(urlRegister, args)
+    
+    ## TODO: fix this
+    # for publishing the current backend, does not have
+
+    await request(urlRegister, { email })
     return
 
 
