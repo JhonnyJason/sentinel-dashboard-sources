@@ -6,9 +6,9 @@ import { createLogFunctions } from "thingy-debug"
 
 ############################################################
 import {
-    createValidator, getErrorMessage, STRINGORNOTHING,
-    STRINGHEX64, STRINGHEX32, STRINGEMAIL, NONEMPTYSTRING, 
-    NUMBERORNOTHING, NUMBER
+    STRINGORNOTHING, STRINGHEX64, STRINGHEX32, STRINGEMAIL, 
+    NONEMPTYSTRING, NUMBERORNOTHING, NUMBER, 
+    createValidator, getErrorMessage
 } from "thingy-schema-validate"
 
 ############################################################
@@ -43,6 +43,11 @@ validateAuthCode = createValidator(STRINGHEX32)
 validateRegisterArgs = createValidator({
     email: STRINGEMAIL,
     linkName: STRINGORNOTHING
+})
+
+############################################################
+validateOldRegisterArgs = createValidator({
+    email: STRINGEMAIL
 })
 
 validateLoginArgs = createValidator({
@@ -143,26 +148,24 @@ request  = (url, args) ->
 
 
 ############################################################
-export register = (email, linkName = "") ->
+export register = (email, linkName) ->
     log "register"
     # throw new Error("Error on Purpose!") ## TODO remove
     # return ## TODO remove
 
-    ## Need to use empty string for now to mitigate error in validatio funtion
-    ## to just omit the validation does not help, as serverside we also do it
+    args = { email }
+    olog args
+    err = validateOldRegisterArgs(args)
+    if err then console.error("ValidateOldRegisterArgs: "+getErrorMessage(err))
+    if err then throw new Error("Invalid Email!")
+    await request(urlRegister, args)
 
-    ## commented out due to shiet    
     # args = { email, linkName }
     # olog args
-    # # err = validateEmail(args)
     # err = validateRegisterArgs(args)
+    # if err then console.error("ValidateRegisterArgs: "+getErrorMessage(err))
     # if err then throw new Error("Invalid Email!")
-    # await request(urlRegister, args)
-    
-    ## TODO: fix this
-    # for publishing the current backend, does not have
-
-    await request(urlRegister, { email })
+    # await request(urlRegister, args)    
     return
 
 
