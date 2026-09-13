@@ -39,10 +39,15 @@ export setSectorrationState = ->
     log "setSectorrationState"
     content.className = "sectorrotation"
     return
-    
+
 export setTrafficlightState = ->
     log "setTrafficlightState"
     content.className = "trafficlight"
+    return
+
+export setPartnersState = ->
+    log "setPartnersState"
+    content.className = "partners"
     return
 
 export setAccountState = ->

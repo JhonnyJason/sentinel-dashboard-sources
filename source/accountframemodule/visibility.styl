@@ -28,6 +28,7 @@
         display block
 
 
+
 #account-status
     .warning
     .status-info
@@ -44,12 +45,31 @@
         display block
 
 #account-status.unlimited-access
+    #autorenew-management
+        display block
     .status-info#paid-access-info
         display block
 
 #account-status.limited-access
     .status-info#limited-access-info
         display block
+#account-status
+    #autorenew-management
+        display none    
+        #continue-subscription-button
+        #cancel-subscription-button
+            display none
+
+    #autorenew-management.auto-renew
+        #auto-renew-active
+        #cancel-subscription-button
+            display: block
+
+    #autorenew-management.auto-renew-cancelled
+        #auto-renew-inactive
+        #continue-subscription-button
+            display: block
+
 
 
 #abonnement-orders

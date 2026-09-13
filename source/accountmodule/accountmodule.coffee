@@ -99,25 +99,19 @@ checkSession = ->
     ## our session has expired
     if remainingValidMS < 0
         try await reLogin()
-        catch err 
-            console.error(err)
-            ## seems all is invalid we may just delete it
-            deleteAccountData()
-
+        catch err then console.error("checkSession->reLogin error: "+err.message)
+    
     ## our sesssion is close to expiry
     else if remainingValidMS < refreshMarginMS
         try await refreshSession()
-        catch err
-            console.error(err)
-            ## maybe authCode is invalid so reLogin could help
-            try await reLogin()
-            catch err 
-                console.error(err)
-                ## seems all is invalid we may just delete it
-                deleteAccountData()
+        catch err then console.error("checkSession->refreshSession error: "+err.message)
 
-    else ## it seems we have valid access then:)
-        onAquiredAccess(true) 
+    ## we assume we have a valid authCode
+    # - optimistically execute onAquiredAccess
+    # - but set refreshIfFail to correct invalid authCode
+    else 
+        try await onAquiredAccess(true)
+        catch err then console.log("checkSession->onAquiredAccess error:"+err.message)
 
     resetSessionCheckTimeout()
     return
@@ -140,10 +134,16 @@ refreshSession = ->
     authCode = accountData.session.authCode
     if !authCode? then throw new Error("No autCode in session!")
 
-    result = await sci.refreshSession(authCode)
 
-    err = validateRefreshSessionResult(result)
-    if err then throw new Error("Invalid Result received!")
+    try 
+        result = await sci.refreshSession(authCode)
+        err = validateRefreshSessionResult(result)
+        if err then throw new Error("Invalid Result received!")
+    catch err ## Session seems broken
+            console.error("refreshSession failed!"+err.message)
+            ## maybe authCode is invalid so reLogin could help
+            try await reLogin()
+            catch err then console.error("refreshSession->reLogin error:"+err.message)
 
     accountData.session.authCode =  result.authCode
     accountData.session.validUntil =  result.validUntil
@@ -155,10 +155,15 @@ reLogin = ->
     log "reLogin"
     email = accountData.email
     passwordSHX = accountData.passwordSHX
-    result = await sci.loginX(email, passwordSHX)
 
-    err = validateLoginResult(result)
-    if err then throw new Error("Invalid Result received!")
+    try
+        result = await sci.loginX(email, passwordSHX)
+        err = validateLoginResult(result)
+        if err then throw new Error("Invalid Result received!")
+    catch err
+        console.error("loginX failed! "+err.message)
+        deleteAccountData() # seems our account data are invalid -> delete
+        return
 
     accountData.passwordSHX = result.passwordSHX
     accountData.session.authCode = result.authCode
@@ -171,13 +176,16 @@ reLogin = ->
 onAquiredAccess = (refreshIfFail) ->
     log "onAquiredAccess"
     authCode = getAuthCode()
-    try
-        subscriptionData = await sci.getSubscriptionData(authCode)
-        setSubscriptionState(subscriptionData)
+    try subscriptionData = await sci.getSubscriptionData(authCode)
     catch err then console.error(err)
+    
+    if !subscriptionData and refreshIfFail
+        try await refreshSession() ## will trigger another onAquiredAccess if successfull
+        catch err then console.error("onAquiredAccess->refreshSession error: "+err.message)
+        return
 
-    if refreshIfFail and !subscriptionData? then assertAuthorization()
-    else heartbeat()
+    setSubscriptionState(subscriptionData)
+    heartbeat()
     return
 
 ############################################################
@@ -187,9 +195,7 @@ logoutClicked = ->
     return
 
 ############################################################
-export accountExists = ->
-    log "accountExists"
-    return accountData?
+export accountExists = -> accountData?
 
 export executeLogout = ->
     log "executeLogout"
@@ -228,12 +234,17 @@ export executeAccountDeletion = (password) ->
     log "executeAccountDeletion"
     passwordSH = await sha256(cfg.pwdSalt+password)
     result = await sci.deleteAccount(accountData.email, passwordSH)
+    deleteAccountData()
+    location.reload()
     return
 
 export executeEmailUpdate = (newEmail, password) ->
     log "executeEmailUpdate"
     passwordSH = await sha256(cfg.pwdSalt+password)
     result = await sci.updateEmail(newEmail, accountData.email, passwordSH)
+    log "emailUpdate successful!"
+    accountData.email = newEmail
+    saveAccountData()
     return
 
 export executePasswordUpdate = (newPassword, password) ->
@@ -245,15 +256,8 @@ export executePasswordUpdate = (newPassword, password) ->
 
 export assertAuthorization = ->
     log "assertAuthorization"
-    try await refreshSession()
-    catch err
-        console.error(err)
-        ## maybe authCode is invalid so reLogin could help
-        try await reLogin()
-        catch err
-            console.error(err)
-            ## seems all is invalid we may just delete it
-            deleteAccountData()
+    try await refreshSession() ## will trigger reLogin 
+    catch err then console.error("assertAuthorization->refreshSession error:"+err.message)
     return
 
 export getAuthCode = ->

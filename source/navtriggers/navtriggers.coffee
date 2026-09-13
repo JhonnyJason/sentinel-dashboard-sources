@@ -40,6 +40,10 @@ export toTrafficlight = ->
     log "toTrafficlight"
     return nav.toBase("trafficlight")
 
+export toPartners = ->
+    log "toPartners"
+    return nav.toBase("partners")
+
 export toAccount = ->
     log "toAccount"
     return nav.toBase("account")

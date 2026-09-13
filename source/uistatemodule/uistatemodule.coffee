@@ -100,6 +100,14 @@ applyBaseState["trafficlight"] = ->
     eventscreener.activate()
     return
 
+applyBaseState["partners"] = ->
+    content.setPartnersState()
+    sideNav.setPartnersState()
+    noAccount.hide()
+    header.className = "logged-in"
+    eventscreener.activate()
+    return
+
 applyBaseState["account"] = ->
     content.setAccountState()
     sideNav.setAccountState()

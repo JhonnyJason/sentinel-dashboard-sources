@@ -10,7 +10,7 @@ include ../preloader/preloader-mixins.pug
             #coupon-display home
 
     
-    #account-status.free-access
+    #account-status
         
         #account-status-tester Gratis Zugang für Tester
         #account-status-free-access Gratis Zugang
@@ -20,11 +20,24 @@ include ../preloader/preloader-mixins.pug
 
         p.status-info#tester-status-info Sie haben gratis Zugang als Tester erhalten. Solange Sie als Tester aktiv sind haben sie unlimitierten Zugang auf alle Funktionen.
         p.status-info#free-access-info Sie wurden für eine Testperiode mit unlimitiertem Zugang zu allen Funktionen freigeschaltet.
-        p.status-info#paid-access-info Sie haben ein gültiges Abonnement. Vielen Dank und viel Erfolg!
+        p.status-info#paid-access-info Sie haben ein gültiges Abonnement. 
+            | <br>Die aktuell bezahlte Periode endet mit dem 
+            span#paid-access-end
+            | .<br>
+            | <br>Vielen Dank und viel Erfolg wünscht Ihnen Ihr Sentinel Team!
         p.status-info#limited-access-info Sie haben kein gültiges Abonnement. Bestimmte limitierte Funktionen stehen Ihnen trotzdem zur Verfügung.
+
+        #autorenew-management
+            p.status-info#auto-renew-active Die automatische Erneuerung des Abonnements ist aktiv.
+            p.warning#auto-renew-inactive Die automatische Erneuerung des Abonnements ist nicht aktiv. Damit velieren Sie den unlimitierten Zugang auf Ende der aktuell bezahlten Periode.
+            button.click-button#cancel-subscription-button Stopp Automatische Erneuerungen
+            button.click-button#continue-subscription-button Aktiviere Automatisch Erneuerungen
+
 
         p.warning#free-access-warning Ihre Testperiode ist gültig bis zum: 
             span#free-access-end 01.10.2026
+
+            
 
         #abonnement-orders
             h2 Jährliches Abonnement

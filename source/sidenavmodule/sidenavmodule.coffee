@@ -22,6 +22,7 @@ export initialize = ->
     optionscreenerBtn.addEventListener("click", triggers.toOptionscreener)
     sectorrotationBtn.addEventListener("click", triggers.toSectorrotation)
     trafficlightBtn.addEventListener("click", triggers.toTrafficlight)
+    partnersBtn.addEventListener("click", triggers.toPartners)
     accountBtn.addEventListener("click", triggers.toAccount)
     
     # headerRect = header.getBoundingClientRect()
@@ -92,6 +93,13 @@ export setSectorrationState = ->
 export setTrafficlightState = ->
     log "setTrafficlightState"
     sidenav.className = "trafficlight"
+    folded = true
+    if folded then sidenav.classList.add("folded")
+    return
+
+export setPartnersState = ->
+    log "setPartnersState"
+    sidenav.className = "partners"
     folded = true
     if folded then sidenav.classList.add("folded")
     return

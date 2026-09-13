@@ -22,12 +22,15 @@ urlLogin = urlAccessManager+"/login"
 urlLoginX = urlAccessManager+"/loginX"
 urlLogout = urlAccessManager+"/logout"
 urlRefreshSession = urlAccessManager+"/refreshSession"
-urlGetSubscriptionData = urlAccessManager+"/getSubscriptionData"
 urlPasswordReset = urlAccessManager+"/requestPasswordReset"
 urlUpdateEmail = urlAccessManager+"/updateEmail"
 urlUpdatePasword = urlAccessManager+"/updatePassword"
 urlDeleteAccount = urlAccessManager+"/deleteAccount"
+
 urlGetCheckoutLink = urlAccessManager+"/getCheckoutLink"
+urlGetSubscriptionData = urlAccessManager+"/getSubscriptionData"
+urlCancelSubscription = urlAccessManager+"/cancelSubscription"
+urlContinueSubscription = urlAccessManager+"/continueSubscription"
 
 urlGetData = urlDatahub+"/getEODHLCData"
 
@@ -103,7 +106,7 @@ deleteAfterAwait = (key, prom) ->
 
 
 ############################################################
-requestExecute = (url, options, isRetry) ->
+requestExecute = (url, options, retryOn401, isRetry) ->
     try response = await fetch(url, options)
     catch err then throw new Error("Network Error: "+err.message)
 
@@ -115,7 +118,7 @@ requestExecute = (url, options, isRetry) ->
         catch err then throw new Error("ResultParsing Error: "+err.message)
     
     ## Any other Error will not be "OK" - and might have an error Messge for us...
-    if response.status == 401
+    if response.status == 401 and retryOn401 and !isRetry
         try await assertAuthorization()
         catch err then throw new Error("Authorization could not be established! #{err.message}")
         return await requestExecute(url, options, true) unless isRetry
@@ -128,7 +131,7 @@ requestExecute = (url, options, isRetry) ->
     return
 
 ############################################################
-request  = (url, args) ->
+request  = (url, args, retryOn401) ->
     log "request "+url
     bodyStr = JSON.stringify(args)
     key = url+bodyStr
@@ -141,7 +144,7 @@ request  = (url, args) ->
         body: bodyStr
         headers: {'Content-Type': 'application/json'}
     
-    prom = requestExecute(url, options)
+    prom = requestExecute(url, options, retryOn401)
     requestToPromise.set(key, prom)
     deleteAfterAwait(key, prom)
     return await prom
@@ -153,20 +156,21 @@ export register = (email, linkName) ->
     # throw new Error("Error on Purpose!") ## TODO remove
     # return ## TODO remove
 
-    args = email
-    err = validateEmail(args)
-    if err then console.error("validateEmail: "+getErrorMessage(err))
-    if err then throw new Error("Invalid Email!")
-    await request(urlRegister, args)
-
-    ## modern version for next upgrade
-    # args = { email }
-    # if linkName then args.linkName = linkName
-    # olog args
-    # err = validateRegisterArgs(args)
-    # if err then console.error("ValidateRegisterArgs: "+getErrorMessage(err))
+    ## old version to stay compatible with old access-manager
+    # args = email
+    # err = validateEmail(args)
+    # if err then console.error("validateEmail: "+getErrorMessage(err))
     # if err then throw new Error("Invalid Email!")
     # await request(urlRegister, args)
+
+    ## modern version for next upgrade
+    args = { email }
+    if linkName then args.linkName = linkName
+    olog args
+    err = validateRegisterArgs(args)
+    if err then console.error("ValidateRegisterArgs: "+getErrorMessage(err))
+    if err then throw new Error("Invalid Email!")
+    await request(urlRegister, args)
     return
 
 
@@ -188,13 +192,7 @@ export refreshSession = (authCode) ->
     log "refreshSession"
     err = validateAuthCode(authCode)
     if err then throw new Error("Invalid authCode!")
-    return await request(urlRefreshSession, authCode)
-
-export getSubscriptionData = (authCode) ->
-    log "getSubscriptionData"
-    err = validateAuthCode(authCode)
-    if err then throw new Error("Invalid authCode!")
-    return await request(urlGetSubscriptionData, authCode)
+    return await request(urlRefreshSession, authCode, true)
 
 export logout = (authCode) ->
     log "logout"
@@ -239,7 +237,7 @@ export getEodData = (dataKey, yearsBack) ->
     err = validateGetDataArgs(args)
     # if err then log getErrorMessage(err)
     if err then throw new Error("Invalid getData args!")
-    return await request(urlGetData, args)
+    return await request(urlGetData, args, true)
     # resultSchema: {
     #     meta: {
     #         startDate: NONEMPTYSTRING,
@@ -252,11 +250,30 @@ export getEodData = (dataKey, yearsBack) ->
 
 
 ############################################################
+export getCheckoutLink = (isYearly, authCode) ->
+    log "getCheckoutLink"
+    return await request(urlGetCheckoutLink, {isYearly, authCode}, true)
+
+export getSubscriptionData = (authCode) ->
+    log "getSubscriptionData"
+    err = validateAuthCode(authCode)
+    if err then throw new Error("Invalid authCode!")
+    return await request(urlGetSubscriptionData, authCode, true)
+
+export cancelSubscription = (authCode) ->
+    log "cancelSubscription"
+    err = validateAuthCode(authCode)
+    if err then throw new Error("Invalid authCode!")
+    return await request(urlCancelSubscription, authCode, true)
+
+export continueSubscription = (authCode) ->
+    log "continueSubscription"
+    err = validateAuthCode(authCode)
+    if err then throw new Error("Invalid authCode!")
+    return await request(urlContinueSubscription, authCode, true)
+
+############################################################
 export discountForBadge = (badge) ->
     log "discountForBadge"
     return await request(urlDiscountForBadge, badge)
 
-############################################################
-export getCheckoutLink = (isYearly, authCode) ->
-    log "getCheckoutLink"
-    return await request(urlGetCheckoutLink, {isYearly, authCode})

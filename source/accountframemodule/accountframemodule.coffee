@@ -38,12 +38,27 @@ discountPriceYearly = document.getElementById("discount-price-yearly")
 discountPriceMonthly = document.getElementById("discount-price-monthly")
 
 ############################################################
+emailChangeFeedback = document.getElementById("email-change-feedback")
+passwordChangeFeedback = document.getElementById("password-change-feedback")
+
+############################################################
 orderYearlyButton = document.getElementById("order-yearly-button")
 orderMonthlyButton = document.getElementById("order-monthly-button")
 
 ############################################################
+cancelSubscriptionButton = document.getElementById("cancel-subscription-button")
+continueSubscriptionButton = document.getElementById("continue-subscription-button")
+
+############################################################
+paidAccessEnd = document.getElementById("paid-access-end")
+freeAccessEnd = document.getElementById("free-access-end")
+
+############################################################
 export initialize = ->
     log "initialize"
+    cancelSubscriptionButton.addEventListener("click", cancelSubscriptionClicked)
+    continueSubscriptionButton.addEventListener("click", continueSubscriptionClicked)
+    
     orderYearlyButton.addEventListener("click", orderYearlyClicked)
     orderMonthlyButton.addEventListener("click", orderMonthlyClicked)
 
@@ -57,6 +72,36 @@ export initialize = ->
     deletionButton.addEventListener("click", deletionButtonClicked)
     changePasswordButton.addEventListener("click", changePasswordClicked)
     changeEmailButton.addEventListener("click", changeEmailClicked)
+    return
+
+
+############################################################
+cancelSubscriptionClicked = ->
+    log "cancelSubscriptionClicked"
+    authCode = accnt.getAuthCode()
+    if !authCode? then return log("No AuthCode available!")
+
+    try
+        await sci.cancelSubscription(authCode)
+        ## optimistically adjust autoRenew
+        subscriptionState.autoRenew = false
+        setSubscriptionState(subscriptionState)
+    catch err then console.error(err)
+    ## TODO: some error feedback to the user
+    return
+
+continueSubscriptionClicked = ->
+    log "continueSubscriptionClicked"
+    authCode = accnt.getAuthCode()
+    if !authCode? then return log("No AuthCode available!")
+
+    try
+        await sci.continueSubscription(authCode)
+        ## optimistically adjust autoRenew
+        subscriptionState.autoRenew = true
+        setSubscriptionState(subscriptionState)
+    catch err then console.error(err)
+    ## TODO: some error feedback to the user
     return
 
 ############################################################
@@ -149,13 +194,17 @@ changePasswordClicked = (evnt) ->
 
 
     passwordSection.classList.add("pending")
-    try await accnt.executePasswordUpdate(newPwd, oldPwd)
+    try 
+        await accnt.executePasswordUpdate(newPwd, oldPwd)
+        newPasswordInput.value = ""
+        repeatedPasswordInput.value = ""
+        oldPasswordInput.value = ""
+        passwordSection.classList.add("virgin")
     catch err
         log err
         passwordSection.classList.add("feedback")
         passwordChangeFeedback.textContent = "Das neue Passwort konnte nicht gesetzt werden!"
-    finally 
-        passwordSection.classList.remove("pending")    
+    finally passwordSection.classList.remove("pending")  
     return
 
 changeEmailClicked = (evnt) ->
@@ -173,10 +222,13 @@ changeEmailClicked = (evnt) ->
         emailSection.classList.add("feedback")
         emailChangeFeedback.textContent = "Kein Passwort eingegeben!"
         return
-
    
     emailSection.classList.add("pending")
-    try await accnt.updateEmail(email, password)
+    try 
+        await accnt.executeEmailUpdate(email, password)
+        oldPasswordEmailInput.value = ""
+        newEmailInput.value = ""
+        emailSection.classList.add("virgin")
     catch err
         log err
         emailSection.classList.add("feedback")
@@ -215,14 +267,20 @@ orderMonthlyClicked = (evnt) ->
     return
 
 ############################################################
-retrievePrices = ->
-    log "retrievePrices"    
+retrieveBenefits = ->
+    log "retrieveBenefits"    
     badge = subscriptionState.badge
+    
+    ## TODO upgrade: getting freeAccess as Badge Benefit
+    if subscriptionState.badgeCouponUsed 
+        subscriptionState.discount = 0
+        return
+
+
     try subscriptionState.discount = await sci.discountForBadge(badge)
     catch err then console.error(err)
     ## TODO also retrieve yearly and monthly prices from somewhere (access-manager?)
-    olog subscriptionState
-    renderPrices()
+    # olog subscriptionState
     return
 
 renderPrices = ->
@@ -262,8 +320,10 @@ export setAccountEmail = (email) ->
 ############################################################
 export setSubscriptionState = (state) ->
     log "setSubscriptionState"
+    if !state then state = Object.create(null)
     olog state
-    subscriptionState = state
+    
+    subscriptionState = state 
     dateToday = (new Date()).toISOString().slice(0,10)
 
     # state.isTester = true # test tester-access state
@@ -282,24 +342,37 @@ export setSubscriptionState = (state) ->
     if state.badge
         couponDisplay.textContent = state.badge
         accountframe.classList.add("has-coupon")
-        retrievePrices()
+        await retrieveBenefits()
 
-    if state.isTester 
+    if state.isTester
         accountStatus.classList = "tester-access"
         return
 
-    if dateToday < "2026-10-01" 
-        if !state.freeAccessUntil or state.freeAccessUntil < "2026-10-01"
-            state.freeAccessUntil = "2026-10-01"
-
+    # Only before the System is live and the userData are not repaired
+    # if dateToday < "2026-10-01" ## treat it as free access
+    #     if !state.freeAccessUntil or state.freeAccessUntil < "2026-10-01"
+    #         state.freeAccessUntil = "2026-10-01"
+            
     if state.subscribedUntil? and state.subscribedUntil > dateToday
         accountStatus.className = "unlimited-access"
-    else if state.subscribedUntil?
-        accountStatus.className = "limited-access"
+        paidAccessEnd.textContent = formatDate(state.subscribedUntil)
+        if state.autoRenew then autorenewManagement.className = "auto-renew" 
+        else autorenewManagement.className = "auto-renew-cancelled"
+
     else if state.freeAccessUntil? and state.freeAccessUntil > dateToday
         accountStatus.className = "free-access"
-    else if state.freeAccessUntil?
-        accountStatus.className = "limited-access"
+        freeAccessEnd.textContent = formatDate(state.freeAccessUntil)
+        if state.autoRenew 
+            autorenewManagement.className = "auto-renew"
+            accountStatus.className = "unlimited-access"
+            paidAccessEnd.textContent = formatDate(state.freeAccessUntil)
+
     else accountStatus.className = "limited-access"
+
     renderPrices()
     return
+
+
+formatDate = (date) -> 
+    [y,m,d] = date.split("-")
+    return [d,m,y].join(".")

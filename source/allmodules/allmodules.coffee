@@ -17,6 +17,7 @@ import * as livedatamodule from "./livedatamodule.js"
 import * as marketdatamodule from "./marketdatamodule.js"
 import * as noaccountmodule from "./noaccountmodule.js"
 import * as optionscreenerframemodule from "./optionscreenerframemodule.js"
+import * as partnersframemodule from "./partnersframemodule.js"
 import * as scimodule from "./scimodule.js"
 import * as seasonalitybacktestingmodule from "./seasonalitybacktestingmodule.js"
 import * as seasonalitychartmodule from "./seasonalitychartmodule.js"
@@ -51,6 +52,7 @@ Modules = {
     marketdatamodule,
     noaccountmodule,
     optionscreenerframemodule,
+    partnersframemodule,
     scimodule,
     seasonalitybacktestingmodule,
     seasonalitychartmodule,
