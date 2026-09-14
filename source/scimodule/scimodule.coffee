@@ -13,7 +13,7 @@ import {
 
 ############################################################
 import { urlAccessManager, urlDatahub, urlLinkGuardian } from "./configmodule.js"
-import { getAuthCode, assertAuthorization } from "./accountmodule.js"
+import { getAuthCode, assertAuthorization, executeLogout } from "./accountmodule.js"
 
 ############################################################
 #region Requet URLs
@@ -119,10 +119,12 @@ requestExecute = (url, options, retryOn401, isRetry) ->
     
     ## Any other Error will not be "OK" - and might have an error Messge for us...
     if response.status == 401 and retryOn401 and !isRetry
-        try await assertAuthorization()
-        catch err then throw new Error("Authorization could not be established! #{err.message}")
-        return await requestExecute(url, options, true) unless isRetry
-        throw new Error("Authorization issue, but refresshed session, and retried :-(!")
+        console.error("401 donot retry!")
+        return executeLogout()
+        # try await assertAuthorization()
+        # catch err then throw new Error("Authorization could not be established! #{err.message}")
+        # return await requestExecute(url, options, true) unless isRetry
+        # throw new Error("Authorization issue, but refresshed session, and retried :-(!")
 
     try errorMessage = await response.text()
     catch err then throw new Error("ErrorParsing Error: "+err.message)
