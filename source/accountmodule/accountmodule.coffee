@@ -131,7 +131,7 @@ resetSessionCheckTimeout = ->
 ############################################################
 refreshSession = ->
     log "refreshSession"
-    authCode = accountData.session.authCode
+    authCode = accountData?.session?.authCode
     if !authCode? then throw new Error("No autCode in session!")
 
 
