@@ -135,7 +135,7 @@ refreshSession = ->
     if !authCode? then throw new Error("No autCode in session!")
 
 
-    try 
+    try
         result = await sci.refreshSession(authCode)
         err = validateRefreshSessionResult(result)
         if err then throw new Error("Invalid Result received!")

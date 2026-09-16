@@ -71,7 +71,7 @@ collectLinkRoute = ->
     path = location.pathname.slice(1)
 
     if(path)
-        globalThis.specialLinkName = path
+        globalThis.specialLinkName = path.toLowerCase()
         origin = location.origin
         history.replaceState(null, "", origin)
 
