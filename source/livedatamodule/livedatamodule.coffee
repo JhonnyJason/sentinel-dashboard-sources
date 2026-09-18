@@ -5,7 +5,7 @@ import { createLogFunctions } from "thingy-debug"
 #endregion
 
 ############################################################
-import { getAuthCode } from "./accountmodule.js"
+import * as accM from "./accountmodule.js"
 import * as cfg from "./configmodule.js"
 
 ############################################################
@@ -39,15 +39,6 @@ heartbeat = ->
     connect() unless connecting or socket? and active
     return
 
-    
-############################################################
-connectAndSubscribe = ->
-    log "connectAndSubscribe"
-    authCode = getAuthCode()
-    connect() unless !authCode?
-    return
-
-
 ############################################################
 connect = ->
     log "connecting"
@@ -80,7 +71,7 @@ destroySocket = ->
 onOpen = ->
     log "connected"
     connecting = false
-    authCode = getAuthCode()
+    authCode = await accM.getValidAuthCode()
     unless authCode?
         log "no auth, closing"
         destroySocket()
@@ -134,7 +125,7 @@ export listenOnSymbolsData = (symbols, listener) ->
         if !symToListeners[sym]? then symToListeners[sym] = [listener]
         else symToListeners[sym].push(listener)
     
-    authCode = getAuthCode()
+    authCode = await accM.getValidAuthCode()
     if  active and socket? and authCode? # seems we are connected :-)
         socket.send("subscribe #{authCode} #{sym}") for sym in symbols
     return

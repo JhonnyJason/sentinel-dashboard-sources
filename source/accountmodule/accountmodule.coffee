@@ -28,6 +28,11 @@ dataKey = "sentinel-account-data"
 accountData = null
 refreshMarginMS = 300_000 # ~5min
 
+############################################################
+setValidAuthCode = null
+validAuthCode = new Promise((rslv) -> setValidAuthCode = rslv)
+authCodeResolved = false
+
 # ############################################################
 # subscriptionData = null
 
@@ -102,16 +107,18 @@ checkSession = ->
         catch err then console.error("checkSession->reLogin error: "+err.message)
     
     ## our sesssion is close to expiry
-    else if remainingValidMS < refreshMarginMS
+    else if remainingValidMS < refreshMarginMS or !authCodeResolved
         try await refreshSession()
         catch err then console.error("checkSession->refreshSession error: "+err.message)
 
-    ## we assume we have a valid authCode
-    # - optimistically execute onAquiredAccess
-    # - but set refreshIfFail to correct invalid authCode
-    else 
-        try await onAquiredAccess(true)
-        catch err then console.log("checkSession->onAquiredAccess error:"+err.message)
+    ## This would only be relevant on first load
+    ## for now we start with authCodeResolved = false -> as such we need to refreshSession anyways
+    # ## we assume we have a valid authCode
+    # # - optimistically execute onAquiredAccess
+    # # - but set refreshIfFail to correct invalid authCode
+    # else 
+    #     try await onAquiredAccess(true)
+    #     catch err then console.log("checkSession->onAquiredAccess error:"+err.message)
 
     resetSessionCheckTimeout()
     return
@@ -129,21 +136,36 @@ resetSessionCheckTimeout = ->
     return
 
 ############################################################
+resetValidAuthCodePromise = ->
+    log "resetValidAuthCodePromise"
+    authCodeResolved = false
+    validAuthCode = new Promise((rslv) -> setValidAuthCode = rslv)
+    return
+
+resolveValidAuthCodePromise = (authCode) ->
+    log "resolveValidAuthCodePromise"
+    authCodeResolved = true
+    setValidAuthCode(authCode)
+    return
+
+############################################################
 refreshSession = ->
     log "refreshSession"
-    authCode = accountData?.session?.authCode
-    if !authCode? then throw new Error("No autCode in session!")
-
-
+    if authCodeResolved then resetValidAuthCodePromise()
+    
     try
+        authCode = accountData?.session?.authCode
+        if !authCode? then throw new Error("No autCode in session!")
+
         result = await sci.refreshSession(authCode)
         err = validateRefreshSessionResult(result)
         if err then throw new Error("Invalid Result received!")
     catch err ## Session seems broken
             console.error("refreshSession failed!"+err.message)
             ## maybe authCode is invalid so reLogin could help
-            try await reLogin()
+            try return await reLogin()
             catch err then console.error("refreshSession->reLogin error:"+err.message)
+            return ## here validAuthCode is the pending promise - nothing we can do
 
     accountData.session.authCode =  result.authCode
     accountData.session.validUntil =  result.validUntil
@@ -153,6 +175,8 @@ refreshSession = ->
 
 reLogin = ->
     log "reLogin"
+    if authCodeResolved then resetValidAuthCodePromise()
+
     email = accountData.email
     passwordSHX = accountData.passwordSHX
 
@@ -173,17 +197,18 @@ reLogin = ->
     return
 
 ############################################################
-onAquiredAccess = (refreshIfFail) ->
+onAquiredAccess = ->
     log "onAquiredAccess"
     authCode = getAuthCode()
-    try subscriptionData = await sci.getSubscriptionData(authCode)
-    catch err then console.error(err)
-    
-    if !subscriptionData and refreshIfFail
-        try await refreshSession() ## will trigger another onAquiredAccess if successfull
-        catch err then console.error("onAquiredAccess->refreshSession error: "+err.message)
-        return
+    if !authCode then throw new Error("We donot have an authCode in onAquiredAccess...")
 
+    try subscriptionData = await sci.getSubscriptionData(authCode)
+    catch err then console.error(err) ## TODO check if this causes issues
+    ## Maybe there is a case where we just aquired a access, but then donot have a valid authCode?
+    ## Maybe if the authCode was not propagated serverside? 
+    ## -> then a small delay and retry would help...
+
+    resolveValidAuthCodePromise(authCode)
     setSubscriptionState(subscriptionData)
     heartbeat()
     return
@@ -261,7 +286,11 @@ export assertAuthorization = ->
     return
 
 export getAuthCode = ->
-    log "getAuthCode"
+
+    log "getAuthCode" # we can use this when triggered by user
     if accountData? and accountData.session?
         return accountData.session.authCode
     return
+
+## Use this function for all automatic calls, that might happen in case we are not logged in...
+export getValidAuthCode = -> validAuthCode

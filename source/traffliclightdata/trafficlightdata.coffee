@@ -6,7 +6,7 @@ import { createLogFunctions } from "thingy-debug"
 
 ############################################################
 import { getEodData } from "./scimodule.js"
-import { getAuthCode } from "./accountmodule.js"
+import * as accM from "./accountmodule.js"
 # import * as liveD from "./livedata.js"
 import * as liveD from "./livedatamodule.js"
 import * as colorS from "./colorstates.js"
@@ -127,7 +127,7 @@ fetchData = ->
     log "fetchData"
     return if cachedStates? and dataIsRecent()
 
-    authCode = getAuthCode()
+    authCode = await accM.getValidAuthCode()
     unless authCode?
         log "not logged in, skipping fetch"
         return

@@ -3,7 +3,7 @@ import { addModulesToDebug } from "thingy-debug"
 ############################################################
 export modulesToDebug = {
 
-    accountframemodule: true
+    # accountframemodule: true
     accountmodule: true
     # appcoremodule: true
     # backtesting: true
@@ -12,14 +12,14 @@ export modulesToDebug = {
     # comboboxfun: true
     # currencytrendframemodule: true
     # CurrencyPair: true
-    # datamodule: true
+    datamodule: true
     # datacache: true
     # economicareasmodule: true
     # EconomicArea: true
     # eventtradechartmodule: true
     # eventtradedetailsmodule: true
-    # eventscreenerframemodule: true
-    # eventschoicetable: true
+    eventscreenerframemodule: true
+    eventschoicetable: true
     # eventscreenerresults: true
     # eventscreeningengine: true
     # forexlivedata: true

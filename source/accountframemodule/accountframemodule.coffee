@@ -10,7 +10,7 @@ import { createLogFunctions } from "thingy-debug"
 # log currencyPairTemplate
 
 ############################################################
-import * as accnt from "./accountmodule.js"
+import * as accM from "./accountmodule.js"
 import * as sci from "./scimodule.js"
 import * as cfg from "./configmodule.js"
 import * as utl from "./utilsmodule.js"
@@ -78,7 +78,7 @@ export initialize = ->
 ############################################################
 cancelSubscriptionClicked = ->
     log "cancelSubscriptionClicked"
-    authCode = accnt.getAuthCode()
+    authCode = accM.getAuthCode()
     if !authCode? then return log("No AuthCode available!")
 
     try
@@ -92,7 +92,7 @@ cancelSubscriptionClicked = ->
 
 continueSubscriptionClicked = ->
     log "continueSubscriptionClicked"
-    authCode = accnt.getAuthCode()
+    authCode = accM.getAuthCode()
     if !authCode? then return log("No AuthCode available!")
 
     try
@@ -156,7 +156,7 @@ deletionButtonClicked = (evnt) ->
 
     
     deletionBlock.classList.add("pending")
-    try await accnt.executeAccountDeletion(passwd)
+    try await accM.executeAccountDeletion(passwd)
     catch err
         log err
         deletionBlock.classList.add("feedback")
@@ -195,7 +195,7 @@ changePasswordClicked = (evnt) ->
 
     passwordSection.classList.add("pending")
     try 
-        await accnt.executePasswordUpdate(newPwd, oldPwd)
+        await accM.executePasswordUpdate(newPwd, oldPwd)
         newPasswordInput.value = ""
         repeatedPasswordInput.value = ""
         oldPasswordInput.value = ""
@@ -225,7 +225,7 @@ changeEmailClicked = (evnt) ->
    
     emailSection.classList.add("pending")
     try 
-        await accnt.executeEmailUpdate(email, password)
+        await accM.executeEmailUpdate(email, password)
         oldPasswordEmailInput.value = ""
         newEmailInput.value = ""
         emailSection.classList.add("virgin")
@@ -242,7 +242,7 @@ changeEmailClicked = (evnt) ->
 ############################################################
 orderYearlyClicked = (evnt) ->
     log "orderYearlyClicked"
-    authCode = accnt.getAuthCode()
+    authCode = accM.getAuthCode()
     if !authCode? then return log("No AuthCode available!")
 
     try { link } = await sci.getCheckoutLink(true, authCode)
@@ -255,7 +255,7 @@ orderYearlyClicked = (evnt) ->
 
 orderMonthlyClicked = (evnt) ->
     log "orderMonthlyClicked"
-    authCode = accnt.getAuthCode()
+    authCode = accM.getAuthCode()
     if !authCode? then return log("No AuthCode available!")
 
     try { link } = await sci.getCheckoutLink(false, authCode)

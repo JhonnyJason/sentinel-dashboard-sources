@@ -12,8 +12,8 @@ import {
 } from "thingy-schema-validate"
 
 ############################################################
+import * as accM from "./accountmodule.js"
 import { urlAccessManager, urlDatahub, urlLinkGuardian } from "./configmodule.js"
-import { getAuthCode, assertAuthorization, executeLogout } from "./accountmodule.js"
 
 ############################################################
 #region Requet URLs
@@ -106,7 +106,7 @@ deleteAfterAwait = (key, prom) ->
 
 
 ############################################################
-requestExecute = (url, options, retryOn401, isRetry) ->
+requestExecute = (url, options, retryOn401) ->
     try response = await fetch(url, options)
     catch err then throw new Error("Network Error: "+err.message)
 
@@ -118,13 +118,11 @@ requestExecute = (url, options, retryOn401, isRetry) ->
         catch err then throw new Error("ResultParsing Error: "+err.message)
     
     ## Any other Error will not be "OK" - and might have an error Messge for us...
-    if response.status == 401 and retryOn401 and !isRetry
-        console.error("401 donot retry!")
-        return executeLogout()
-        # try await assertAuthorization()
-        # catch err then throw new Error("Authorization could not be established! #{err.message}")
-        # return await requestExecute(url, options, true) unless isRetry
-        # throw new Error("Authorization issue, but refresshed session, and retried :-(!")
+    if response.status == 401 and retryOn401
+        try await accM.assertAuthorization()
+        catch err then throw new Error("Authorization could not be established! #{err.message}")
+        return await requestExecute(url, options, false)
+        throw new Error("Authorization issue, but refresshed session, and retried :-(!")
 
     try errorMessage = await response.text()
     catch err then throw new Error("ErrorParsing Error: "+err.message)
@@ -234,12 +232,13 @@ export deleteAccount = (email, passwordSH) ->
 ############################################################
 export getEodData = (dataKey, yearsBack) ->
     log "getEodData"    
-    authCode = getAuthCode()
+    authCode = await accM.getValidAuthCode()
+
     args = { authCode, dataKey, yearsBack }
     err = validateGetDataArgs(args)
     # if err then log getErrorMessage(err)
     if err then throw new Error("Invalid getData args!")
-    return await request(urlGetData, args, true)
+    return await request(urlGetData, args)
     # resultSchema: {
     #     meta: {
     #         startDate: NONEMPTYSTRING,
@@ -254,25 +253,25 @@ export getEodData = (dataKey, yearsBack) ->
 ############################################################
 export getCheckoutLink = (isYearly, authCode) ->
     log "getCheckoutLink"
-    return await request(urlGetCheckoutLink, {isYearly, authCode}, true)
+    return await request(urlGetCheckoutLink, {isYearly, authCode})
 
 export getSubscriptionData = (authCode) ->
     log "getSubscriptionData"
     err = validateAuthCode(authCode)
     if err then throw new Error("Invalid authCode!")
-    return await request(urlGetSubscriptionData, authCode, true)
+    return await request(urlGetSubscriptionData, authCode)
 
 export cancelSubscription = (authCode) ->
     log "cancelSubscription"
     err = validateAuthCode(authCode)
     if err then throw new Error("Invalid authCode!")
-    return await request(urlCancelSubscription, authCode, true)
+    return await request(urlCancelSubscription, authCode)
 
 export continueSubscription = (authCode) ->
     log "continueSubscription"
     err = validateAuthCode(authCode)
     if err then throw new Error("Invalid authCode!")
-    return await request(urlContinueSubscription, authCode, true)
+    return await request(urlContinueSubscription, authCode)
 
 ############################################################
 export discountForBadge = (badge) ->

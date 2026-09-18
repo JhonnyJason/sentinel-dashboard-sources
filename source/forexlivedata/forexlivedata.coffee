@@ -5,7 +5,6 @@ import { createLogFunctions } from "thingy-debug"
 #endregion
 
 ############################################################
-import { getAuthCode } from "./accountmodule.js"
 import * as liveD from "./livedatamodule.js"
 
 

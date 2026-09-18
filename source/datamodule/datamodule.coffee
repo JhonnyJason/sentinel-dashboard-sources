@@ -48,7 +48,8 @@ sendCommand = (command, payload, expectedResponseType) ->
         try await readySocket
         catch err then reject(new Error("Socket not connected"))
         
-        authCode = accM.getAuthCode()
+        # authCode = accM.getAuthCode()
+        authCode = await accM.getValidAuthCode()
         reject(new Error("We are not logged in!")) unless authCode?
         
         if payload? and typeof payload == "string"
@@ -98,7 +99,7 @@ receiveData = (evnt) ->
     log "receiveData"
     try
         data = JSON.parse(evnt.data)
-        olog data
+        # olog data
         if(data == "Unauthorized!") then accM.assertAuthorization()
         
         ## TODO listen specifically on data updates
