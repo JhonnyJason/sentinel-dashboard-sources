@@ -238,6 +238,7 @@ addCOTSpan = (td, cotBase, cotQuote) ->
 addWinrateSpan = (td, winrate) ->
     cls = "winrate"
     if winrate >= 70 then cls += " positive"
+    # if winrate <= 30 then cls += " negative"
     td.appendChild(getSpan(cls, winrate.toFixed(1)))
     return
 

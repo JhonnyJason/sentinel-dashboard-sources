@@ -167,6 +167,8 @@ export startScreening = (forexPairs) ->
             #     continue
             
             winrate10Y = backtest10YRes.winTrades / backtest10YRes.totalTrades
+            if backtest10YRes.isLong != info.isLong then winrate10Y =  1.0 / winrate10Y
+
             # if winrate10Y < minSuccessRate
             #     symbolToInfo[sym] = Object.create(null)
             #     log "10Y Successrate was too low - continue!"
@@ -195,6 +197,8 @@ export startScreening = (forexPairs) ->
             #     continue            
             
             winrate15Y = backtest15YRes.winTrades / backtest15YRes.totalTrades
+            if backtest15YRes.isLong != info.isLong then winrate15Y = 1.0 / winrate15Y
+
             # if winrate15Y < minSuccessRate
             #     symbolToInfo[sym] = Object.create(null)
             #     log "15Y Successrate was too low - continue!"
@@ -223,7 +227,6 @@ export startScreening = (forexPairs) ->
             f = 1.0 if info.isLong
             f = -1.0 if !info.isLong
             
-
             
             ## add trend information
             livePrice = liveD.getLatestPrice(sym)
