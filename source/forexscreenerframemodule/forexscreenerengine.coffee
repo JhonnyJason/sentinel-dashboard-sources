@@ -167,7 +167,7 @@ export startScreening = (forexPairs) ->
             #     continue
             
             winrate10Y = backtest10YRes.winTrades / backtest10YRes.totalTrades
-            if backtest10YRes.isLong != info.isLong then winrate10Y =  1.0 / winrate10Y
+            if backtest10YRes.isLong != info.isLong then winrate10Y =  1.0 - winrate10Y
 
             # if winrate10Y < minSuccessRate
             #     symbolToInfo[sym] = Object.create(null)
@@ -197,7 +197,7 @@ export startScreening = (forexPairs) ->
             #     continue            
             
             winrate15Y = backtest15YRes.winTrades / backtest15YRes.totalTrades
-            if backtest15YRes.isLong != info.isLong then winrate15Y = 1.0 / winrate15Y
+            if backtest15YRes.isLong != info.isLong then winrate15Y = 1.0 - winrate15Y
 
             # if winrate15Y < minSuccessRate
             #     symbolToInfo[sym] = Object.create(null)
