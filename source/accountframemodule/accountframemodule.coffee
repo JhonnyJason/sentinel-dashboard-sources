@@ -54,6 +54,10 @@ paidAccessEnd = document.getElementById("paid-access-end")
 freeAccessEnd = document.getElementById("free-access-end")
 
 ############################################################
+newsletterSubscriptionInput = document.getElementById("newsletter-subscription-input")
+updateEmailInput = document.getElementById("update-email-input")
+
+############################################################
 export initialize = ->
     log "initialize"
     cancelSubscriptionButton.addEventListener("click", cancelSubscriptionClicked)
@@ -72,8 +76,42 @@ export initialize = ->
     deletionButton.addEventListener("click", deletionButtonClicked)
     changePasswordButton.addEventListener("click", changePasswordClicked)
     changeEmailButton.addEventListener("click", changeEmailClicked)
+
+    newsletterSubscriptionInput.addEventListener("change", newsletterSubscriptionChanged)
+    updateEmailInput.addEventListener("change", updateEmailChanged)
     return
 
+
+############################################################
+newsletterSubscriptionChanged = ->
+    log "newsletterSubscriptionChanged"
+    subscribe = newsletterSubscriptionInput.checked
+    try 
+        authCode = accM.getAuthCode()
+        if !authCode? then throw new Error("No AuthCode available!")
+
+        if subscribe then await sci.subscribeNewsletter(authCode)
+        else await sci.unsubscribeNewsletter(authCode)
+
+    catch err 
+        newsletterSubscriptionInput.checked = !subscribe
+        console.error(err)
+    return
+
+updateEmailChanged = ->
+    log "updateEmailChanged"
+    subscribe = updateEmailInput.checked
+    try 
+        authCode = accM.getAuthCode()
+        if !authCode? then throw new Error("No AuthCode available!")
+
+        if subscribe then await sci.subscribeUpdateEmails(authCode)
+        else await sci.unsubscribeUpdateEmails(authCode)
+         
+    catch err 
+        updateEmailInput.checked = !subscribe
+        console.error(err)
+    return
 
 ############################################################
 cancelSubscriptionClicked = ->
@@ -323,7 +361,13 @@ export setSubscriptionState = (state) ->
     if !state then state = Object.create(null)
     olog state
     
-    subscriptionState = state 
+    subscriptionState = state
+    if state.wantsNewsletter then newsletterSubscriptionInput.checked = true
+    else newsletterSubscriptionInput.checked = false
+
+    if state.wantsEmailOnUpdate then updateEmailInput.checked = true
+    else updateEmailInput.checked = false
+
     dateToday = (new Date()).toISOString().slice(0,10)
 
     # state.isTester = true # test tester-access state

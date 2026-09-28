@@ -1,9 +1,10 @@
 ############################################################
-export appVersion = "v0.2.3"
+export appVersion = "v0.2.4"
 export heartbeatMS = 120_000 # ~2min
 
 ############################################################
 #region service URLs
+
 ############################################################
 # Access Manager URL
 # url = "https://sentinel-access-manager-dev.dotv.ee"

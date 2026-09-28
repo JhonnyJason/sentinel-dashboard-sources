@@ -32,6 +32,11 @@ urlGetSubscriptionData = urlAccessManager+"/getSubscriptionData"
 urlCancelSubscription = urlAccessManager+"/cancelSubscription"
 urlContinueSubscription = urlAccessManager+"/continueSubscription"
 
+urlSubscribeNewsletter = urlAccessManager+"/subscribeNewsletter"
+urlUnsubscribeNewsletter = urlAccessManager+"/unsubscribeNewsletter"
+urlSubscribeUpdateEmails = urlAccessManager+"/subscribeUpdateEmails"
+urlUnsubscribeUpdateEmails = urlAccessManager+"/unsubscribeUpdateEmails"
+
 urlGetData = urlDatahub+"/getEODHLCData"
 
 urlDiscountForBadge = urlLinkGuardian+"/getDiscount"
@@ -272,6 +277,31 @@ export continueSubscription = (authCode) ->
     err = validateAuthCode(authCode)
     if err then throw new Error("Invalid authCode!")
     return await request(urlContinueSubscription, authCode)
+
+############################################################
+export subscribeNewsletter = (authCode) ->
+    log "subscribeNewsletter"
+    err = validateAuthCode(authCode)
+    if err then throw new Error("Invalid authCode!")
+    return await request(urlSubscribeNewsletter, authCode)
+
+export unsubscribeNewsletter = (authCode) ->
+    log "unsubscribeNewsletter"
+    err = validateAuthCode(authCode)
+    if err then throw new Error("Invalid authCode!")
+    return await request(urlUnsubscribeNewsletter, authCode)
+
+export subscribeUpdateEmails = (authCode) ->
+    log "subscribeUpdateEmails"
+    err = validateAuthCode(authCode)
+    if err then throw new Error("Invalid authCode!")
+    return await request(urlSubscribeUpdateEmails, authCode)
+
+export unsubscribeUpdateEmails = (authCode) ->
+    log "unsubscribeUpdateEmails"
+    err = validateAuthCode(authCode)
+    if err then throw new Error("Invalid authCode!")
+    return await request(urlUnsubscribeUpdateEmails, authCode)
 
 ############################################################
 export discountForBadge = (badge) ->

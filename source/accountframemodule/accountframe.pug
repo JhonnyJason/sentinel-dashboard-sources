@@ -78,7 +78,17 @@ include ../preloader/preloader-mixins.pug
     #account-management
         h2 Account Aktionen
         //- p Hinweis: Sie können nur eine der Änderungen gleichzeitig durchführen.
-
+        #notification-section
+            .change-block
+                //- h3 Newsletter und Benachrichtigungen
+                .checkbox-line
+                    input#newsletter-subscription-input(type="checkbox")
+                    label(for="newsletter-subscription-input") Ich möchte den Newsletter erhalten.
+                    
+                .checkbox-line
+                    input#update-email-input(type="checkbox")
+                    label(for="update-email-input") Ich möchte bei größeren Upgrades des Sentinels informiert werden. 
+       
         #email-section.virgin
             .change-block
                 label(for="new-email-input") Neue Emailadresse setzen:
@@ -90,6 +100,8 @@ include ../preloader/preloader-mixins.pug
                 .feedback-line
                     p#email-change-feedback Keine Emailadresse angegeben!
                     +preloader("email-change-preloader", "spinner-1")
+
+                    
 
         #password-section.virgin
             .change-block
