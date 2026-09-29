@@ -71,6 +71,7 @@ retrieveMissingSymbolData = ->
         return
 
     await Promise.all(relevantPairs.map(retrieveMissingData))
+    log "retrieved missingForexSymbols"
     return
 
 ############################################################

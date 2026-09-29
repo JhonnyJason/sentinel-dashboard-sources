@@ -24,7 +24,7 @@ export modulesToDebug = {
     # eventscreeningengine: true
     # forexlivedata: true
     # forexscreeningengine: true
-    # forexscreenerframemodule: true
+    forexscreenerframemodule: true
     # forexscreenerresults: true
     # fouriermodule: true
     # hlcbacktestingmodule: true
