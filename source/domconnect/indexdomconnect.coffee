@@ -98,6 +98,7 @@ indexdomconnect.initialize = () ->
     global.trafficlightBtn = document.getElementById("trafficlight-btn")
     global.partnersBtn = document.getElementById("partners-btn")
     global.accountBtn = document.getElementById("account-btn")
+    global.accessLimitedDisplay = document.getElementById("access-limited-display")
     global.noaccountframe = document.getElementById("noaccountframe")
     global.loginRegisterSection = document.getElementById("login-register-section")
     global.loginButton = document.getElementById("login-button")

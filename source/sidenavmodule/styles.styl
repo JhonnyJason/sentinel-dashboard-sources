@@ -50,12 +50,16 @@
         display none
 
 #sidenav
+    display flex
+    flex-direction: column
     position fixed
     top 0
     left 0
     padding (mobile-header-height + 25px) 5px 20px 5px // top-paddingh of 122 is centerd with control button
     box-sizing: border-box
-    
+    overflow-y auto
+    overflow-x hidden
+
     width side-nav-width
     height 100vh
     z-index 2
@@ -66,6 +70,7 @@
     background-color #fff
 
     .nav-btn
+        flex  0 0  auto
         display flex
         margin-bottom 10px
         gap 10px
@@ -102,6 +107,55 @@
         cursor pointer
         button
             pointer-events: none
+
+    #access-limited-display
+        margin-top auto
+        background-color transparent
+
+    #access-limited-info
+        // color cd-down-red
+        background-color alpha(cd-error-red, 0.2)
+        // background-color rgba(255, 100, 100, 0.15)
+        // color cd-dark-blue
+        // border-color: cd-down-red
+        color cd-error-red
+
+    #access-limited-from-info
+        background-color alpha(cd-flash-orange, 0.1)
+        // background-color rgba(255, 165, 0, 0.15)
+        color cd-flash-orange
+        
+    #access-limited-info
+    #access-limited-from-info
+        display none
+        padding 10px
+        font-size: 9pt
+        border-left 2px solid
+        border-right 2px solid
+        border-radius 3px
+        p
+            margin-bottom 10px
+            text-align: left
+
+        #access-limited-from
+            font-size: 12pt
+            font-weight: bold
+            text-align: center
+            // text-decoration: underline
+            margin-bottom 10px
+
+        #access-limited-from::after
+            content: "Uhr"
+            padding-left 3px
+
+
+    #access-limited-display.limited
+        #access-limited-info
+            display block
+
+    #access-limited-display.limited-from
+        #access-limited-from-info
+            display block
 
 @media desktopscreen
     #sidenav

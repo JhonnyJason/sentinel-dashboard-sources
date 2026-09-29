@@ -4,7 +4,7 @@ import { addModulesToDebug } from "thingy-debug"
 export modulesToDebug = {
 
     # accountframemodule: true
-    accountmodule: true
+    # accountmodule: true
     # appcoremodule: true
     # backtesting: true
     # chartfun: true
@@ -12,14 +12,14 @@ export modulesToDebug = {
     # comboboxfun: true
     # currencytrendframemodule: true
     # CurrencyPair: true
-    datamodule: true
+    # datamodule: true
     # datacache: true
     # economicareasmodule: true
     # EconomicArea: true
     # eventtradechartmodule: true
     # eventtradedetailsmodule: true
-    eventscreenerframemodule: true
-    eventschoicetable: true
+    # eventscreenerframemodule: true
+    # eventschoicetable: true
     # eventscreenerresults: true
     # eventscreeningengine: true
     # forexlivedata: true
@@ -40,6 +40,7 @@ export modulesToDebug = {
     # seasonalityframemodule: true
     # seasonalitychartmodule: true
     # seasonalitybacktestingmodule: true
+    sidenavmodule: true
     # summaryframemodule: true
     # symboloptionsmodule: true
     # symbolselectmodule: true

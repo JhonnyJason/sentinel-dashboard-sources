@@ -9,6 +9,10 @@ import * as triggers from "./navtriggers.js"
 
 ############################################################
 folded = true
+limitExecutor = null
+
+############################################################
+accessLimitedFrom = document.getElementById("access-limited-from")
 
 ############################################################
 export initialize = ->
@@ -25,6 +29,7 @@ export initialize = ->
     partnersBtn.addEventListener("click", triggers.toPartners)
     accountBtn.addEventListener("click", triggers.toAccount)
     
+
     # headerRect = header.getBoundingClientRect()
     # headerHeight = headerRect.top - headerRect.bottom
     # headerHeight = Math.max(headerHeight, header.offsetHeight)
@@ -114,4 +119,33 @@ export setAccountState = ->
 export hide = ->
     log "hide"
     sidenav.className = "hidden"
+    return
+
+
+############################################################
+export setAccessLimit = (limitedFrom) ->
+    log "setAccessLimit "+limitedFrom
+    if limitedFrom == 0 then return accessLimitedDisplay.className = ""
+    
+    accessTimeMS = limitedFrom - Date.now()
+    if accessTimeMS <= 0 then accessLimitedDisplay.className = "limited"
+    
+    if accessTimeMS > 0 
+        resetLimitExecutor(accessTimeMS)
+        accessLimitedDisplay.className = "limited-from"
+        limitDateObj = new Date(limitedFrom)
+        # endTime = limitDateObj.getHours()+":"+limitDateObj.getMinutes()
+        endTime = limitDateObj.toTimeString().split(":").slice(0, 2).join(":")
+        accessLimitedFrom.textContent = endTime
+    return
+
+executeLimit = ->
+    limitExecutor = null
+    accessLimitedDisplay.className = "limited"
+    return
+
+
+resetLimitExecutor = (freeAccessTimeMS) ->
+    if limitExecutor then clearTimeout(limitExecutor)
+    limitExecutor = setTimeout(limitExecutor, freeAccessTimeMS + 1000)
     return

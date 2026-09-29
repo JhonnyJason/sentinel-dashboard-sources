@@ -19,6 +19,7 @@ import * as sci from "./scimodule.js"
 import * as cfg from "./configmodule.js"
 import { setAccountEmail, setSubscriptionState } from "./accountframemodule.js"
 import { heartbeat } from "./datamodule.js"
+import { setAccessLimit } from "./sidenavmodule.js"
 
 #endregion
 
@@ -41,18 +42,21 @@ authCodeResolved = false
 validateLoginResult = createValidator({ 
     authCode: STRINGHEX32, 
     validUntil: NUMBER,
+    limitedFrom: NUMBER,
     passwordSHX: STRINGHEX64  
 })
 validateRefreshSessionResult = createValidator({
     authCode: STRINGHEX32,
-    validUntil: NUMBER
+    validUntil: NUMBER,
+    limitedFrom: NUMBER
 })
 validateAccountData = createValidator({
     email: STRINGEMAIL
     passwordSHX: STRINGHEX64
     session: {
         authCode: STRINGHEX32
-        validUntil: NUMBER
+        validUntil: NUMBER,
+        limitedFrom: NUMBER
     }
 })
 
@@ -90,6 +94,7 @@ saveAccountData = ->
     if !accountData? then return localStorage.removeItem(dataKey)
     
     setAccountEmail(accountData.email)
+    olog accountData
     dataString = JSON.stringify(accountData)
     return localStorage.setItem(dataKey, dataString)
 
@@ -169,6 +174,7 @@ refreshSession = ->
 
     accountData.session.authCode =  result.authCode
     accountData.session.validUntil =  result.validUntil
+    accountData.session.limitedFrom = result.limitedFrom
     saveAccountData()
     onAquiredAccess()
     return
@@ -192,6 +198,7 @@ reLogin = ->
     accountData.passwordSHX = result.passwordSHX
     accountData.session.authCode = result.authCode
     accountData.session.validUntil = result.validUntil
+    accountData.session.limitedFrom = result.limitedFrom
     saveAccountData()
     onAquiredAccess()
     return
@@ -201,6 +208,8 @@ onAquiredAccess = ->
     log "onAquiredAccess"
     authCode = getAuthCode()
     if !authCode then throw new Error("We donot have an authCode in onAquiredAccess...")
+    limitedFrom = accountData.session.limitedFrom
+    setAccessLimit(limitedFrom)
 
     try subscriptionData = await sci.getSubscriptionData(authCode)
     catch err then console.error(err) ## TODO check if this causes issues
@@ -235,6 +244,8 @@ export executeLogout = ->
 
 export executeLogin = ( email, password ) ->
     log "executeLogin"
+    if authCodeResolved then resetValidAuthCodePromise()
+
     passwordSH = await sha256(cfg.pwdSalt+password)
     result = await sci.login(email, passwordSH)
 
@@ -247,6 +258,7 @@ export executeLogin = ( email, password ) ->
         session: {
             authCode: result.authCode
             validUntil: result.validUntil
+            limitedFrom: result.limitedFrom
         }
     }
 
@@ -286,11 +298,9 @@ export assertAuthorization = ->
     return
 
 export getAuthCode = ->
-
     log "getAuthCode" # we can use this when triggered by user
-    if accountData? and accountData.session?
-        return accountData.session.authCode
-    return
+    log accountData?.session?.authCode
+    return accountData?.session?.authCode
 
 ## Use this function for all automatic calls, that might happen in case we are not logged in...
 export getValidAuthCode = -> validAuthCode

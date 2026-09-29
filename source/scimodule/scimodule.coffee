@@ -238,7 +238,8 @@ export deleteAccount = (email, passwordSH) ->
 export getEodData = (dataKey, yearsBack) ->
     log "getEodData"    
     authCode = await accM.getValidAuthCode()
-
+    log authCode
+    
     args = { authCode, dataKey, yearsBack }
     err = validateGetDataArgs(args)
     # if err then log getErrorMessage(err)
