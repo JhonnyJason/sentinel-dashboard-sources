@@ -103,7 +103,7 @@ tableChanged = (evt) ->
     if pos?
         state = C.setIncluded(state, Number(pos), evt.target.checked)
         # toggle in place instead of rebuilding the table, so the checkbox keeps focus
-        for td in cyclesTableArea.querySelectorAll("tbody tr:not(.more) td:nth-child(#{Number(pos) + 1})")
+        for td in cyclesTableArea.querySelectorAll("tbody td:nth-child(#{Number(pos) + 1})")
             td.classList.toggle("included", evt.target.checked)
         renderControls()
     emitChange()
@@ -241,14 +241,23 @@ renderTable = (complete, today) ->
     checks = for pos in [0...n]
         checked = if state.included[pos] then " checked" else ""
         "<th><input type=\"checkbox\" data-include=\"#{pos}\"#{checked} aria-label=\"Position #{pos} einbeziehen\"></th>"
+    cellClass = (hasData, pos) ->
+        classes = []
+        if !hasData then classes.push("empty")
+        if state.included[pos] then classes.push("included")
+        return classes.join(" ")
     body = for row in rows.slice(0, MAX_ROWS)
         cells = for c, pos in row.cells
-            classes = []
-            if !c.label? then classes.push("empty")
-            if state.included[pos] then classes.push("included")
-            "<td class=\"#{classes.join(" ")}\" data-period=\"#{c.key}\">#{c.label ? ""}</td>"
+            "<td class=\"#{cellClass(c.label?, pos)}\" data-period=\"#{c.key}\">#{c.label ? ""}</td>"
         "<tr>#{cells.join("")}</tr>"
-    if rows.length > MAX_ROWS then body.push("<tr class=\"more\"><td colspan=\"#{n}\">⋮</td></tr>")
+    # last row for the hidden periods of each column: a single one is shown, several as ⋮
+    hidden = rows.slice(MAX_ROWS)
+    if hidden.length
+        cells = for pos in [0...n]
+            periods = (r.cells[pos] for r in hidden when r.cells[pos].label?)
+            text = if periods.length == 1 then periods[0].label else if periods.length then "⋮" else ""
+            "<td class=\"#{cellClass(periods.length > 0, pos)}\">#{text}</td>"
+        body.push("<tr class=\"more\">#{cells.join("")}</tr>")
     # only generated keys and labels here - the user's position labels go in as values below
     cyclesTableArea.innerHTML = "<table><thead><tr>#{head.join("")}</tr><tr>#{checks.join("")}</tr></thead><tbody>#{body.join("")}</tbody></table>"
     input.value = state.labels[i] for input, i in cyclesTableArea.querySelectorAll("th input")
