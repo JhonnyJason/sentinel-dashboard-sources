@@ -6,7 +6,6 @@ import { createLogFunctions } from "thingy-debug"
 
 ############################################################
 import uPlot from "uplot"
-import * as utl from "./utilsmodule.js"
 
 ############################################################
 monthNames = {
@@ -15,6 +14,7 @@ monthNames = {
     MM: ["Ja", "Fe", "Mä", "Ap", "Ma", "Ju", "Ju", "Au", "Se", "Ok", "No", "De"]
     M: ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"]
 }
+weekdayNames = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"]
 
 ############################################################
 export class SeasonalityChart
@@ -32,8 +32,9 @@ export class SeasonalityChart
 
     ##########################################
     #region Series Data manipulation
-    setTimeSeries: (series) => 
+    setTimeSeries: (series, backStartIdx = 0) => 
         @timeSeries = series
+        @backStartIdx = backStartIdx
         return
 
     setDataSeries: (allSeries) =>
@@ -191,7 +192,7 @@ export class SeasonalityChart
         width = Math.floor(rect.width)
         height = Math.floor(rect.height)
 
-        { absoluteMax, setXRange } = produceRangeSetter()
+        { absoluteMax, setXRange } = produceRangeSetter(@timeSeries, @backStartIdx)
         @defaultMax = absoluteMax  # Store for reset functionality
 
         seriesConfig = [{}]  # x-axis placeholder
@@ -224,6 +225,23 @@ export class SeasonalityChart
                     scale: "x"
                     stroke: "#ffffff"
                     values: (u, splits) ->
+                        span = u.scales.x.max - u.scales.x.min
+                        # weekly: weekday + day, sub-day splits would repeat the label
+                        if span < 10 * 86_400
+                            prev = null
+                            return splits.map (ts) ->
+                                d = new Date(ts * 1000)
+                                label = weekdayNames[d.getDay()] + " " + d.getDate() + "."
+                                if label == prev then return ""
+                                prev = label
+                                return label
+                        # short spans (monthly) show the day, quarters day + month, long ones the month
+                        if span < 40 * 86_400
+                            return splits.map (ts) -> new Date(ts * 1000).getDate() + "."
+                        if span < 200 * 86_400
+                            return splits.map (ts) ->
+                                d = new Date(ts * 1000)
+                                d.getDate() + ". " + monthNames.MMM[d.getMonth()]
                         names = if splits.length > 12 then monthNames.MMMM else monthNames.MMM
                         splits.map (ts) ->
                             d = new Date(ts * 1000)
@@ -267,19 +285,12 @@ export class SeasonalityChart
 
 
 ############################################################
-produceRangeSetter = ->
+# visible range = span of the current period, draggable over the whole axis
+produceRangeSetter = (timeSeries, backStartIdx) ->
     log "produceRangeSetter"
-    jan1Latest = utl.getJan1Date()
-    jan1Before = new Date(jan1Latest)
-    jan1Before.setYear(jan1Latest.getFullYear() - 1)
-    dec31Next = utl.getDec31Date()
-
-    min = jan1Latest.getTime() / 1000
-    max = dec31Next.getTime() / 1000
-    rangeDif = max - min
-
-    absoluteMax = max
-    absoluteMin = jan1Before.getTime() / 1000
+    absoluteMin = timeSeries[0]
+    absoluteMax = timeSeries[timeSeries.length - 1]
+    rangeDif = absoluteMax - timeSeries[backStartIdx]
 
     setXRange = (u, min, max) ->
         min = max - rangeDif

@@ -5,10 +5,8 @@ import { createLogFunctions } from "thingy-debug"
 #endregion
 
 ############################################################
-import * as utl from "./utilsmodule.js"
-
-############################################################
 import { SeasonalityChart } from "./chartfun.js"
+import { buildAxis, placeComposite, placeLatest } from "./chartlayout.js"
 
 ############################################################
 chartContainer = document.getElementById("chart-container")
@@ -16,8 +14,9 @@ aggregationYearsIndicator = document.getElementById("aggregation-years-indicator
 
 ############################################################
 xAxisData = null
-adrAggregation = null  # Average Daily Return - prepared for 2-year display
-latestData = null      # prepared for 2-year display
+adrAggregation = null  # Average Daily Return on the axis
+latestData = null      # the displayed chunks on the axis
+backStartIdx = 0       # index in xAxisData where the last part starts
 
 ############################################################
 selection = null
@@ -120,75 +119,12 @@ applySeriesVisibility = ->
     return
 
 ############################################################
-# Prepare raw 366-day seasonality data for 2-year chart display
-prepareSeasonalityFor2Year = (rawData) ->
-    cfg = utl.getLeapYearConfig()
-    factors = utl.toFactorsArray(rawData)
-    frontData = utl.fromFactorsBackward(factors)
-    backData = utl.fromFactorsForward(factors)
-
-    if !cfg.lastYearIsLeap then frontData = removeFeb29(frontData)
-    if !cfg.currentYearIsLeap then backData = removeFeb29(backData)
-
-    return [...frontData, ...backData]
-
-############################################################
-removeFeb29 = (arr) ->
-    result = []
-    for val,i in arr when i != utl.FEB29
-        result.push(val)
-    return result
-
-
-############################################################
-prepareChartData = (rawAdr, rawLatest) ->
-    log "prepareChartData"
-    cfg = utl.getLeapYearConfig()
-
-    ## Prepare ADR aggregation for 2-year display
-    adrAggregation = prepareSeasonalityFor2Year(rawAdr)
-
-    ## Prepare latestData for 2-year display
-    thisYearsData = rawLatest[0]
-    lastYearsData = rawLatest[1]
-
-    factors = utl.toFactorsArray(lastYearsData)
-    lastYearsData = utl.fromFactorsBackward(factors)
-
-    factors = utl.toFactorsArray(thisYearsData)
-    thisYearsData = utl.fromFactorsForward(factors)
-
-    missingDays = cfg.currentYearDays - thisYearsData.length
-    missingData = new Array(missingDays).fill(null)
-
-    latestData = [...lastYearsData, ...thisYearsData, ...missingData]
-
-    ## Create time axis
-    jan1 = utl.getJan1Date()
-    axisTime = jan1.getTime() / 1000
-
-    currentYearTimeAxis = []
-    for i in [0...cfg.currentYearDays]
-        currentYearTimeAxis[i] = axisTime
-        axisTime += 86_400
-
-    axisTime = jan1.getTime() / 1000 - 86_400
-    lastYearTimeAxis = new Array(cfg.lastYearDays)
-    i = cfg.lastYearDays
-    while i--
-        lastYearTimeAxis[i] = axisTime
-        axisTime -= 86_400
-
-    xAxisData = [...lastYearTimeAxis, ...currentYearTimeAxis]
-    return
-
-############################################################
 redrawChart = ->
     log "redrawChart"
     return unless adrAggregation?
     seasonalityChart.reset()
 
-    seasonalityChart.setTimeSeries(xAxisData)
+    seasonalityChart.setTimeSeries(xAxisData, backStartIdx)
     series = []
     series.push({ adrSeriesConfig..., data: adrAggregation }) ## Adr is 1
     # if seriesVisibility.fourier and frAggregation?
@@ -213,10 +149,14 @@ export reset = ->
     return
 
 ############################################################
+# data: { composite, chunks, refDate, timeframe, ages } - see chartlayout.coffee
 export prepareData = (data) ->
     log "prepareData"
-    {rawLatest, rawAdr, years} = data
-    prepareChartData(rawAdr, rawLatest)
+    { composite, chunks, refDate, timeframe, ages } = data
+    axis = buildAxis(timeframe, refDate, ages)
+    adrAggregation = placeComposite(axis, composite)
+    latestData = placeLatest(axis, chunks)
+    { xAxisData, backStartIdx } = axis
     return
 
 ############################################################
@@ -254,6 +194,11 @@ export setSelectedRegion = (selReg, force) ->
     onRangeSelect(selection) if onRangeSelect?
     redrawChart()
     return
+
+############################################################
+export indexToDate = (idx) -> new Date(xAxisData[idx] * 1000)
+# -1 when the date is not on the current chart axis
+export dateToIndex = (date) -> xAxisData.findIndex((ts) -> new Date(ts * 1000).toDateString() == date.toDateString())
 
 ############################################################
 export setOnRangeSelectListener = (listener) -> onRangeSelect = listener

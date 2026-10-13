@@ -10,32 +10,20 @@ import * as utl from "./utilsmodule.js"
 
 ############################################################
 keyToHistory = Object.create(null)
+keyToHistoryMonths = Object.create(null)
+keyToHistoryWeeks = Object.create(null)
+keyToHistoryQuarters = Object.create(null)
+keyToHistoryOf = { yearly: keyToHistory, quarterly: keyToHistoryQuarters, monthly: keyToHistoryMonths, weekly: keyToHistoryWeeks }
+
 ############################################################
 keyToRawData = Object.create(null)
 keyToMetaData = Object.create(null)
+keyToNewestDate = Object.create(null)
 
 ############################################################
 #region Interface
 export getCurrentMetaData = (dataKey) -> keyToMetaData[dataKey]
 export getCurrentRawData = (dataKey) -> keyToRawData[dataKey]
-
-##
-# @params dataKey (e.g. symbol of stock)
-# @returns daily close data of the current and the last year for the dataKey
-export  getLatestCloseData = (dataKey) ->
-    dataPerYear = await getHistoryHLC(dataKey, 1)
-    
-    result = []
-    
-    for yearData in dataPerYear
-        yearResult = [] 
-        yearResult[i] = d[d.length - 1] for d,i in yearData when d?
-        result.push(yearResult)
-    
-    # checking the data
-    # endExcert = result[0].slice(-30)
-    # console.log(endExcert)
-    return result
 
 ############################################################
 # @params dataKey (e.g. symbol of stock)
@@ -56,39 +44,38 @@ export getHistoricTradingDays = (dataKey, toAge) ->
 ############################################################
 ##
 # @params dataKey (e.g. symbol of stock)
-# @params toAge the oldest year to retrieve
-# @returns all daily close data of the last `toAge` years
-export getHistoricCloseData = (dataKey, toAge) ->
-    dataPerYear = await getHistoryHLC(dataKey, toAge)
-
-    result = []
-
-    for yearData in dataPerYear
-        yearResult = []
-        yearResult[i] = d[d.length - 1] for d,i in yearData when d?
-        result.push(yearResult)
-
-    return result
+# @params timeframe "yearly" | "quarterly" | "monthly" | "weekly"
+# @params toAge the oldest chunk age to retrieve
+# @returns daily close chunks, newest first, full length - missing days stay undefined
+#   yearly 365 / 366 (real day of year), quarterly 93 (monthInQuarter * 31 + day - 1),
+#   monthly 31, weekly 7 (Monday = 0)
+export getHistoricCloseChunks = (dataKey, timeframe, toAge) ->
+    if !keyToHistory[dataKey] then await retrieveFullHistory(dataKey)
+    history = keyToHistoryOf[timeframe][dataKey]
+    for chunk in extractRelevantHistory(history, toAge)
+        closes = new Array(chunk.length)
+        closes[i] = d[d.length - 1] for d,i in chunk when d?
+        closes
 
 ############################################################
 ##
 # @params dataKey (e.g. symbol of stock)
 # @params toAge the oldest year to retrieve
 # @returns all daily high/low data of the last `toAge` years 
-export getHistoricHighLowData = (dataKey, toAge) ->
-    dataPerYear = await getHistoryHLC(dataKey, toAge)
+# export getHistoricHighLowData = (dataKey, toAge) ->
+#     dataPerYear = await getHistoryHLC(dataKey, toAge)
 
-    result = []
+#     result = []
     
-    for yearData in dataPerYear
-        yearResult = [] 
-        for d,i in yearData when d?
-            if d.length >= 2 then yearResult[i] = [d[0], d[1]]
-            else yearResult[i] = [d[0], d[0]]
+#     for yearData in dataPerYear
+#         yearResult = [] 
+#         for d,i in yearData when d?
+#             if d.length >= 2 then yearResult[i] = [d[0], d[1]]
+#             else yearResult[i] = [d[0], d[0]]
 
-        result.push(yearResult)
+#         result.push(yearResult)
         
-    return result
+#     return result
 
 
 ############################################################
@@ -104,6 +91,23 @@ export getHistoryHLC = (dataKey, toAge) ->
     if !keyToHistory[dataKey] then await retrieveFullHistory(dataKey)
     return extractRelevantHistory(keyToHistory[dataKey], toAge)
 
+############################################################
+##
+# @params dataKey (e.g. symbol of stock)
+# @params toAge (numbers of months to retrieve 0 means only current month)
+# @returns list of arrays each array is the monthly data and has a size of 31
+export getMonthlyHistoryHLC = (dataKey, toAge) ->
+    if !keyToHistoryMonths[dataKey] then await retrieveFullHistory(dataKey)
+    return extractRelevantHistory(keyToHistoryMonths[dataKey], toAge)
+
+############################################################
+##
+# @params dataKey (e.g. symbol of stock)
+# @params toAge (numbers of weeks to retrieve 0 means only current week)
+# @returns list of arrays each array is the weekly data (Monday = 0 ... Sunday = 6) and has a size of 7
+export getWeeklyHistoryHLC = (dataKey, toAge) ->
+    if !keyToHistoryWeeks[dataKey] then await retrieveFullHistory(dataKey)
+    return extractRelevantHistory(keyToHistoryWeeks[dataKey], toAge)
 
 ############################################################
 ##
@@ -112,6 +116,14 @@ export getHistoryHLC = (dataKey, toAge) ->
 export getHistoricDepth = (dataKey) ->
     return 0 unless keyToHistory[dataKey]?
     return keyToHistory[dataKey].length
+
+############################################################
+##
+# @params dataKey (e.g. symbol of stock)
+# @returns date of the newest datapoint - chunk age 0 is the period of this date
+export getNewestDate = (dataKey) ->
+    if !keyToHistory[dataKey] then await retrieveFullHistory(dataKey)
+    return keyToNewestDate[dataKey]
 
 #endregion
 
@@ -143,31 +155,70 @@ digestRemoteData = (dataKey, result) ->
 
     # Bucket data by year
     yearBuckets = Object.create(null)
+    monthBuckets = Object.create(null)
+    weekBuckets = Object.create(null)
+    quarterBuckets = Object.create(null)
+    week = null
     for hlc in data
-
         ## "workaround" for corrupted Data...
-        hlc = repairHLC(hlc) unless hlc.length == 1
+        # hlc = repairHLC(hlc) unless hlc.length == 1
     
         year = currentDate.getFullYear()
+        month = 100 * year + (currentDate.getMonth() + 1)
+        quarter = 10 * year + Math.floor(currentDate.getMonth() / 3)
+        
+        monthDayIndex = currentDate.getDate() - 1
+        weekDayIndex = (currentDate.getDay() + 6) % 7 # Monday = 0 ... Sunday = 6
+        quarterDayIndex = (currentDate.getMonth() % 3) * 31 + monthDayIndex
         dayIndex = utl.getDayOfYear(currentDate)
 
-        # Initialize year bucket if needed
-        unless yearBuckets[year]
-            yearBuckets[year] = Array(utl.getDaysOfYear(year)).fill(null)
+        # week key is the YYYYMMDD of the Monday of this week
+        if !week? or weekDayIndex == 0 then week = getWeekKey(currentDate, weekDayIndex)
 
+        # Initialize year bucket if needed
+        if !yearBuckets[year]? then yearBuckets[year] = Array(utl.getDaysOfYear(year)).fill(null)
+        # Initialize month bucket if needed
+        if !monthBuckets[month]? then monthBuckets[month] = Array(31).fill(null)
+        # Initialize week bucket if needed
+        if !weekBuckets[week]? then weekBuckets[week] = Array(7).fill(null)
+        if !quarterBuckets[quarter]? then quarterBuckets[quarter] = Array(93).fill(null)
+
+        weekBuckets[week][weekDayIndex] = hlc
+        monthBuckets[month][monthDayIndex] = hlc
+        quarterBuckets[quarter][quarterDayIndex] = hlc
         yearBuckets[year][dayIndex] = hlc
         currentDate.setDate(currentDate.getDate() + 1)
+    currentDate.setDate(currentDate.getDate() - 1) # back to the last datapoint
+    keyToNewestDate[dataKey] = currentDate
 
     # Convert to array with current year first (descending order)
     years = Object.keys(yearBuckets).map(Number).sort((a, b) -> b - a)
+    months = Object.keys(monthBuckets).map(Number).sort((a,b) -> b - a)
+    weeks = Object.keys(weekBuckets).map(Number).sort((a,b) -> b - a)
+    quarters = Object.keys(quarterBuckets).map(Number).sort((a,b) -> b - a)
 
     # Log what we stored per year
-    for year in years
-        bucket = yearBuckets[year]
+    # for year in years
+    #     bucket = yearBuckets[year]
+    #     filledCount = bucket.filter((v) -> v?).length
+    #     log "year #{year} has #{filledCount} values."
+
+    for month in months
+        bucket = monthBuckets[month]
         filledCount = bucket.filter((v) -> v?).length
+        # log "month #{month} has #{filledCount} values."
 
     keyToHistory[dataKey] = years.map((y) -> yearBuckets[y])
+    keyToHistoryMonths[dataKey] = months.map((m) -> monthBuckets[m])
+    keyToHistoryWeeks[dataKey] = weeks.map((w) -> weekBuckets[w])
+    keyToHistoryQuarters[dataKey] = quarters.map((q) -> quarterBuckets[q])
     return
+
+############################################################
+getWeekKey = (date, weekDayIndex) ->
+    monday = new Date(date)
+    monday.setDate(monday.getDate() - weekDayIndex)
+    return 10000 * monday.getFullYear() + 100 * (monday.getMonth() + 1) + monday.getDate()
 
 
 ############################################################
@@ -175,12 +226,13 @@ extractRelevantHistory = (history, toAge) ->
     result = []
     age = 0
     runLimit = toAge + 1
+
     while age < runLimit
         if !history[age]? then break
         result.push(history[age])
         age++
+    
     return result
-
 
 ############################################################
 repairHLC = (hlc) ->

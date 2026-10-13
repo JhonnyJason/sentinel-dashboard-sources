@@ -4,16 +4,25 @@ include ../preloader/preloader-mixins.pug
 #seasonalityframe.chart-inactive
     #selection-row
         #symbol-select-seasonality
-        .select-wrapper: select#timeframe-select
+        .select-wrapper: select#history-timeframe-select
             option(value="5" selected) 5 Jahre
-            
+        .select-wrapper: select#chart-timeframe-select
+            option(value="yearly" selected) Jährlich
+            option(value="quarterly") Quartalsweise
+            option(value="monthly") Monatlich
+            option(value="weekly") Wöchentlich
+
         #selected-symbol-display
         button#close-chart-button.click-button: svg: use(href="#svg-cross-icon")
+
+    #timeframe-cycles-row 
+        include seasonalitytimeframecycles.pug
 
     #chart-row
         #chart-container
             +preloader("circles", "circles")
             include instructions.pug
+            #chart-no-data Keine Daten für den gewählten Zyklus im gewählten Zeitraum
             #seasonality-chart
             #cursor-indicator
                 svg: use(href="#svg-cursor-icon")
@@ -26,8 +35,6 @@ include ../preloader/preloader-mixins.pug
             #tab-content-container 
                 include ../seasonalitychartmodule/chart-components.pug
                 include ../seasonalitybacktestingmodule/backtesting-summary.pug
-
+    
     #backtesting-details-row
         include ../seasonalitybacktestingmodule/backtesting-details.pug
-
-    

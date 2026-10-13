@@ -6,7 +6,6 @@ import { createLogFunctions } from "thingy-debug"
 
 ############################################################
 import * as mData from "./marketdatamodule.js"
-import * as utl from "./utilsmodule.js"
 
 ############################################################
 import { SymbolSelect } from "./symbolselectmodule.js"
@@ -14,7 +13,12 @@ import { SymbolSelect } from "./symbolselectmodule.js"
 ############################################################
 import * as backtesting from "./seasonalitybacktestingmodule.js"
 import * as charting from "./seasonalitychartmodule.js"
+import * as cycles from "./seasonalitycyclesmodule.js"
+import { todayYmd, ymdOf, includedChunkFn, isFullCycle, displayAges } from "./cyclemath.js"
 
+############################################################
+# the cycle unit follows the chart timeframe
+timeframeToUnit = { yearly: "years", quarterly: "quarters", monthly: "months", weekly: "weeks" }
 
 ############################################################
 letMainThreadRun = ->
@@ -28,6 +32,8 @@ symbolSelect = null
 #region State
 selectedSymbol = null
 selectedRangeY = null
+chartTimeframe = null
+selectedCycle = null
 
 backtestingRegion = null
 chartData = null
@@ -43,8 +49,11 @@ export initialize = (c) ->
     symbolSelect = new SymbolSelect({ container, optionsLimit })
     symbolSelect.setOnSelectListener(onStockSelected)
     
-    timeframeSelect.addEventListener("change", timeframeSelected)
-    selectedRangeY = timeframeSelect.value
+    historyTimeframeSelect.addEventListener("change", timeframeSelected)
+    selectedRangeY = historyTimeframeSelect.value
+
+    chartTimeframeSelect.addEventListener("change", chartTimeframeChanged)
+    chartTimeframe = chartTimeframeSelect.value
 
     closeChartButton.addEventListener("click", onCloseChart)
 
@@ -55,53 +64,50 @@ export initialize = (c) ->
     # notice updates in backtestingRegion Selection
     charting.setOnRangeSelectListener(updateBacktestingRegion)
     backtesting.setOnRangeChangeListener(updateBacktestingRegion)
+
+    # seasonalitycyclesmodule is initialized before us (allmodules order)
+    cycles.setOnChangeListener(onCycleChanged)
+    cycles.setUnit(timeframeToUnit[chartTimeframe])
+    updateCyclesRange()
     return
 
 ############################################################
 #region Event Listeners
 onStockSelected = (symbol) ->
     log "onStockSelected"
-    backtestingRegion = null
-    charting.reset()
+    resetSelection()
     selectedSymbol = symbol
     selectedSymbolDisplay.textContent = ""+selectedSymbol
-    setStateLoading()
-    try
-        await loadDataAndRenderChart()
-        setChartActive()
-    catch err
-        console.error(err)
-        symbolSelect.setError("Fehler in der Datenanfrage für #{selectedSymbol}!")
-        clearSelection()
+    await reload()
     return
 
 timeframeSelected = ->
     log "timeframeSelected"
-    selectedRangeY = timeframeSelect.value
-    # charting.reset()
-    setStateLoading()
-    try
-        if !selectedSymbol? then throw new Error("No Symbol Selected!")
-        await loadDataAndRenderChart()
-
-        if backtestingRegion?
-            await runAndDisplayBacktesting()
-            setBacktestingActive()
-        else setChartActive()
-    catch err
-        console.error(err)
-        symbolSelect.setError("Fehler in der Datenanfrage für #{selectedSymbol}!")
-        clearSelection()
+    selectedRangeY = historyTimeframeSelect.value
+    await reload()
     return
 
+chartTimeframeChanged = ->
+    log "chartTimeframeChanged"
+    chartTimeframe = chartTimeframeSelect.value
+    setCycleUnit(timeframeToUnit[chartTimeframe])
+    await reload()
+    return
+
+onCycleChanged = (cycle) ->
+    log "onCycleChanged"
+    # skips the echo of setCycleUnit and edits without effect on the setting
+    return if JSON.stringify(cycle) == JSON.stringify(selectedCycle)
+    selectedCycle = cycle
+    await reload()
+    return
 
 onCloseChart = ->
     log "onCloseChart"
     clearSelection()
     symbolSelect.resetSearch()
     chartData = null
-    charting.reset()
-    backtestingRegion = null
+    resetSelection()
     # backtesting.reset()
     return
 
@@ -136,6 +142,7 @@ updateBacktestingRegion = (region) ->
 #region Set UI States
 setStateLoading = ->
     log "setStateLoading"
+    seasonalityframe.classList.remove("no-data")
     seasonalityframe.classList.remove("chart-active")
     seasonalityframe.classList.remove("analysing")
     seasonalityframe.classList.remove("backtesting")
@@ -154,8 +161,19 @@ setChartActive = ->
     symbolSelect.unfreeze()
     return
 
+setNoData = ->
+    log "setNoData"
+    seasonalityframe.classList.remove("chart-active")
+    seasonalityframe.classList.remove("analysing")
+    seasonalityframe.classList.remove("backtesting")
+    seasonalityframe.classList.remove("loading-data")
+    seasonalityframe.classList.add("no-data")
+    symbolSelect.unfreeze()
+    return
+
 setChartInactive = ->
     log "setChartInactive"
+    seasonalityframe.classList.remove("no-data")
     seasonalityframe.classList.remove("chart-active")
     seasonalityframe.classList.remove("analysing")
     seasonalityframe.classList.remove("backtesting")
@@ -177,25 +195,69 @@ setBacktestingActive = ->
 ############################################################
 runAndDisplayBacktesting = ->
     log "runAndDisplayBacktesting"
-    { startIdx, endIdx } = getNormalizedSelectionIndices()
-    # olog {startIdx, endIdx}
-
-    symbol = selectedSymbol
+    { startIdx, endIdx } = backtestingRegion
+    entryDate = charting.indexToDate(startIdx)
+    exitDate = charting.indexToDate(endIdx)
     years = parseInt(selectedRangeY)
-
-    await backtesting.run(symbol, startIdx, endIdx, years)
+    { isIncluded, ages, refDate } = chartData
+    # single mode: the selection lies in chunk ages[0], run k k periods before it
+    isRunIncluded = if isIncluded? then (k) -> isIncluded(ages[0] + k)
+    await backtesting.run(selectedSymbol, entryDate, exitDate, years, chartTimeframe, refDate, isRunIncluded)
     return
 
 ############################################################
+# always back to "Kein Zyklus" (setUnit alone keeps the cycle if the unit is unchanged)
+# the caller reloads anyway
+setCycleUnit = (unit) ->
+    selectedCycle = null
+    cycles.setUnit(unit)
+    cycles.deactivate()
+    return
+
+############################################################
+# after a change of symbol, history range, chart timeframe or cycle
+reload = ->
+    setStateLoading()
+    try
+        if !selectedSymbol then return clearSelection()
+        if !await loadDataAndRenderChart() then return setNoData()
+
+        if backtestingRegion?
+            await runAndDisplayBacktesting()
+            setBacktestingActive()
+        else setChartActive()
+    catch err
+        console.error(err)
+        symbolSelect.setError("Fehler in der Datenanfrage für #{selectedSymbol}!")
+        clearSelection()
+    return
+
+############################################################
+# returns false if the cycle leaves no data in the history range
 loadDataAndRenderChart = ->
     log "loadDataAndRenderChart"
-    chartData = await retrieveRelevantData()
+    # cap before loading, so a timeframe switch never loads the deeper range
+    maxYears = timeframeMaxYears[chartTimeframe]
+    if maxYears? and parseInt(selectedRangeY) > maxYears then selectedRangeY = String(maxYears)
+    data = await retrieveRelevantData()
+    # the selection is index-based - only valid on the axis it was made on
+    if layoutKey(data) != layoutKey(chartData) then resetSelection()
+    chartData = data
     updateYearsOptions() ## only here this may change
+    updateCyclesRange()
+    if !chartData.composite? then return false
 
     charting.prepareData(chartData)
     charting.render(backtestingRegion)
-    return
+    return true
 
+
+layoutKey = (data) -> data? and JSON.stringify([data.timeframe, data.ages])
+
+resetSelection = ->
+    backtestingRegion = null
+    charting.reset()
+    return
 
 ############################################################
 clearSelection = ->
@@ -209,18 +271,31 @@ clearSelection = ->
 resetTimeframeSelect = ->
     log "resetTimeframeSelect"
     selectedRangeY = "5"
-    timeframeSelect.innerHTML = ""
+    historyTimeframeSelect.innerHTML = ""
     optionEl = document.createElement("option")
     optionEl.value = "5"
     optionEl.textContent = "5 Jahre"
     optionEl.selected = true
-    timeframeSelect.appendChild(optionEl)
+    historyTimeframeSelect.appendChild(optionEl)
+    updateCyclesRange()
     return
 
 ############################################################
+# history range = the selected years before the current one + the current year
+updateCyclesRange = ->
+    today = todayYmd()
+    fromYear = parseInt(today.slice(0, 4)) - parseInt(selectedRangeY)
+    cycles.setRange("#{fromYear}-01-01", today)
+    return
+
+############################################################
+# caps backtests at ~310 runs: weekly 5 years (+ current year), monthly 20 years
+timeframeMaxYears = { weekly: 5, monthly: 20 }
+
 updateYearsOptions = ->
     log "updateYearsOptions"
-    allOptions = [ 5, 10, 15, 20, 25, 30 ]
+    maxYears = timeframeMaxYears[chartTimeframe] ? Infinity
+    allOptions = (opt for opt in [ 5, 10, 15, 20, 25, 30 ] when opt <= maxYears)
 
     if !selectedSymbol? then return resetTimeframeSelect()
     else ## Determine available options based on maxHistory
@@ -242,86 +317,45 @@ updateYearsOptions = ->
         selectedRangeY = String(currentYears)
 
     ## Render options to dropdown
-    timeframeSelect.innerHTML = ""
+    historyTimeframeSelect.innerHTML = ""
     for opt in actualOptions
         optionEl = document.createElement("option")
         optionEl.value = opt
         optionEl.textContent = "#{opt} Jahre"
         if opt == currentYears then optionEl.selected = true
-        timeframeSelect.appendChild(optionEl)
+        historyTimeframeSelect.appendChild(optionEl)
     return
     
 ############################################################
 retrieveRelevantData = ->
     log "retrieveRelevantData"
-    symbol = selectedSymbol
     years = parseInt(selectedRangeY)
+    timeframe = chartTimeframe
+    # chunk 0 is the period of the newest data date (refDate), not of today
+    { chunks, refDate } = await mData.getCloseChunks(selectedSymbol, timeframe, years)
 
-    rawLatest = await mData.getLatestData(symbol)
-    rawAdr = await mData.getSeasonalityComposite(symbol, years, 0)
-    if !rawAdr? then throw new Error("No ADR data returned!")
+    # null = continuous: no cycle or a full cycle
+    isIncluded = null
+    if selectedCycle? and !isFullCycle(selectedCycle) then isIncluded = includedChunkFn(selectedCycle, ymdOf(refDate))
+    ages = displayAges(selectedCycle, isIncluded)
 
-    # log "ADR data length: " + rawAdr.length
-    return { rawLatest, rawAdr, years }
+    # composite null: no data for the selected cycle in the history range
+    composite = mData.calculateSeasonalityComposite(chunks, 0, isIncluded)
+    return { composite, chunks, refDate, timeframe, ages, isIncluded }
 
 
 ############################################################
-# Converts raw chart indices to LeapNorm indices (0-365)
-# Chart layout: [...lastYearData, ...currentYearData]
-# startIdx will be negative on year overlap
-getNormalizedSelectionIndices = ->
-    return unless backtestingRegion? # no selection, nothing to do
-    
-    cfg = utl.getLeapYearConfig()
-    lastYearDays = cfg.lastYearDays
-    { startIdx, endIdx } = backtestingRegion
-
-    startInLastYear = startIdx < lastYearDays
-    endInLastYear = endIdx < lastYearDays
-
-    if startInLastYear
-        startIdx = utl.realToLeapNormIdx(startIdx, cfg.lastYearIsLeap)
-    else
-        startIdx = utl.realToLeapNormIdx(startIdx - lastYearDays, cfg.currentYearIsLeap)
-
-    if endInLastYear
-        endIdx = utl.realToLeapNormIdx(endIdx, cfg.lastYearIsLeap)
-    else
-        endIdx = utl.realToLeapNormIdx(endIdx - lastYearDays, cfg.currentYearIsLeap)
-
-    # Only make startIdx negative when selection overlaps years
-    if startInLastYear and !endInLastYear
-        startIdx = startIdx - 366
-
-    return { startIdx, endIdx }
-
 getBacktestingRegionFromDates = (startDate, endDate) ->
     log "getBacktestingRegionFromDates"
-    cfg = utl.getLeapYearConfig()
-    
-    lastYearDays = cfg.lastYearDays
     if typeof startDate == "string" then startDate = new Date(startDate+"T12:00Z")
     if typeof endDate == "string" then endDate = new Date(endDate+"T12:00Z")
 
     if startDate.getTime() > endDate.getTime() then throw new Error("Invalid startDate - endDate configuration!")
 
-    today = new Date()
-    currentYear = today.getFullYear()
-    lastYear = currentYear - 1
-
-    if startDate.getFullYear() == currentYear
-        startIdx = lastYearDays + utl.getDayOfYear(startDate)
-    else if startDate.getFullYear() == lastYear
-        startIdx = utl.getDayOfYear(startDate)
-    else throw new Error("startDate was noth within the possible backtesting region!")
-
-    if endDate.getFullYear() == currentYear
-        endIdx = lastYearDays + utl.getDayOfYear(endDate)
-    else if endDate.getFullYear() == lastYear
-        endIdx = utl.getDayOfYear(endDate)
-    else throw new Error("endDate was noth within the possible backtesting region!")
-
-
+    startIdx = charting.dateToIndex(startDate)
+    endIdx = charting.dateToIndex(endDate)
+    if startIdx < 0 then throw new Error("startDate was not within the possible backtesting region!")
+    if endIdx < 0 then throw new Error("endDate was not within the possible backtesting region!")
     return { startIdx, endIdx }
 
 
@@ -330,10 +364,14 @@ export setSeasonalityBacktestingState = (symbol, years, startDate, endDate) ->
     log "setSeasonalityBacktestingState"
     try
         symbolSelect.resetSearch()
+        # screener ranges are yearly
+        chartTimeframeSelect.value = "yearly"
+        chartTimeframe = "yearly"
+        setCycleUnit("years")
         await onStockSelected(symbol)
         await letMainThreadRun()
 
-        timeframeSelect.value = ""+years
+        historyTimeframeSelect.value = ""+years
         backtestingRegion = null
         await timeframeSelected()
         await letMainThreadRun()

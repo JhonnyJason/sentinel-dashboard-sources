@@ -444,12 +444,12 @@ getAverageDailyReturnSeq = (infoObjects, key) ->
         evntDateObj = getCorrespondingDateObj(obj)
         rawStartIdx = utl.dateDifDays(zeroDateObj, evntDateObj) - centerIdx
         # log rawStartIdx
-        end = rawStartIdx + fullLen
+        rawEndIdx = rawStartIdx + fullLen
         # do we have all data available for this event?
-        if rawStartIdx < 0 or end >= rawData.length then continue 
+        if rawStartIdx < 0 or rawEndIdx >= rawData.length then continue 
         
         count++ # adding another row of factors
-        seq = rawData.slice(rawStartIdx, end)
+        seq = rawData.slice(rawStartIdx, rawEndIdx)
         factorsArray = utl.toFactorsArray(seq.map((el) -> el[el.length - 1]))
         if factorsArray.length != sums.length then alert("unexpected factorsArray length!")
         sums[i] += f for f,i in factorsArray

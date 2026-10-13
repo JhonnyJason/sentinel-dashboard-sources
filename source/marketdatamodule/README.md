@@ -64,49 +64,12 @@ datacache.getMarketHistory("GOOGL", 10)
 }
 ```
 
+## Close chunks (seasonality input)
+`getCloseChunks(symbol, timeframe, years)` → `{ chunks, refDate }`
+- `timeframe`: `yearly` | `quarterly` | `monthly` | `weekly`; chunks newest first, chunk 0 = period of `refDate` (newest data date).
+- Window back to Jan 1 of (`refDate` year − `years`).
+- Slot space: yearly 366 (FEB29 slot `null` in non-leap years, via `normalizeYearData`), quarterly 93 (`monthInQuarter * 31 + day - 1`), monthly 31, weekly 7 (Mon = 0). Non-existent slots `null`, missing days `undefined`.
+- The caller computes the composite: `calculateSeasonalityComposite(chunks, 0, isIncluded)` (re-exported here), `isIncluded(k)` per chunk age or `null` = all. Chunk 0 never enters the composite. Returns `null` if no sample remains.
+- datacache buckets all four timeframes in one pass (`getHistoricCloseChunks`).
+
 ## Seasonality Calculation
-
-For any calcuations we need to first Normalize the years to the same length.
-Here we might cut off the February 29 or add a February 29 on every year.
-Currently we Normalize all years to 366 days (duplicate Feb 28 for non-leap years)
-
-### Average Daily Return method
-Uses log-returns for averaging across years (see `seasonality.coffee`):
-
-1. Calculate log-factors: `log(day[i] / day[i+1])`
-2. Average factors across years
-3. Reconstruct normalized price curve from averaged factors
-
-This approach handles the compounding nature of returns correctly.
-
-Here we also want to calculate the standard deviation for a better picture - still missing.
-
-### Fourier Transform method
-
-1. Concatenate all relevant years into one "signal"
-2. 
-3. Normalize to values be between -1 and +1
-4. Frequency Transform the "signal" 
-5. Cut off frequencies from 183
-6. Inverse Transform to time-space
-7. Extract and skew the yearly dynamics by adding the yearly return gradient
-
-Here we have experiments of pure FFT and frequency cut off available in the fouriermodule.
-The full chain needs to be sophisticatedly implemented here.
-
-### Fourier Average method
-
-MAYBE: Is this cool to have?
-
-Here we calculate the fourier transform of each year and then average them.
-Also here we want a standard deviation with the averaged line.
-
-## TODO
-
-- [x] Transform datahub response to cache structure (datacache.coffee)
-- [ ] Define interface for seasonalityframemodule
-- [ ] Wire datacache to marketdatamodule interface
-- [ ] Convenience extractors: `getCloses()`, `getHighs()`, `getLows()`
-- [ ] Wire up seasonality calculations to interface
-- [ ] Implement Standard Deviation in Average Return method
-- [ ] Implement Fourier Transform method

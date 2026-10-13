@@ -34,18 +34,6 @@ export isLeapYear = (year) ->
 export getDaysOfYear = (year) ->
     if isLeapYear(year) then 366 else 365
 
-export getLeapYearConfig = ->
-    today = new Date()
-    currentYear = today.getFullYear()
-    lastYear = currentYear - 1
-    
-    return {
-        currentYearIsLeap: isLeapYear(currentYear)
-        lastYearIsLeap: isLeapYear(lastYear)
-        currentYearDays: getDaysOfYear(currentYear)
-        lastYearDays: getDaysOfYear(lastYear)
-    }
-
 ############################################################
 # Index Conventions:
 #   nonLeapNorm (0-364): Jan1=0, Feb28=58, Mar1=59. No Feb29.
@@ -178,6 +166,20 @@ export dateDifDays = (date1, date2) ->
     daysDif = msDif / 86_400_000 # = 1000 * 60 * 60 * 24
     return Math.round(daysDif)
 
+# same date k periods ("yearly" | "quarterly" | "monthly" | "weekly") earlier, at noon - a day the
+# target month lacks becomes its last day (Feb 29 -> Feb 28, 31st -> 30th)
+export shiftPeriodsBack = (date, k, timeframe) ->
+    if timeframe == "weekly"
+        return new Date(date.getFullYear(), date.getMonth(), date.getDate() - 7 * k, 12)
+    months = switch timeframe
+        when "monthly" then k
+        when "quarterly" then 3 * k
+        else 12 * k
+    result = new Date(date.getFullYear(), date.getMonth() - months, 1, 12)
+    lastDay = new Date(result.getFullYear(), result.getMonth() + 1, 0).getDate()
+    result.setDate(Math.min(date.getDate(), lastDay))
+    return result
+
 export getDayOfYear = (date) -> # 01.01. -> 0
     startOfYear = new Date(date.getFullYear(), 0, 1, 12, 0, 0)
     return dateDifDays(startOfYear, date)
@@ -191,7 +193,7 @@ export getJan1Date = (date) ->
     date.setMilliseconds(0)
     date.setSeconds(0)
     date.setMinutes(0)
-    date.setHours(20)
+    date.setHours(12)
     date.setDate(1)
     date.setMonth(0)
     return date

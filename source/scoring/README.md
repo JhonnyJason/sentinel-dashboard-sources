@@ -8,11 +8,11 @@ Consolidates all scoring pipeline logic: normalization math, area scoring functi
 |------|------|
 | `normmath.coffee` | Pure math for param conversions (peak/steepness ↔ a,b,c; neutralRate/sensitivity ↔ a,b; amplification ↔ b,d) |
 | `areanorm.coffee` | Pure normalization score functions: `inflNorm`, `mrrNorm`, `gdpgNorm`, `cotNorm` — each takes `(data, params)` → score in [0, 2] |
-| `ScoreCombinator.coffee` | Pair-level scoring engine: diff curves + final combination weights + calculation |
+| `defaultsnapshot.coffee` | Default parameters: per-area norm params, diff params, final weights |
 | `scorehelper.coffee` | Display helpers: diff curve wrappers, color/trend-text mapping, horizon score functions |
 
 ## Design
 
 - **Pure functions** — `normmath` and `areanorm` have no state, no DOM, no side effects
-- **scorehelper** — bridges ScoreCombinator (live playground) and default params (standalone display)
+- **scorehelper** — applies the default params from `defaultsnapshot` (overridable via `setGlobalParams`)
 - **EconomicArea** delegates to `areanorm` via closures in its `normFun` map

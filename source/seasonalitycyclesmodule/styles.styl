@@ -1,0 +1,177 @@
+// seasonalitycycles styles
+cycles-border = #ccc
+cycles-empty-bg = #f4f4f4
+cycles-column-width = 180px
+
+#seasonalitycycles
+    width 100%
+    min-width 0
+    text-align left
+    font-size 11pt
+
+    input[type="text"]
+        padding 6px 8px
+        border solid 1px cd-dark-blue
+        border-radius 3px
+        font-size 11pt
+
+    input:focus
+        outline none
+        box-shadow 0 0 3px 0 cd-dark-blue
+
+    input:disabled
+        border-color cycles-border
+        background-color cycles-empty-bg
+
+    input:disabled + svg
+        opacity 0.3
+
+    // .edit-group from eventscreenerframemodule: underline + edit icon instead of the input border
+    .edit-group
+        align-items center
+        gap 3px
+
+    .edit-group:focus-within
+        border-bottom-color cd-dark-blue
+
+#cycles-name-line
+    display flex
+    flex-wrap wrap
+    align-items center
+    gap 10px
+    margin-bottom 10px
+
+#cycles-editor
+    display flex
+    flex-direction: column
+    gap 10px 
+    margin-bottom 10px
+    
+// same height as the selects in #selection-row (the id prefix outranks the input rule above)
+#seasonalitycycles #cycles-name-input
+    padding 10px
+    padding-right 30px
+    font-size 12pt
+
+#seasonalitycycles #cycles-name-input.taken
+    border-color cd-error-red
+    background-color alpha(cd-error-red, 0.1)
+
+#cycles-name-hint
+    color cd-error-red
+
+#cycles-editor
+    input[type="range"]
+        accent-color cd-dark-blue
+        cursor pointer
+
+// bordered input with the edit icon inside on the right, the label makes the icon focus the input
+.cycles-editable
+    position relative
+    display flex
+
+    svg
+        position absolute
+        top 50%
+        right 8px
+        width 15px
+        height 15px
+        transform translateY(-50%)
+        pointer-events none
+
+// the id prefix outranks the general #seasonalitycycles input rules
+#seasonalitycycles #cycles-size-input
+    width 2.5em
+    border none
+    background-color transparent
+    box-shadow none
+
+.cycles-field
+    display flex
+    align-items center
+    gap 6px
+
+.cycles-field-label
+    font-weight bold
+
+// like the "Jetzt ändern!" buttons of accountframemodule, but as high as #cycles-name-input
+// (smaller than those, hence the smaller radius); the id prefix outranks reset.styl's button:hover
+#seasonalitycycles .cycles-button
+    font-size 12pt
+    color #fff
+    background-color cd-button-dark
+    border solid 2px #fff
+    box-shadow 0 0 5px #000
+    padding 9px 20px
+    border-radius 8px
+    width 130px
+
+// locked / unlocked like the account deletion button of accountframemodule
+#seasonalitycycles #cycles-delete-button
+    background-color #301
+
+#seasonalitycycles #cycles-delete-button.unlocked
+    background-color #812
+
+// faded like the account frame buttons instead of buttonstylemodule's grey
+#seasonalitycycles .cycles-button:disabled
+    filter none
+    opacity 0.4
+    cursor default
+
+// scrolls inside, never widens the page
+#cycles-table-area
+    max-width 100%
+    overflow auto
+
+    table
+        border-collapse collapse
+        font-variant-numeric tabular-nums
+
+    th
+    td
+        // a specified cell width is the column minimum, so columns never shrink
+        width cycles-column-width
+        min-width cycles-column-width
+        box-sizing border-box
+        padding 4px 8px
+        border solid 1px cycles-border
+        text-align center
+        white-space nowrap
+
+    th
+        font-weight normal
+        padding 8px 20px
+
+    th .edit-group
+        margin 0 4px
+
+    th input[type="checkbox"]
+        accent-color cd-dark-blue
+        cursor pointer
+
+    td.empty
+        background-color cycles-empty-bg
+
+    // cells of the positions checked in the header (cells without data stay empty)
+    td.included:not(.empty)
+        color #fff
+        background-color cd-dark-blue
+
+    tr.more td
+        border none
+        color cd-info
+
+// the id prefix outranks the general #seasonalitycycles input rules
+#seasonalitycycles #cycles-table-area th input[type="text"]
+    // no intrinsic width (~20 chars), else it widens the column beyond cycles-column-width
+    width 0
+    flex 1
+    min-width 0
+    padding 2px 0
+    border none
+    border-radius 0
+    background-color transparent
+    box-shadow none
+    text-align center
+    font-size 11pt

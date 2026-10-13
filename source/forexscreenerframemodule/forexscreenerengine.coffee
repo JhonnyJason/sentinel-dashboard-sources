@@ -432,12 +432,22 @@ getRelevantSaisonalityComposites = ->
 
     proms = relevantSymbols.map(
         (sym) ->
-            symbolToSaisonality10J[sym] = await mData.getSeasonalityComposite(sym, 10, 0)
-            symbolToSaisonality15J[sym] = await mData.getSeasonalityComposite(sym, 15, 0)
+            { chunks } = await mData.getCloseChunks(sym, "yearly", 15)
+            # the 10 year window = an age filter on the 15 year chunks
+            symbolToSaisonality10J[sym] = mData.calculateSeasonalityComposite(chunks, 0, (k) -> k <= 10)
+            symbolToSaisonality15J[sym] = mData.calculateSeasonalityComposite(chunks, 0)
     )
     await Promise.all(proms)
     log "retrieved all relevant Saisonality Composites!"
     return
+
+############################################################
+# composite: 367 points, point 0 = start, point i+1 = close of leap-norm slot i
+# returns maxRange points, point k = close of slot startIdx + k, wrapping into the next year
+sliceCyclic = (composite, startIdx, maxRange) ->
+    factors = utl.toFactorsArray(composite) # factor i = change into slot i, incl. Jan 1
+    factors = [...factors, ...factors]
+    return utl.fromFactorsForward(factors.slice(startIdx + 1, startIdx + maxRange))
 
 ############################################################
 getSeasonalBestFitRangeFromToday = (composite, isLong, maxRange) ->
@@ -463,17 +473,7 @@ getSeasonalBestFitRangeFromToday = (composite, isLong, maxRange) ->
     # log composite.length
     # log composite.map((el) -> el.toFixed(2))
 
-    if startIdx + maxRange > 365 ## overlapped
-        overlap = startIdx - 366 
-        lower = utl.toFactorsArray(composite.slice(overlap))
-        lower.push(1.0) # unknown new year shift... setting 31.12. = 01.01
-        
-        overlap = maxRange + overlap # overlap is negative  
-        upper = utl.toFactorsArray(composite.slice(0, overlap))
-
-        composite = utl.fromFactorsForward([...lower, ...upper])
-    else # no overlap
-        composite = composite.slice(startIdx, startIdx + maxRange)
+    composite = sliceCyclic(composite, startIdx, maxRange)
     
     # log composite.length
     # log composite.map((el) -> el.toFixed(2))
@@ -489,49 +489,6 @@ getSeasonalBestFitRangeFromToday = (composite, isLong, maxRange) ->
     range.endIdx = range.endIdx + startIdx
     ## range.endIdx might be > 366 -> overflow
     return range
-
-getSeasonalBestFitRange = (composite, isLong, maxRange) ->
-    # log "getSeasonalBestFitRange"
-
-    ## Today to index in 366 leap-norm
-    todayDate = new Date()
-    todayIdx = utl.getDayOfYear(todayDate)
-    todayIdx = utl.realToLeapNormIdx(todayIdx, currentYearIsLeap)
-    
-    ## start checking from tomorrow
-    startIdx = todayIdx + 1
-    # startIdx = 356
-    # log startIdx
-
-    # composite = composite.map((el, idx) -> idx)
-    # log composite.length
-    log composite.map((el) -> el.toFixed(2))
-
-    if startIdx + maxRange > 365 ## overlapped
-        overlap = startIdx - 366 
-        lower = utl.toFactorsArray(composite.slice(overlap))
-        lower.push(1.0) # unknown new year shift... setting 31.12. = 01.01
-        
-        overlap = maxRange + overlap # overlap is negative  
-        upper = utl.toFactorsArray(composite.slice(0, overlap))
-
-        composite = utl.fromFactorsForward([...lower, ...upper])
-    else # no overlap
-        composite = composite.slice(startIdx, startIdx + maxRange)
-    
-    # log composite.length
-    # log composite.map((el) -> el.toFixed(2))
-
-    if isLong then range = getBestRangeForLong(composite)
-    else range = getBestRangeForShort(composite)
-    return null unless range?
-
-    ## shifting up the indices - 0 in the sliced composite is our startIdx
-    range.startIdx = range.startIdx + startIdx
-    range.endIdx = range.endIdx + startIdx
-    ## range.endIdx might be > 366 -> overflow
-    return range
-
 
 ############################################################
 getBestRangeForLong = (seq) ->

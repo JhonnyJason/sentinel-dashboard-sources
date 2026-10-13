@@ -9,12 +9,13 @@
     scrollbar-gutter stable
     padding 20px 10px 20px 20px
     box-sizing: border-box
-    
+
 #selection-row
+#timeframe-cycles-row
     display: flex
     justify-content: flex-end
     align-items: center
-    gap 10px
+    gap: 10px
 
     .select-wrapper
         display block
@@ -67,6 +68,20 @@
         color cd-dark-blue
         height inherit
         width inherit
+
+#timeframe-cycles-row
+    flex-wrap wrap
+
+#timeframecycles-details-container
+    flex-basis 100%
+    min-width 0
+
+#timeframecylces-selection-line    
+    display flex
+    flex-direction row
+    gap 10px
+    margin-right auto
+    margin-top 10px
 
 #close-chart-button.click-button::after
     background-color #000

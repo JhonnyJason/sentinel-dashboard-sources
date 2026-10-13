@@ -142,7 +142,7 @@ sortYearlyResults = (results) ->
 
     compareFn = switch sortColumn
         when "startDate"
-            (a, b) -> a.year - b.year
+            (a, b) -> if a.entryDate < b.entryDate then -1 else if a.entryDate > b.entryDate then 1 else 0
         when "profit"
             if currentIsShort
                 (a, b) -> (-a.changeP) - (-b.changeP)  # Flipped for Short

@@ -53,9 +53,6 @@ export class SymbolBacktester
         
         maxSeqLen = endIdxLN - startIdxLN + 1
 
-        if !@ready then throw new Error("Symbol Backtester #{@symbol}:#{@key} cannot addBacktestRun when not being in ready state!")
-        if @evaluated then throw new Error("Symbol Backtester #{@symbol}:#{@key} cannot addBacktestRun in an evaluated state!")
-
         endYear = startYear
         count = 4
         while startIdxLN < 0
@@ -71,22 +68,29 @@ export class SymbolBacktester
             count--
             throw new Error("Index Adjustment.Illegal overflow!(>=4 years)") if count == 0
 
+        ## targeted start/end dates
+        entryDate = utl.leapNormToYYYYMMDD(startIdxLN, startYear)
+        exitDate = utl.leapNormToYYYYMMDD(endIdxLN, endYear)
+        @addBacktestRunDates(entryDate, exitDate, key, maxSeqLen)
+        return
+
+    ############################################################
+    # entryDate / exitDate: targeted "YYYY-MM-DD", adjusted to trading days per @tdc
+    addBacktestRunDates: (entryDate, exitDate, key, maxSeqLen) =>
+        if !@ready then throw new Error("Symbol Backtester #{@symbol}:#{@key} cannot addBacktestRun when not being in ready state!")
+        if @evaluated then throw new Error("Symbol Backtester #{@symbol}:#{@key} cannot addBacktestRun in an evaluated state!")
+
         if !key? then key = @runInfoObjects.length
         if typeof key != "string" then key = "#{key}"
-
-        # olog {startYear, startIdxLN, endYear, endIdxLN, maxSeqLen}
 
         infoObj = Object.create(null)
         @runInfoObjects.push(infoObj)
         
         infoObj.key = key
 
-        ## targeted start/end dates  
-        entryDate = utl.leapNormToYYYYMMDD(startIdxLN, startYear)
         entryDateObj = new Date(entryDate + "T12:00Z")
-        exitDate = utl.leapNormToYYYYMMDD(endIdxLN, endYear)
         exitDateObj = new Date(exitDate + "T12:00Z")
-        # olog { entryDate, exitDate }
+        if !maxSeqLen? then maxSeqLen = utl.dateDifDays(entryDateObj, exitDateObj) + 1
 
         ## get effectively tradable start/end index
         zeroDateObj = new Date(@metaData.startDate + "T12:00Z")
@@ -143,21 +147,6 @@ export class SymbolBacktester
         # entryExitDif = seqLen - 1
         # infoObj.entryExitDif = utl.dateDifDays(entryDateObj, exitDateObj)
 
-        infoObj.effEntryIdx = utl.getDayOfYear(entryDateObj) # real index of effective entryDate
-        # effExitIdx = effEntryIdx + seqLen - 1
-
-        ## save other indices to know how much we are off target in real or leap normed terms
-        infoObj.startIdxLN = startIdxLN # leap-normed start index (target)
-        infoObj.endIdxLN = endIdxLN # leap-normed end index (target)
-        
-        isLeap = utl.isLeapYear(startYear)
-        infoObj.startIdxR = utl.leapNormToRealIdx(startIdxLN, isLeap) # real start index (target)
-        infoObj.startYear = startYear
-        
-        isLeap = utl.isLeapYear(endYear)
-        infoObj.endIdxR = utl.leapNormToRealIdx(endIdxLN, isLeap) # real end index (target)
-        infoObj.endYear = endYear
-        
         ## Absolute virtual entry close -> reference for all absolute values
         infoObj.entryCv = infoObj.seq[0][2] 
         

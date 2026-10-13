@@ -11,6 +11,7 @@ import * as chartModule from "./seasonalitychartmodule.js"
 ############################################################
 # import { runBacktesting } from "./backtesting.js"
 import { SymbolBacktester } from "./hlcbacktestingmodule.js"
+import * as utl from "./utilsmodule.js"
 
 ############################################################
 import { render as renderDetails } from "./renderdetails.js"
@@ -172,37 +173,35 @@ renderSummary = (results) ->
     return
 
 ############################################################
-export run = (symbol, startIdx, endIdx, years) ->
-    log "updateBacktestingUI"
-    ## If there is any overlap here then startIdx will be negative
-    ## at max we have 1 year overlap...
-    olog { startIdx, endIdx }
+# entryDate / exitDate: the selection in the chart
+# one run per period back to Jan 1 of (refDate year - years) - same window as the composite
+# isRunIncluded(k): keep run k (k periods before the selection), null = all runs
+export run = (symbol, entryDate, exitDate, years, timeframe, refDate, isRunIncluded = null) ->
+    log "run"
+    olog { entryDate, exitDate, years, timeframe }
 
-    if startIdx < 0 # overflow drags last backtest Run to start one year earlier
-        lastStartYear = (new Date()).getFullYear() - 1
-        years--
-        endIdx += 366
-        startIdx += 366
-    else lastStartYear = (new Date()).getFullYear()
-
-    backtestKey = "#{symbol}:#{years}:#{startIdx}:#{endIdx}"
+    backtestKey = "#{symbol}:#{years}:#{timeframe}:#{toISODate(entryDate)}:#{toISODate(exitDate)}"
     tdc = { postponeEntry: true, preponeExit: true }
     backtester = new SymbolBacktester(symbol, backtestKey, tdc)
     ## Data should be cached already - still could take time loading an throw Errors
     await backtester.loadData()
-    
-    startYear = lastStartYear
-    while years >= 0
-        backtester.addBacktestRun(startYear, startIdx, endIdx, startYear)
-        years--
-        startYear--
+
+    windowStart = new Date(refDate.getFullYear() - years, 0, 1, 12)
+    k = 0
+    loop
+        entry = utl.shiftPeriodsBack(entryDate, k, timeframe)
+        break if entry < windowStart
+        if !isRunIncluded? or isRunIncluded(k)
+            entryStr = toISODate(entry)
+            backtester.addBacktestRunDates(entryStr, toISODate(utl.shiftPeriodsBack(exitDate, k, timeframe)), entryStr)
+        k++
     
     results = backtester.runEvaluationSync()
     
     ## add some data for summary rendering
-    results.entryDate = indexToDate(startIdx) # for showing DD.MM. - DD.MM.  
-    results.exitDate = indexToDate(endIdx) # for showing DD.MM. - DD.MM.
-    results.daysInTrade = (endIdx - startIdx)
+    results.entryDate = formatLabel(entryDate, timeframe)
+    results.exitDate = formatLabel(exitDate, timeframe)
+    results.daysInTrade = utl.dateDifDays(entryDate, exitDate)
 
     renderSummary(results)
     renderDetails(results)
@@ -212,21 +211,17 @@ export run = (symbol, startIdx, endIdx, years) ->
 export setOnRangeChangeListener = (listener) -> onRangeChange = listener
 
 ############################################################
-# Helper to format Leap Norm day index to "DD.MM." string
-# Handles negative indices for overlapping selections (-1 = Dec 31)
-indexToDate = (dayIdx) ->
-    # Normalize negative indices: -1 -> 365, -366 -> 0
-    if dayIdx < 0 then dayIdx = 366 + dayIdx
+toISODate = (date) -> date.toISOString().slice(0, 10)
 
-    # Use leap reference year (normalized indices assume 366 days)
-    jan1 = new Date(2024, 0, 1, 12)
-    targetDate = new Date(jan1.getTime() + dayIdx * 86_400_000)
+weekdayNames = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"]
 
-    day = targetDate.getDate()
-    month = targetDate.getMonth() + 1
-    dayStr = if day < 10 then "0#{day}" else "#{day}"
-    monthStr = if month < 10 then "0#{month}" else "#{month}"
-    return "#{dayStr}.#{monthStr}."
+# summary label: yearly + quarterly "DD.MM.", monthly "DD.", weekly "Mo"
+formatLabel = (date, timeframe) ->
+    if timeframe == "weekly" then return weekdayNames[date.getDay()]
+    day = String(date.getDate()).padStart(2, "0")
+    if timeframe == "monthly" then return "#{day}."
+    month = String(date.getMonth() + 1).padStart(2, "0")
+    return "#{day}.#{month}."
 
 ############################################################
 factorToDeltaPercent = (f) -> 100.0 * (f - 1.0)

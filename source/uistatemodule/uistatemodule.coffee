@@ -166,7 +166,7 @@ export applyUIStateModifier = (modifier) ->
     log "applyUIStateModifier #{modifier}"
     applyModifierFunction = applyModifier[modifier]
 
-    if typeof applyUIStateModifier != "function" then throw new Error("on applyUIStateModifier: modifier '#{modifier}' apply function did not exist!")
+    if typeof applyModifierFunction != "function" then throw new Error("on applyUIStateModifier: modifier '#{modifier}' apply function did not exist!")
 
     currentModifier = modifier
     applyModifierFunction(currentContext)

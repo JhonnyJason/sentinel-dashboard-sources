@@ -1,0 +1,22 @@
+//- seasonalitycycles structure - included in #timeframecycles-details-container
+//- the cycle unit follows the chart timeframe of the seasonality frame
+#seasonalitycycles
+    #cycles-name-line
+        label.cycles-editable
+            input#cycles-name-input(type="text" placeholder="Name des Zyklus" aria-label="Name des Zyklus" autocomplete="off")
+            svg: use(href="#svg-edit-icon")
+        button#cycles-save-button.cycles-button.click-button(type="button" disabled) Speichern
+        button#cycles-delete-button.cycles-button.click-button(type="button" disabled) Löschen
+        span#cycles-name-hint
+    #cycles-editor
+        label.cycles-field
+            span.cycles-field-label Zyklusgröße
+            span.edit-group
+                input#cycles-size-input(type="number" min="1" step="1" disabled)
+                svg: use(href="#svg-edit-icon")
+        //- the readout ("Zyklus beginnt 2024") is the label of the slider
+        label.cycles-field
+            span#cycles-anchor-readout.cycles-field-label Zyklus beginnt
+            input#cycles-anchor-slider(type="range" min="0" max="0" step="1" value="0" disabled)
+    //- table (with the position label inputs in the header) is rendered by seasonalitycyclesmodule
+    #cycles-table-area
