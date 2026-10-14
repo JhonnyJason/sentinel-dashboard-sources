@@ -4,48 +4,49 @@ nav#sidenav.hidden
         button#show-button: .nav-icn: svg: use(href="#svg-right-icon")
         button#hide-button: .nav-icn: svg: use(href="#svg-left-icon")
 
-    button#summary-btn.nav-btn.click-button
-        .nav-icn: svg: use(href="#svg-flags-collection")
-        //- .nav-lbl Alle Basisdaten
-        .nav-lbl Makrodaten
-    button#currencytrend-btn.nav-btn.click-button
-        .nav-icn: svg: use(href="#svg-trendup-icon")
-        //- .nav-icn: img(src="/img/forex-trends.webp")
-        .nav-lbl Forex Scores
-    button#seasonality-btn.nav-btn.click-button
-        .nav-icn: svg: use(href="#svg-seasonality-icon")
-        .nav-lbl Saisonalität
-    button#eventscreener-btn.nav-btn.click-button
-        .nav-icn: svg: use(href="#svg-eventscreener-icon")
-        //- .nav-icn: img(src="/img/event-screener.webp")
-        .nav-lbl Event Screener
-    button#forexscreener-btn.nav-btn.click-button
-        .nav-icn: svg: use(href="#svg-forexscreener-icon")
-        .nav-lbl Forex Screener
-    button#optionscreener-btn.nav-btn.click-button
-        .nav-icn: svg: use(href="#svg-optionscreener-icon")
-        .nav-lbl Optionen Screener
-    button#sectorrotation-btn.nav-btn.click-button
-        .nav-icn: svg: use(href="#svg-sectorrotation-icon")
-        .nav-lbl Sektor Rotation
-    button#trafficlight-btn.nav-btn.click-button
-        //- .nav-icn: svg: use(href="#svg-trafficlight-icon")
-        .nav-icn: img(src="/img/trafficlight.webp")
-        .nav-lbl Börsen Ampel
-        span#tl-nav-indicator
-    button#partners-btn.nav-btn.click-button
-        .nav-icn: svg: use(href="#svg-partners-icon")
-        .nav-lbl Partner Angebote
-    button#account-btn.nav-btn.click-button
-        .nav-icn: svg: use(href="#svg-account-icon")
-        .nav-lbl Account
+    #sidenav-scroll
+        button#summary-btn.nav-btn.click-button
+            .nav-icn: svg: use(href="#svg-flags-collection")
+            //- .nav-lbl Alle Basisdaten
+            .nav-lbl Makrodaten
+        button#currencytrend-btn.nav-btn.click-button
+            .nav-icn: svg: use(href="#svg-trendup-icon")
+            //- .nav-icn: img(src="/img/forex-trends.webp")
+            .nav-lbl Forex Scores
+        button#seasonality-btn.nav-btn.click-button
+            .nav-icn: svg: use(href="#svg-seasonality-icon")
+            .nav-lbl Saisonalität
+        button#eventscreener-btn.nav-btn.click-button
+            .nav-icn: svg: use(href="#svg-eventscreener-icon")
+            //- .nav-icn: img(src="/img/event-screener.webp")
+            .nav-lbl Event Screener
+        button#forexscreener-btn.nav-btn.click-button
+            .nav-icn: svg: use(href="#svg-forexscreener-icon")
+            .nav-lbl Forex Screener
+        button#optionscreener-btn.nav-btn.click-button
+            .nav-icn: svg: use(href="#svg-optionscreener-icon")
+            .nav-lbl Optionen Screener
+        button#sectorrotation-btn.nav-btn.click-button
+            .nav-icn: svg: use(href="#svg-sectorrotation-icon")
+            .nav-lbl Sektor Rotation
+        button#trafficlight-btn.nav-btn.click-button
+            //- .nav-icn: svg: use(href="#svg-trafficlight-icon")
+            .nav-icn: img(src="/img/trafficlight.webp")
+            .nav-lbl Börsen Ampel
+            span#tl-nav-indicator
+        button#partners-btn.nav-btn.click-button
+            .nav-icn: svg: use(href="#svg-partners-icon")
+            .nav-lbl Partner Angebote
+        button#account-btn.nav-btn.click-button
+            .nav-icn: svg: use(href="#svg-account-icon")
+            .nav-lbl Account
 
-    #access-limited-display
-        #access-limited-info
-            p <b>Achtung!</b> Sie haben Ihr heutiges Limit für Datenabfragen erreicht!
-            p Ein Abonnement würde Sie von dieser Limitierung befreien :)
+        #access-limited-display
+            #access-limited-info
+                p <b>Achtung!</b> Sie haben Ihr heutiges Limit für Datenabfragen erreicht!
+                p Ein Abonnement würde Sie von dieser Limitierung befreien :)
 
-        #access-limited-from-info
-            p Ihr limitierer Zugang für Datenabfragen läuft bis: 
-            #access-limited-from 22:22
-            p Ein Abonnement würde Sie von dieser Limitierung befreien :)
+            #access-limited-from-info
+                p Ihr limitierer Zugang für Datenabfragen läuft bis: 
+                #access-limited-from 22:22
+                p Ein Abonnement würde Sie von dieser Limitierung befreien :)

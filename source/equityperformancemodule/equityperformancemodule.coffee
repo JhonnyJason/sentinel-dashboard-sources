@@ -116,7 +116,7 @@ renderEquityCurve = (dates, equity) ->
     equityChart = new uPlot(options, [equity.map((e, i) -> i), equity], equityCurveChart)
     return
 
-# Bars at x = 1..n in percent: regular exits grey; a trade cut by the stop-loss (orange) or the
+# Bars at x = 1..n in percent: regular exits grey (losses light red tinted); a trade cut by the stop-loss (orange) or the
 # take-profit (green) is a narrower bar in front of its faded theoretical bar (no stop-loss/take-profit).
 # Max drops as red, max rises as green dots; a theoretical extreme the cut trade never reached is faded.
 # A dot at the cutting level would only repeat the bar end -> left out.
@@ -126,7 +126,9 @@ renderTradesChart = (dates, trades, theoTrades) ->
     xs = (i + 1 for t, i in trades)
     toP = (f) -> 100 * f
     cutBy = (exit) -> (t) -> if t.exit == exit then toP(t.profitF) else null
-    profits = trades.map(cutBy("end"))
+    endProfits = trades.map(cutBy("end"))
+    profits = endProfits.map((p) -> if p? and p >= 0 then p else null)
+    losses = endProfits.map((p) -> if p? and p < 0 then p else null)
     theoProfits = trades.map((t, i) -> if t.exit != "end" then toP(theoTrades[i].profitF) else null)
     slProfits = trades.map(cutBy("sl"))
     tpProfits = trades.map(cutBy("tp"))
@@ -153,6 +155,7 @@ renderTradesChart = (dates, trades, theoTrades) ->
     options.series = [
         {}
         barSeries(bars, "#dddddd")
+        barSeries(bars, "#e8c8c8") # loss: grey with a light red tint
         barSeries(bars, "rgba(221, 221, 221, 0.3)")
         barSeries(narrowBars, "#ff8c00")
         barSeries(narrowBars, "#4caf50") # cd-up-green
@@ -162,9 +165,23 @@ renderTradesChart = (dates, trades, theoTrades) ->
         dotSeries("rgba(76, 175, 80, 0.35)")
     ]
     # scales and plot area exist only after uPlot's first (async) layout
-    options.hooks = { draw: [positionLevelLines] }
-    data = [xs, profits, theoProfits, slProfits, tpProfits, maxDrops, theoDrops, maxRises, theoRises]
+    options.hooks = { drawAxes: [drawZeroLine], draw: [positionLevelLines] }
+    data = [xs, profits, losses, theoProfits, slProfits, tpProfits, maxDrops, theoDrops, maxRises, theoRises]
     tradesChart = new uPlot(options, data, equityTradesChart)
+    return
+
+# drawn with the axes, so the bars cover it
+drawZeroLine = (u) ->
+    { ctx, bbox } = u
+    y = Math.round(u.valToPos(0, "y", true)) + 0.5
+    ctx.save()
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.5)"
+    ctx.lineWidth = uPlot.pxRatio
+    ctx.beginPath()
+    ctx.moveTo(bbox.left, y)
+    ctx.lineTo(bbox.left + bbox.width, y)
+    ctx.stroke()
+    ctx.restore()
     return
 
 positionLevelLines = (u) ->

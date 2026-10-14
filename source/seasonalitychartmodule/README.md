@@ -24,3 +24,8 @@ Decided by the cycle only, as a list of displayed chunk ages `ages` (oldest firs
   Only shown where unambiguous (`cyclemath.showsLatest`, frame passes `showLatest`): continuous, or exactly one included position at age 0 or 1 (e.g. Q3 in Q4 yes, Q1 in Q4 no, Q1 + Q3 never). Weekly cut-offs never - no fitting cycle. Otherwise the series is all `null`.
 - **Slot space**: composite and chunks come in slot space (yearly 366, quarterly 93, monthly 31, weekly 7); `periodPart` only keeps the slots that exist in that calendar period.
 - `backStartIdx` = start of the last part (0 in single mode) - the initial visible range.
+
+## Interaction (`chartfun.coffee`)
+- Mouse: uPlot's own drag-select on the plot; drag on the x axis shifts the visible range (`attachAxisDrag`, pointer events).
+- Touch / pen: uPlot only handles mouse events, so `attachTouchSelect` drives the selection through its API. Pointer capture (finger may leave the chart), only the first finger, a move below 10px is a tap (date only), only the release commits; a cancel restores the previous selection.
+- `touch-action`: `pan-y pinch-zoom` on the plot (vertical swipes scroll the page), `none` on the movable x axis.

@@ -71,9 +71,8 @@ export class SeasonalityChart
         log "Chart.onInit"
         xAxisEl = u.root.getElementsByClassName('u-axis')[0]
         xAxisEl.classList.add("movable")
-        wrappedMouseDownListener = (evnt) -> xAxisMouseDown(evnt, u)
-        xAxisEl.addEventListener("mousedown", wrappedMouseDownListener)
-        log "set mousedown Listener"
+        attachAxisDrag(u, xAxisEl)
+        attachTouchSelect(u)
 
         # Set inital Scale from @xDrag if we have one
         if @xDrag? and @xDrag > 1
@@ -110,10 +109,12 @@ export class SeasonalityChart
             log "Selection range: #{startIndex} - #{endIndex}"
             ## Seems @selection is null here despite having set int on render - how could it be?
             ## maybe when any redraw calls reset()
-            if @selection? and @selection.startIndex == startIndex and @selection.endIndex == endIndex
+            if @selection? and @selection.startIdx == startIndex and @selection.endIdx == endIndex
                 log "Range did not change - we skip doing anything :-)"
                 return
 
+            # remembered here too - without a re-render @selection would stay the old range
+            @selection = { startIdx: startIndex, endIdx: endIndex }
             return unless @onSelect?
             @onSelect(startIndex, endIndex)
         return false
@@ -321,35 +322,78 @@ formatCursorDate = (ts) ->
 
 ############################################################
 #region Manual Selection Interference
-xAxisMouseDown = (evnt, u) ->
-    y0 = evnt.clientY;
-    x0 = evnt.clientX;
+# drag on the x axis shifts the visible range - pointer events, so mouse, touch and pen alike
+# pointer capture: moves and the release still arrive when the pointer leaves the axis
+attachAxisDrag = (u, axisEl) ->
+    drag = null # only the first pointer drags
 
-    scale = u.scales["x"]
-    currentMin = scale.min
-    currentMax = scale.max
-    dim = u.bbox.width
-
-    range = currentMax - currentMin
-    unitsPerPx = range / (dim / uPlot.pxRatio)
-
-    mousemove = (e) ->
-        d = x0 - e.clientX
-        shiftyBy = d * unitsPerPx;
-
-        min = currentMin + shiftyBy
-        max = currentMax + shiftyBy
-
-        cancelSelect(u)
-        u.setScale("x", { min, max })
+    axisEl.addEventListener "pointerdown", (e) ->
+        return if drag?
+        e.preventDefault()
+        axisEl.setPointerCapture(e.pointerId)
+        { min, max } = u.scales.x
+        unitsPerPx = (max - min) / (u.bbox.width / uPlot.pxRatio)
+        drag = { id: e.pointerId, x0: e.clientX, min, max, unitsPerPx }
         return
 
-    mouseup = (e) ->
-        document.removeEventListener('mousemove', mousemove)
-        document.removeEventListener('mousemove', mouseup)
+    axisEl.addEventListener "pointermove", (e) ->
+        return unless drag?.id == e.pointerId
+        shift = (drag.x0 - e.clientX) * drag.unitsPerPx
+        cancelSelect(u)
+        u.setScale("x", { min: drag.min + shift, max: drag.max + shift })
+        return
 
-    document.addEventListener('mousemove', mousemove)
-    document.addEventListener('mouseup', mouseup)
+    end = (e) -> drag = null if drag?.id == e.pointerId
+    axisEl.addEventListener(type, end) for type in ["pointerup", "pointercancel", "lostpointercapture"]
+    return
+
+# uPlot only handles mouse events, so touch and pen select the range here, through its API.
+# Only a release commits (fires setSelect -> backtest); a cancel (browser scroll, second finger,
+# chart rebuilt) restores the previous selection. A move below minDragPx is a tap: date only.
+minDragPx = 10
+attachTouchSelect = (u) ->
+    over = u.over
+    drag = null # only the first finger selects
+
+    toPos = (e) ->
+        rect = over.getBoundingClientRect()
+        clamp = (v, max) -> Math.min(Math.max(v, 0), max)
+        { x: clamp(e.clientX - rect.left, rect.width), y: clamp(e.clientY - rect.top, rect.height) }
+
+    showSelect = (x0, x1, fire) ->
+        height = u.bbox.height / uPlot.pxRatio
+        u.setSelect({ left: Math.min(x0, x1), width: Math.abs(x1 - x0), top: 0, height }, fire)
+        return
+
+    over.addEventListener "pointerdown", (e) ->
+        return if e.pointerType == "mouse" or drag?
+        e.preventDefault() # no emulated mouse events -> uPlot would clear the selection on a tap
+        over.setPointerCapture(e.pointerId)
+        { x, y } = toPos(e)
+        { left, width, top, height } = u.select
+        drag = { id: e.pointerId, x0: x, prev: { left, width, top, height }, moved: false }
+        u.setCursor({ left: x, top: y })
+        return
+
+    over.addEventListener "pointermove", (e) ->
+        return unless drag?.id == e.pointerId
+        { x, y } = toPos(e)
+        drag.moved = drag.moved or Math.abs(x - drag.x0) >= minDragPx
+        u.setCursor({ left: x, top: y })
+        showSelect(drag.x0, x, false) if drag.moved
+        return
+
+    end = (e, commit) ->
+        return unless drag?.id == e.pointerId
+        if commit and drag.moved then showSelect(drag.x0, toPos(e).x, true)
+        else u.setSelect(drag.prev, false)
+        u.setCursor({ left: -10, top: -10 }) # no hover on touch -> hide cursor + date
+        drag = null
+        return
+
+    over.addEventListener("pointerup", (e) -> end(e, true))
+    over.addEventListener(type, (e) -> end(e, false)) for type in ["pointercancel", "lostpointercapture"]
+    return
 
 ############################################################
 cancelSelect = (u) ->

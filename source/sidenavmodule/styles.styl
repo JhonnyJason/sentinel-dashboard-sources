@@ -50,15 +50,10 @@
         display none
 
 #sidenav
-    display flex
-    flex-direction: column
     position fixed
     top 0
     left 0
-    padding (mobile-header-height + 25px) 5px 20px 5px // top-paddingh of 122 is centerd with control button
     box-sizing: border-box
-    overflow-y auto
-    overflow-x hidden
 
     width side-nav-width
     height 100vh
@@ -68,6 +63,16 @@
     transition: transform 0.3s
     transform translateX(0)
     background-color #fff
+
+    // scrolls inside #sidenav, so the overflow does not clip #sidenav-controls
+    #sidenav-scroll
+        display flex
+        flex-direction: column
+        height 100%
+        padding (mobile-header-height + 25px) 5px 20px 5px // top-paddingh of 122 is centerd with control button
+        box-sizing: border-box
+        overflow-y auto
+        overflow-x hidden
 
     .nav-btn
         flex  0 0  auto
@@ -159,7 +164,8 @@
 
 @media desktopscreen
     #sidenav
-        padding (header-height + 20px)  5px 20px 5px
+        #sidenav-scroll
+            padding (header-height + 20px)  5px 20px 5px
         #sidenav-controls
             display none
     #sidenav.folded
