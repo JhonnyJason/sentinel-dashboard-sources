@@ -21,5 +21,6 @@ Decided by the cycle only, as a list of displayed chunk ages `ages` (oldest firs
 
 - **100 point** = start of the last part: earlier parts are built backward ending at 100, the last part forward from 100.
 - **Latest data**: chunk `ages[j]` on part `j`, in percent of the last close before the last part (fallback: its first close). E.g. every 2nd year, in a year between → last year's chunk.
+  Only shown where unambiguous (`cyclemath.showsLatest`, frame passes `showLatest`): continuous, or exactly one included position at age 0 or 1 (e.g. Q3 in Q4 yes, Q1 in Q4 no, Q1 + Q3 never). Weekly cut-offs never - no fitting cycle. Otherwise the series is all `null`.
 - **Slot space**: composite and chunks come in slot space (yearly 366, quarterly 93, monthly 31, weekly 7); `periodPart` only keeps the slots that exist in that calendar period.
 - `backStartIdx` = start of the last part (0 in single mode) - the initial visible range.

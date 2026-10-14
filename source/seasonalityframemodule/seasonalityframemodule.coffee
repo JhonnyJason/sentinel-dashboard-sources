@@ -14,7 +14,7 @@ import { SymbolSelect } from "./symbolselectmodule.js"
 import * as backtesting from "./seasonalitybacktestingmodule.js"
 import * as charting from "./seasonalitychartmodule.js"
 import * as cycles from "./seasonalitycyclesmodule.js"
-import { todayYmd, ymdOf, includedChunkFn, isFullCycle, displayAges } from "./cyclemath.js"
+import { todayYmd, ymdOf, includedChunkFn, isFullCycle, displayAges, showsLatest } from "./cyclemath.js"
 
 ############################################################
 # the cycle unit follows the chart timeframe
@@ -341,7 +341,8 @@ retrieveRelevantData = ->
 
     # composite null: no data for the selected cycle in the history range
     composite = mData.calculateSeasonalityComposite(chunks, 0, isIncluded)
-    return { composite, chunks, refDate, timeframe, ages, isIncluded }
+    showLatest = ages? and showsLatest(selectedCycle, isIncluded, ages)
+    return { composite, chunks, refDate, timeframe, ages, isIncluded, showLatest }
 
 
 ############################################################

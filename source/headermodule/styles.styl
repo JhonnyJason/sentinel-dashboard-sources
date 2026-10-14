@@ -1,13 +1,17 @@
+ewag-border-color = #000
 // header styles
 #header
-    background-color cd-dark-blue
-    color #fff
+    // background-color cd-dark-blue
+    // color #fff
+    background-color #fff
+    color cd-dark-blue
     padding 15px
     width 100%
     box-sizing: border-box
     position fixed
     z-index 3
-    box-shadow 0 0 5px alpha(#fff, 0.2)
+    // box-shadow 0 0 5px alpha(#fff, 0.2)
+    box-shadow 0 0 5px alpha(#000, 0.2)
 
     display flex
     justify-content: flex-start
@@ -19,8 +23,14 @@
         overflow: hidden
         text-overflow: ellipsis
         white-space: nowrap
-        span
+        #current-version
             font-size 12pt
+        #ewag-label
+            font-weight: bold
+            color cd-light-blue
+            text-shadow: -1px  1px 0 ewag-border-color, 1px  -1px 0 ewag-border-color, -1px  -1px 0 ewag-border-color, 1px  1px 0 ewag-border-color;
+            overflow: visible
+            // color #000
 
 #header-logo
     width: 45px

@@ -149,13 +149,13 @@ export reset = ->
     return
 
 ############################################################
-# data: { composite, chunks, refDate, timeframe, ages } - see chartlayout.coffee
+# data: { composite, chunks, refDate, timeframe, ages, showLatest } - see chartlayout.coffee
 export prepareData = (data) ->
     log "prepareData"
-    { composite, chunks, refDate, timeframe, ages } = data
+    { composite, chunks, refDate, timeframe, ages, showLatest } = data
     axis = buildAxis(timeframe, refDate, ages)
     adrAggregation = placeComposite(axis, composite)
-    latestData = placeLatest(axis, chunks)
+    latestData = if showLatest then placeLatest(axis, chunks) else axis.xAxisData.map(-> null)
     { xAxisData, backStartIdx } = axis
     return
 

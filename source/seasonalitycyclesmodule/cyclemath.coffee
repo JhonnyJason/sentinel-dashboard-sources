@@ -89,6 +89,12 @@ export displayAges = (cycle, isIncluded) ->
     for k in [0...cycle.size] when isIncluded(k) then return [k]
     return null
 
+# latest data only where unambiguous: continuous, or exactly one included position
+# lying in the current / previous period - weeks have no fitting cycle, never in single mode
+export showsLatest = (cycle, isIncluded, ages) ->
+    return true unless isIncluded?
+    return cycle.unit != "weeks" and ages[0] <= 1 and cycle.included.filter(Boolean).length == 1
+
 # rows newest first; cells without data have label null
 export buildGrid = (unit, n, anchorIdx, rangeFrom, rangeTo) ->
     pFrom = periodIdxOfDate(unit, rangeFrom)
