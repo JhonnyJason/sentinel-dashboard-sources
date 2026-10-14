@@ -1,26 +1,69 @@
 //- partnersframe structure
+//- shortcut: same general text for every partner, fill in the exact conditions per partner once known
+mixin sentinelOffer
+    .sentinel-offer
+        h3 Ihr Sentinel Vorteil
+        p Wenn Sie sich über den Partner-Link oben anmelden, erhalten Sie den Sentinel zu einem exklusiven Sonderpreis.
+
 #partnersframe
     //- h1 Partner Angebote
 
-    .partner-entry 
+    .partner-entry
+        .logo: img(src="/img/wh-selfinvest-logo.png" alt="WH SelfInvest Logo")
+        .description
+            p WH SelfInvest ist ein europäischer Online-Broker für Futures, CFDs, Forex und Aktien. Mit der eigenen Trading-Plattform NanoTrader, persönlichem Kundenservice und transparenten Konditionen bietet WH SelfInvest Privattradern ein professionelles Umfeld für den Handel an den internationalen Märkten.
+        .website
+            h3 Webseite
+            a(href="https://www.whselfinvest.de" target="_blank") https://www.whselfinvest.de
+        .special-offer
+            h3 Partner Angebot Link
+            a(href="https://www.whselfinvest.com/de-de/trading/information/kunden/beziehung?pid=e165421110ba03099a1c0393373c5b43&pdffile=43" target="_blank") https://www.whselfinvest.com/de-de/trading/information/kunden/beziehung?pid=e165421110ba03099a1c0393373c5b43&pdffile=43
+        +sentinelOffer
+
+    .partner-entry
+        .logo: img(src="/img/tickmill_logo.png" alt="Tickmill Logo")
+        .description
+            p Tickmill ist ein international regulierter Forex- und CFD-Broker, der Tradern Zugang zu Devisen, Indizes, Rohstoffen und weiteren Märkten bietet. Mit niedrigen Spreads, schneller Orderausführung und den bewährten Plattformen MetaTrader 4 und 5 richtet sich Tickmill an Einsteiger ebenso wie an aktive Trader.
+        .website
+            h3 Webseite
+            a(href="https://www.tickmill.com" target="_blank") https://www.tickmill.com
+        .special-offer
+            h3 Partner Angebot Link
+            a(href="https://go.tickmill.com/visit/?bta=37576&brand=tickmill" target="_blank") https://go.tickmill.com/visit/?bta=37576&brand=tickmill
+        +sentinelOffer
+
+    .partner-entry
+        .logo: img(src="/img/gbe-brokers-logo.png" alt="GBE brokers Logo")
+        .description
+            p GBE brokers ist ein regulierter Forex- und CFD-Broker mit deutschen Wurzeln, der Tradern Zugang zu Devisen, Indizes, Rohstoffen und Kryptowährungen bietet. Mit Raw Spreads, schneller Ausführung und der MetaTrader-Plattform legt GBE brokers den Fokus auf faire und transparente Handelsbedingungen.
+        .website
+            h3 Webseite
+            a(href="https://www.gbebrokers.com" target="_blank") https://www.gbebrokers.com
+        .special-offer
+            h3 Partner Angebot Link
+            a(href="https://login.gbebrokers.com/rx?ca=2585" target="_blank") https://login.gbebrokers.com/rx?ca=2585
+        +sentinelOffer
+
+    .partner-entry
         .logo: include iq-capital-logo.svg
-        .description 
+        .description
             p IQ Capital ist eine moderne Prop-Trading-Firma, die talentierten Tradern Zugang zu erheblichem Handelskapital ermöglicht. Mit klaren Regeln, fairen Gewinnbeteiligungen und einem konsequenten Fokus auf die Trader bietet IQ Capital eine gute Möglichkeit, Trading-Skills zu skalieren, ohne eigenes Kapital zu riskieren.
         .website
-            h3 Webseite 
-            a(href="https://www.iqcapital.io/" target="_blank") https://www.iqcapital.io 
+            h3 Webseite
+            a(href="https://www.iqcapital.io/" target="_blank") https://www.iqcapital.io
         .special-offer
-            h3 Partner Angebot Link 
+            h3 Partner Angebot Link
             a(href="https://checkout.iqcapital.io/products?aff=piyyby" target="_blank") https://checkout.iqcapital.io/products?aff=piyyby
-        
+        +sentinelOffer
 
-    .partner-entry 
+    .partner-entry
         .logo.black: include ninjatrader-logo.svg
-        .description 
+        .description
             p NinjaTrader ist eine leistungsstarke Trading-Plattform und Futures-Brokerage, die Tradern einen direkten Zugang zu den globalen Futures-Märkten ermöglicht. Mit professionellen Charting- und Analyse-Tools, wettbewerbsfähigen Gebühren und intuitiven Desktop-, Web- und Mobile-Lösungen bietet NinjaTrader eine flexible Umgebung für Trader aller Erfahrungsstufen.
         .website
-            h3 Webseite 
-            a(href="https://www.ninjatrader.com" target="_blank") https://www.ninjatrader.com 
+            h3 Webseite
+            a(href="https://www.ninjatrader.com" target="_blank") https://www.ninjatrader.com
         .special-offer
-            h3 Partner Angebot Link für Demo/Starter Plattform 
+            h3 Partner Angebot Link für Demo/Starter Plattform
             a(href="https://ninjatraderdomesticvendor.sjv.io/4aGGgM" target="_blank") https://ninjatraderdomesticvendor.sjv.io/4aGGgM
+        +sentinelOffer

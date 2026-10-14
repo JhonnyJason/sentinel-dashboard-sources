@@ -73,7 +73,8 @@ export activate = ->
     return if activated
     eventsChoice.initialize(onEventChoiceUpdate)
     setUIState("nodetails")
-    generateScreeningResult()
+    # no automatic screening - only load the stored symbols, the user starts the run
+    retrieveMissingSymbolData()
     activated = true
     return
 
