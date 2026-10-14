@@ -19,6 +19,27 @@
         font-size 9pt
         color #ffaaaa
 
+// tabs: the active button / panel pair gets .active (seasonalitybacktestingmodule)
+#backtesting-details-tabs
+    display flex
+    gap 5px
+    margin-bottom 20px
+    border-bottom solid 1px alpha(#fff, 0.2)
+    button
+    button:hover // reset.styl clears padding on button:hover
+        padding 8px 15px
+        font-size 11pt
+        color alpha(#fff, 0.6)
+        border-bottom solid 2px transparent
+    button.active
+        color #fff
+        border-bottom-color #fff
+
+.backtesting-details-tab
+    display none
+.backtesting-details-tab.active
+    display block
+
 #backtesting-details-table
     width 100%
     border-collapse collapse

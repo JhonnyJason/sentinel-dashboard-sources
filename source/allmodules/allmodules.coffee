@@ -6,6 +6,7 @@ import * as contentmodule from "./contentmodule.js"
 import * as currencytrendframemodule from "./currencytrendframemodule.js"
 import * as datamodule from "./datamodule.js"
 import * as debugmodule from "./debugmodule.js"
+import * as equityperformancemodule from "./equityperformancemodule.js"
 import * as eventscreenerframemodule from "./eventscreenerframemodule.js"
 import * as eventtradechartmodule from "./eventtradechartmodule.js"
 import * as eventtradedetailsmodule from "./eventtradedetailsmodule.js"
@@ -29,6 +30,7 @@ import * as statemodule from "./statemodule.js"
 import * as summaryframemodule from "./summaryframemodule.js"
 import * as symboloptionsmodule from "./symboloptionsmodule.js"
 import * as symbolselectmodule from "./symbolselectmodule.js"
+import * as tradesimulationmodule from "./tradesimulationmodule.js"
 import * as trafficlightframemodule from "./trafficlightframemodule.js"
 import * as uistatemodule from "./uistatemodule.js"
 import * as utilsmodule from "./utilsmodule.js"
@@ -42,6 +44,7 @@ Modules = {
     currencytrendframemodule,
     datamodule,
     debugmodule,
+    equityperformancemodule,
     eventscreenerframemodule,
     eventtradechartmodule,
     eventtradedetailsmodule,
@@ -65,6 +68,7 @@ Modules = {
     summaryframemodule,
     symboloptionsmodule,
     symbolselectmodule,
+    tradesimulationmodule,
     trafficlightframemodule,
     uistatemodule,
     utilsmodule,

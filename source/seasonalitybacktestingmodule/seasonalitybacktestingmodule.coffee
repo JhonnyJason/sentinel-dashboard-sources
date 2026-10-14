@@ -7,6 +7,7 @@ import { createLogFunctions } from "thingy-debug"
 ############################################################
 import * as parentFrame from "./seasonalityframemodule.js"
 import * as chartModule from "./seasonalitychartmodule.js"
+import * as equityPerformance from "./equityperformancemodule.js"
 
 ############################################################
 # import { runBacktesting } from "./backtesting.js"
@@ -52,6 +53,8 @@ export initialize = ->
     entryDatePlusButton.addEventListener("click", onEntryPlusClicked)
     exitDateMinusButton.addEventListener("click", onExitMinusClicked)
     exitDatePlusButton.addEventListener("click", onExitPlusClicked) 
+
+    backtestingDetailsTabs.addEventListener("click", onDetailsTabClicked)
     return
 
 ############################################################
@@ -205,6 +208,15 @@ export run = (symbol, entryDate, exitDate, years, timeframe, refDate, isRunInclu
 
     renderSummary(results)
     renderDetails(results)
+    equityPerformance.setResults(results)
+    return
+
+############################################################
+onDetailsTabClicked = (evt) ->
+    tab = evt.target.dataset.tab
+    return unless tab?
+    for el in backtestingDetailsContainer.querySelectorAll("[data-tab]")
+        el.classList.toggle("active", el.dataset.tab == tab)
     return
 
 ############################################################

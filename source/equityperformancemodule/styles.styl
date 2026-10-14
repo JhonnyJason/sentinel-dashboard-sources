@@ -1,0 +1,109 @@
+blocks-width = 320px
+
+#equity-performance
+    text-align left
+    h2
+        font-size 12pt
+        margin 0 0 15px 0
+    h3
+    .label
+        display block
+        font-size 9pt
+        margin-bottom 3px
+        color #ccc
+    .value
+        font-size 11pt
+        font-weight bold
+    .positive
+        color cd-up-green
+    .negative
+        color cd-down-red
+    // :focus too - reset.styl clears border, padding and background on input:focus
+    input[type="number"]
+    input[type="number"]:focus
+        width 90px
+        padding 5px 8px
+        border solid 1px #fff
+        border-radius 3px
+        background-color transparent
+        color #fff
+        font-size 11pt
+        transition box-shadow 0.2s
+    input[type="number"]:focus
+        outline none
+        box-shadow 0 0 5px 0 #fff
+
+// two rows: block (fixed width) | chart (shrinks first), both stretched to the taller one
+.equity-row
+    display flex
+    gap 10px
+    margin-bottom 10px
+
+#equity-controls
+#equity-summary
+    flex 0 0 blocks-width
+    box-sizing border-box
+    padding 15px
+    border-radius 3px
+    background-color alpha(#fff, 0.03)
+
+.equity-chart
+    flex 1 1 0
+    min-width 0
+    min-height 250px
+    position relative
+    // out of the flow: the canvas follows the box height, never drives it
+    .uplot
+        position absolute
+        inset 0
+    border-radius 3px
+    background-color alpha(#fff, 0.03)
+
+// transparent 9px hit zone, 2px line in its middle (stop-loss yellow, take-profit green); top = the line's centre
+.equity-level-line
+    display none
+    position absolute
+    z-index 1
+    height 9px
+    transform translateY(-50%)
+    cursor ns-resize
+    touch-action none
+    --line-color #ffd700
+    background linear-gradient(transparent 3.5px, var(--line-color) 3.5px, var(--line-color) 5.5px, transparent 5.5px)
+    &.active
+        display block
+
+#equity-take-profit-line
+    --line-color #4caf50 // cd-up-green (no stylus variables in custom properties)
+
+.equity-hint
+    margin 0 0 12px 0
+    font-size 9pt
+    color #ccc
+
+.equity-mode-row
+    display flex
+    flex-wrap wrap
+    gap 5px 15px
+    margin-bottom 15px
+    font-size 10pt
+
+.equity-controls-grid
+    display grid
+    grid-template-columns repeat(auto-fill, minmax(130px, 1fr))
+    gap 12px
+
+// like #backtesting-summary-grid: two centred columns
+.equity-summary-grid
+    display grid
+    grid-template-columns 1fr 1fr
+    gap 15px 10px
+    text-align center
+
+@media screen and (max-width: 800px)
+    .equity-row
+        flex-wrap wrap
+    #equity-controls
+    #equity-summary
+    .equity-chart
+        flex-basis 100%

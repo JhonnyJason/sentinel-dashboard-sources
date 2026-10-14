@@ -1,0 +1,58 @@
+//- equity performance - the "Performance" tab of the backtesting details
+//- two rows: summary | equity curve, controls | trades chart
+#equity-performance
+    .equity-row
+        #equity-summary
+            h2 Zusammenfassung
+            .equity-summary-grid
+                div
+                    h3.label Summierter Profit
+                    #equity-sum-profit.value -
+                div
+                    h3.label Trades
+                    #equity-total-trades.value -
+                div
+                    h3.label Max Drawdown
+                    #equity-max-drawdown.value -
+                div
+                    h3.label Max Drawdown (realisiert)
+                    #equity-max-drawdown-realized.value -
+                div
+                    h3.label Max Drawdown Abs
+                    #equity-max-drawdown-abs.value -
+                div
+                    h3.label Max Drawdown Abs (realisiert)
+                    #equity-max-drawdown-realized-abs.value -
+                div
+                    h3.label Stop-Loss Treffer
+                    #equity-sl-hits.value -
+                div
+                    h3.label Take-Profit Treffer
+                    #equity-tp-hits.value -
+        #equity-curve-chart.equity-chart
+    .equity-row
+        #equity-controls
+            h2 Einstellungen
+            p.equity-hint Beispielhafter Basiseinsatz: 100 € pro Trade.
+            .equity-mode-row
+                label
+                    input(type="radio" name="equity-mode" checked)
+                    |  Immer Basiseinsatz investieren
+                label
+                    input#equity-reinvest-radio(type="radio" name="equity-mode")
+                    |  Profite reinvestieren
+            //- empty field = off
+            .equity-controls-grid
+                label
+                    span.label Stop-Loss %
+                    input#equity-stop-loss-input(type="number" max="0" step="0.1" placeholder="-")
+                label
+                    span.label Take-Profit %
+                    input#equity-take-profit-input(type="number" min="0" step="0.1" placeholder="-")
+                label
+                    span.label Gebühren % pro Trade
+                    input#equity-fee-input(type="number" min="0" step="0.01" placeholder="0")
+        #equity-trades-chart.equity-chart
+            //- draggable level lines, positioned over the uPlot root (which is rebuilt on every render)
+            #equity-stop-loss-line.equity-level-line
+            #equity-take-profit-line.equity-level-line
