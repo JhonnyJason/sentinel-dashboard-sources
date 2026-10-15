@@ -23,6 +23,10 @@ export initialize = ->
     for line in [equityStopLossLine, equityTakeProfitLine]
         line.addEventListener("pointerdown", onLevelDragStart)
         line.addEventListener("pointermove", onLevelDrag)
+    equityTradesChart.addEventListener("pointerdown", onChartPress)
+    equityTradesChart.addEventListener("pointerup", onChartRelease)
+    equityTradesChart.addEventListener("pointercancel", onChartCancel)
+    equityTradesChart.addEventListener("pointermove", onChartHover)
     # the tab may be hidden (display none) when results arrive -> draw once it gets a size
     observer = new ResizeObserver(render)
     observer.observe(equityCurveChart)
@@ -57,16 +61,98 @@ onLevelDragStart = (evt) ->
     evt.currentTarget.setPointerCapture(evt.pointerId)
     return
 
-# the inputs stay the single source of truth; kept 0.1% off zero so a line never hides mid-drag
 onLevelDrag = (evt) ->
     line = evt.currentTarget
     return unless line.hasPointerCapture(evt.pointerId)
-    rect = tradesChart.over.getBoundingClientRect()
-    y = Math.min(Math.max(evt.clientY - rect.top, 0), rect.height)
-    v = tradesChart.posToVal(y, "y")
+    setLevel(line, evt.clientY)
+    return
+
+# the inputs stay the single source of truth; kept 0.1% off zero so a line never hides mid-drag
+setLevel = (line, clientY) ->
+    v = pointerToLevel(clientY)
     if line == equityStopLossLine then equityStopLossInput.value = Math.min(-0.1, v).toFixed(1)
     else equityTakeProfitInput.value = Math.max(0.1, v).toFixed(1)
     onControlsChanged()
+    return
+
+# level in % at the pointer's height, clamped to the plot
+pointerToLevel = (clientY) ->
+    rect = tradesChart.over.getBoundingClientRect()
+    y = Math.min(Math.max(clientY - rect.top, 0), rect.height)
+    return tradesChart.posToVal(y, "y")
+
+# the line a press at clientY would create; null when that side's level is already set (or at exactly 0)
+missingLevelLine = (clientY) ->
+    v = pointerToLevel(clientY)
+    if v > 0 and !controls.takeProfitF? then return equityTakeProfitLine
+    if v < 0 and !controls.stopLossF? then return equityStopLossLine
+    return null
+
+isOnPlot = (evt) -> tradesChart? and tradesChart.over.contains(evt.target)
+
+############################################################
+# a press into the plot creates a missing level and drags it on in the same gesture.
+# Touch: dragging and page scrolling are both vertical, so the speed decides -
+# a fast first move is a swipe (scrolls), a slow one or a hold grabs the level, a tap only sets it.
+holdMs = 150
+swipeSpeed = 0.5 # px/ms
+press = null # the pending touch press
+
+onChartPress = (evt) ->
+    return unless evt.isPrimary and isOnPlot(evt)
+    line = missingLevelLine(evt.clientY)
+    return unless line?
+    if evt.pointerType == "mouse" then return grabLevel(line, evt.pointerId, evt.clientY)
+    press = { line, id: evt.pointerId, y: evt.clientY, t: evt.timeStamp, grabbed: false }
+    press.timer = setTimeout(grabPress, holdMs)
+    # on the touched node itself: the render detaches it, and a detached node's events no longer bubble
+    evt.target.addEventListener("touchmove", onPressTouchMove, { passive: false })
+    return
+
+onPressTouchMove = (evt) ->
+    return unless press?
+    unless press.grabbed
+        touch = evt.touches[0]
+        speed = Math.abs(touch.clientY - press.y) / Math.max(1, evt.timeStamp - press.t)
+        if speed > swipeSpeed then return endPress()
+        grabPress()
+    evt.preventDefault() # no page scroll while dragging the level
+    return
+
+grabPress = ->
+    return unless press? and !press.grabbed
+    press.grabbed = true
+    grabLevel(press.line, press.id, press.y)
+    return
+
+# shown right away: the draw hook that activates it may run after the capture
+grabLevel = (line, pointerId, clientY) ->
+    setLevel(line, clientY)
+    line.classList.add("active")
+    line.setPointerCapture(pointerId)
+    return
+
+# a tap: set the level without dragging
+onChartRelease = (evt) ->
+    return unless evt.pointerId == press?.id
+    setLevel(press.line, press.y) unless press.grabbed
+    endPress()
+    return
+
+# the browser took the touch for scrolling
+onChartCancel = (evt) ->
+    endPress() if evt.pointerId == press?.id
+    return
+
+endPress = ->
+    clearTimeout(press.timer) if press?
+    press = null
+    return
+
+# crosshair only where a press would create a level
+onChartHover = (evt) ->
+    return unless evt.pointerType == "mouse"
+    equityTradesChart.classList.toggle("level-creatable", isOnPlot(evt) and missingLevelLine(evt.clientY)?)
     return
 
 ############################################################
@@ -97,7 +183,7 @@ baseOptions = (chartEl, dates) -> {
     width: chartEl.clientWidth
     height: chartEl.clientHeight
     legend: { show: false }
-    cursor: { y: false, drag: { x: false, y: false, setScale: false } }
+    cursor: { drag: { x: false, y: false, setScale: false } }
     scales: { x: { time: false } }
     axes: [
         { stroke: "#ffffff", grid: { show: false }, values: (u, splits) -> splits.map((i) -> dates[i]?.slice(0, 4) ? "") }
