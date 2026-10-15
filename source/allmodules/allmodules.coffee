@@ -1,6 +1,7 @@
 import * as accountframemodule from "./accountframemodule.js"
 import * as accountmodule from "./accountmodule.js"
 import * as appcoremodule from "./appcoremodule.js"
+import * as chanceriskprofilemodule from "./chanceriskprofilemodule.js"
 import * as configmodule from "./configmodule.js"
 import * as contentmodule from "./contentmodule.js"
 import * as currencytrendframemodule from "./currencytrendframemodule.js"
@@ -39,6 +40,7 @@ Modules = {
     accountframemodule,
     accountmodule,
     appcoremodule,
+    chanceriskprofilemodule,
     configmodule,
     contentmodule,
     currencytrendframemodule,

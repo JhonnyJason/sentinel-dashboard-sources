@@ -8,6 +8,7 @@ import { createLogFunctions } from "thingy-debug"
 import * as parentFrame from "./seasonalityframemodule.js"
 import * as chartModule from "./seasonalitychartmodule.js"
 import * as equityPerformance from "./equityperformancemodule.js"
+import * as chanceRiskProfile from "./chanceriskprofilemodule.js"
 
 ############################################################
 # import { runBacktesting } from "./backtesting.js"
@@ -209,6 +210,7 @@ export run = (symbol, entryDate, exitDate, years, timeframe, refDate, isRunInclu
     renderSummary(results)
     renderDetails(results)
     equityPerformance.setResults(results)
+    chanceRiskProfile.setResults(results)
     return
 
 ############################################################

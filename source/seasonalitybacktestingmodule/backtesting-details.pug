@@ -2,9 +2,12 @@
 #backtesting-details-container
     #backtesting-details-tabs
         button.click-button.active(data-tab="performance") Performance
+        button.click-button(data-tab="chanceriskprofile") Chancen-Risiko-Profil
         button.click-button(data-tab="details") Details
     .backtesting-details-tab.active(data-tab="performance")
         include ../equityperformancemodule/equityperformance.pug
+    .backtesting-details-tab(data-tab="chanceriskprofile")
+        include ../chanceriskprofilemodule/chanceriskprofile.pug
     .backtesting-details-tab(data-tab="details")
         table#backtesting-details-table
         p.warning Wir haben größere Veränderungen in den Daten gefunden. Die Betroffenen Jahre sind rot hinterlegt und wurden für alle weiteren Berechnungen exkludiert. Diese aussergewöhnlich großen Veränderungen können durch ein Fehler in den Daten, oder ein einmaliges Ereignes enstanden sein, wodurch sie somit nicht als hilfreich für die Saisonalitätsanalyse erachtet wurden.

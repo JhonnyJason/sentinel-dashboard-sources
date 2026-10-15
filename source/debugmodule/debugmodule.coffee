@@ -7,13 +7,14 @@ export modulesToDebug = {
     # accountmodule: true
     # appcoremodule: true
     # backtesting: true
+    # chanceriskprofilemodule: true
     # chartfun: true
     # colorstates: true
     # comboboxfun: true
     # currencytrendframemodule: true
     # CurrencyPair: true
     # datamodule: true
-    datacache: true
+    # datacache: true
     # economicareasmodule: true
     # EconomicArea: true
     # eventtradechartmodule: true

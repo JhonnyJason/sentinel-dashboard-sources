@@ -25,6 +25,14 @@
     gap 5px
     margin-bottom 20px
     border-bottom solid 1px alpha(#fff, 0.2)
+    // squeezed: equal shares, a label shorter than its share keeps its width, the rest ends in an ellipsis
+    button
+        flex 1 1 0
+        max-width max-content
+        min-width 0
+        overflow hidden
+        white-space nowrap
+        text-overflow ellipsis
     button
     button:hover // reset.styl clears padding on button:hover
         padding 8px 15px

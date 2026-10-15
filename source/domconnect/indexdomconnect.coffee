@@ -84,6 +84,7 @@ indexdomconnect.initialize = () ->
     global.backtestingDetailsContainer = document.getElementById("backtesting-details-container")
     global.backtestingDetailsTabs = document.getElementById("backtesting-details-tabs")
     global.backtestingDetailsTable = document.getElementById("backtesting-details-table")
+    global.chanceriskprofile = document.getElementById("chanceriskprofile")
     global.equityPerformance = document.getElementById("equity-performance")
     global.equitySumProfit = document.getElementById("equity-sum-profit")
     global.equityTotalTrades = document.getElementById("equity-total-trades")
