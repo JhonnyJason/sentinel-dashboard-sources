@@ -228,9 +228,6 @@ renderTradesChart = (dates, trades, theoTrades) ->
 
     bars = uPlot.paths.bars({ size: [0.6, 40] }) # max px width: few trades would give fat bars
     narrowBars = uPlot.paths.bars({ size: [0.35, 24] })
-    noLine = -> null
-    barSeries = (paths, color) -> { paths, fill: color, stroke: color, points: { show: false } }
-    dotSeries = (color) -> { paths: noLine, points: { show: true, size: 6, fill: color, stroke: color } }
 
     # equityTradesChart. # this line is needed to workaround a DOM-connect bug...
     options = baseOptions(equityTradesChart, dates)
@@ -256,8 +253,13 @@ renderTradesChart = (dates, trades, theoTrades) ->
     tradesChart = new uPlot(options, data, equityTradesChart)
     return
 
+# shared with the seasonality blocks chart
+noLine = -> null
+export barSeries = (paths, color) -> { paths, fill: color, stroke: color, points: { show: false } }
+export dotSeries = (color, size = 6) -> { paths: noLine, points: { show: true, size, fill: color, stroke: color } }
+
 # drawn with the axes, so the bars cover it
-drawZeroLine = (u) ->
+export drawZeroLine = (u) ->
     { ctx, bbox } = u
     y = Math.round(u.valToPos(0, "y", true)) + 0.5
     ctx.save()

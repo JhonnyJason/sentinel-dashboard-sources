@@ -186,6 +186,49 @@ export averageDailyReturn = (factorArrays) ->
 
 
 ############################################################
+#region Block Returns
+slotCounts = { yearly: 366, quarterly: 93, monthly: 31, weekly: 7 }
+monthLengths = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31] # 366 slot space
+
+# block: "days" | "months" (months only for yearly / quarterly)
+# returns slot ranges [start, end) in the slot space of the timeframe
+export blockRanges = (timeframe, block) ->
+    if block == "days" then return ([i, i + 1] for i in [0...slotCounts[timeframe]])
+    if block == "months" and timeframe == "quarterly" then return [[0, 31], [31, 62], [62, 93]]
+    if block == "months" and timeframe == "yearly"
+        start = 0
+        return (([start, start += len]) for len in monthLengths)
+    throw new Error("blockRanges: no block #{block} for timeframe #{timeframe}")
+
+# same chunks and isIncluded as calculateSeasonalityComposite, chunk 0 (unfinished) left out
+# per chunk and range: % change over the range; a chunk without a sample in the range doesn't count
+# returns { avg, min, max } in percent per range, null where no chunk has a sample
+export calculateBlockReturns = (chunks, ranges, isIncluded = null) ->
+    factorArrays = (f for f, k in toLogFactorArrays(chunks) when k > 0 and (!isIncluded? or isIncluded(k)))
+    avg = new Array(ranges.length).fill(null)
+    min = new Array(ranges.length).fill(null)
+    max = new Array(ranges.length).fill(null)
+    for [start, end], r in ranges
+        sum = 0
+        count = 0
+        for factors in factorArrays
+            logSum = 0
+            hasSample = false
+            for i in [start...end] when Number.isFinite(factors[i])
+                logSum += factors[i]
+                hasSample = true
+            continue unless hasSample
+            p = 100 * (Math.exp(logSum) - 1)
+            sum += p
+            count++
+            min[r] = if min[r]? then Math.min(min[r], p) else p
+            max[r] = if max[r]? then Math.max(max[r], p) else p
+        if count then avg[r] = sum / count
+    return { avg, min, max }
+
+#endregion
+
+############################################################
 # chunks: equally sized close arrays, newest first
 # factor[i] = log change *into* slot i, prev is the last number before it,
 # also across the boundary into the next-older chunk

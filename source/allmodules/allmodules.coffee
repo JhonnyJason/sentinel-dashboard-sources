@@ -22,6 +22,7 @@ import * as optionscreenerframemodule from "./optionscreenerframemodule.js"
 import * as partnersframemodule from "./partnersframemodule.js"
 import * as scimodule from "./scimodule.js"
 import * as seasonalitybacktestingmodule from "./seasonalitybacktestingmodule.js"
+import * as seasonalityblocksmodule from "./seasonalityblocksmodule.js"
 import * as seasonalitychartmodule from "./seasonalitychartmodule.js"
 import * as seasonalitycyclesmodule from "./seasonalitycyclesmodule.js"
 import * as seasonalityframemodule from "./seasonalityframemodule.js"
@@ -61,6 +62,7 @@ Modules = {
     partnersframemodule,
     scimodule,
     seasonalitybacktestingmodule,
+    seasonalityblocksmodule,
     seasonalitychartmodule,
     seasonalitycyclesmodule,
     seasonalityframemodule,

@@ -85,3 +85,40 @@ Standard Button - use with .click-button for regular text buttons
     box-shadow 0 0 5px #000
     padding 12px 20px
     border-radius 10px
+
+/*==========================================================
+Select - wrap a select in .select-wrapper: dropdown arrow + field style
+==========================================================*/
+.select-wrapper
+    display block
+    position relative
+
+.select-wrapper::after
+    content ""
+    display block
+    position absolute
+    top 50%
+    right 9px
+    z-index 200
+    width 12px
+    height 8px
+    transform translateY(-4px)
+    background-color cd-dark-blue
+    clip-path polygon(100% 0%, 0 0%, 50% 100%)
+
+.select-wrapper select
+.select-wrapper select:focus // reset.styl strips select:focus (same specificity as a bare element)
+    z-index 1
+    padding 10px
+    padding-right 25px
+    border-radius 3px
+    border solid 1px cd-dark-blue
+    font-size 12pt
+    background #fff
+    cursor pointer
+    transition box-shadow 0.2s
+    appearance none
+
+.select-wrapper select:focus
+    outline none
+    box-shadow 0 0 3px 0 cd-dark-blue

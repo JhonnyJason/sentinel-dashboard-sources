@@ -17,41 +17,6 @@
     align-items: center
     gap: 10px
 
-    .select-wrapper
-        display block
-        position relative
-
-    .select-wrapper::after
-        content ""
-        display block
-        position absolute
-        top 50%
-        right 9px
-        z-index 200
-        width 12px
-        height 8px
-        transform translateY(-4px)
-        background-color cd-dark-blue
-        clip-path polygon(100% 0%, 0 0%, 50% 100%)
-
-
-    select
-        z-index 1
-        padding: 10px
-        padding-right 25px
-        border-radius: 3px
-        border solid 1px cd-dark-blue
-        font-size 12pt
-        background: #fff
-        cursor: pointer
-        transition: box-shadow 0.2s
-        appearance none
-
-    select:focus
-        outline: none
-        box-shadow: 0 0 3px 0 cd-dark-blue
-        border solid 1px cd-dark-blue
-
     #selected-symbol-display
         margin-left auto
         margin-right 20px
@@ -101,7 +66,7 @@
     // width 100%
     box-sizing: border-box
     // padding 15px
-    height 500px
+    height 760px // 500px seasonality chart + 260px blocks chart
     // color white
     border-radius: 3px
 
@@ -192,7 +157,7 @@
 @media screen and (max-width: 475px)
     #chart-container
         height auto
-        min-height: 500px
+        min-height: 760px
 
 @media miniscreen   
     #chart-side-container

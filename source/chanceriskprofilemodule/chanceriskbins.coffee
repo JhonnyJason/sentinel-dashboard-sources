@@ -12,8 +12,9 @@ for k in [-4..1]
 
 ############################################################
 # trades: simulate(...).trades, sign: -1 for shorts turns their profit space back into price change
-# -> { edges, losses, wins } (edges.length = bins + 1)
-export binProfile = (trades, sign = 1) ->
+# offset: the user's choice as steps away from the FD width (+ coarser, - finer), one of the returned choices
+# -> { edges, losses, wins, choices } (edges.length = bins + 1, choices: [{ offset, count, width }] coarse to fine)
+export binProfile = (trades, sign = 1, offset = 0) ->
     days = [] # [closeF, isWin]
     for t in trades
         days.push([sign * closeF, t.profitF > 0]) for [worstF, closeF] in t.path
@@ -39,6 +40,14 @@ export binProfile = (trades, sign = 1) ->
     { w, lo, count } = layout(niceSteps[++idx]) while count > maxBins and idx < niceSteps.length - 1
     { w, lo, count } = layout(niceSteps[--idx]) while count < minBins and idx > 0
 
+    # the user's choices: every nice step within minBins..maxBins, plus the FD width itself (it may sit outside at a zero spread)
+    choices = []
+    for j in [niceSteps.length - 1..0]
+        c = layout(niceSteps[j]).count
+        choices.push({ offset: j - idx, count: c, width: niceSteps[j] }) if j == idx or minBins <= c <= maxBins
+    # an offset that isn't a choice (stale) falls back to the FD width
+    { w, lo, count } = layout(niceSteps[idx + offset]) if choices.some((c) -> c.offset == offset)
+
     edges = (lo + i * w for i in [0..count])
     losses = (0 for i in [0...count])
     wins = (0 for i in [0...count])
@@ -46,7 +55,7 @@ export binProfile = (trades, sign = 1) ->
         # small epsilon: a value exactly on an edge must not slip into the lower bin by float error; the max on the top edge -> last bin
         i = Math.min(count - 1, Math.max(0, Math.floor((v - lo) / w + 1e-9)))
         if isWin then wins[i]++ else losses[i]++
-    return { edges, losses, wins }
+    return { edges, losses, wins, choices }
 
 # linear interpolation between the closest ranks
 quantile = (sorted, p) ->

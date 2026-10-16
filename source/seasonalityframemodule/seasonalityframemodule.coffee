@@ -14,6 +14,7 @@ import { SymbolSelect } from "./symbolselectmodule.js"
 import * as backtesting from "./seasonalitybacktestingmodule.js"
 import * as charting from "./seasonalitychartmodule.js"
 import * as cycles from "./seasonalitycyclesmodule.js"
+import * as blocks from "./seasonalityblocksmodule.js"
 import { todayYmd, ymdOf, includedChunkFn, isFullCycle, displayAges, showsLatest } from "./cyclemath.js"
 
 ############################################################
@@ -249,6 +250,7 @@ loadDataAndRenderChart = ->
 
     charting.prepareData(chartData)
     charting.render(backtestingRegion)
+    blocks.setData(chartData)
     return true
 
 

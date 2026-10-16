@@ -24,6 +24,7 @@ include ../preloader/preloader-mixins.pug
             include instructions.pug
             #chart-no-data Keine Daten für den gewählten Zyklus im gewählten Zeitraum
             #seasonality-chart
+            include ../seasonalityblocksmodule/seasonalityblocks.pug
             #cursor-indicator
                 svg: use(href="#svg-cursor-icon")
                 span.location 12.01.2026

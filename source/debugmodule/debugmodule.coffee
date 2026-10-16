@@ -41,6 +41,7 @@ export modulesToDebug = {
     # seasonalityframemodule: true
     # seasonalitychartmodule: true
     # seasonalitybacktestingmodule: true
+    # seasonalityblocksmodule: true
     # sidenavmodule: true
     # summaryframemodule: true
     # symboloptionsmodule: true

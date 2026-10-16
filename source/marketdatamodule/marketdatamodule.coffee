@@ -10,7 +10,7 @@ import { normalizeYearData } from "./seasonality.js"
 
 ############################################################
 export { getHistoricDepth, getNewestDate }
-export { calculateSeasonalityComposite } from "./seasonality.js"
+export { calculateSeasonalityComposite, blockRanges, calculateBlockReturns } from "./seasonality.js"
 
 ############################################################
 # timeframe: "yearly" | "quarterly" | "monthly" | "weekly"
