@@ -1,5 +1,13 @@
 //- Chancen-Risiko-Profil - the "Chancen-Risiko-Profil" tab of the backtesting details, uPlot renders into it
 #chanceriskprofile
 //- bin width beneath the chart: the nice widths within 10..100 bins, Auto = the FD width
+//- right of it the legend of the σ lines: the actual share of the values per side
 #chanceriskprofile-bins
     .select-wrapper: select#chanceriskprofile-bins-select
+    #chanceriskprofile-legend
+        .chanceriskprofile-legend-box.loss
+            .chanceriskprofile-legend-title Verlustseite
+            #chanceriskprofile-loss-legend
+        .chanceriskprofile-legend-box.profit
+            .chanceriskprofile-legend-title Gewinnseite
+            #chanceriskprofile-profit-legend

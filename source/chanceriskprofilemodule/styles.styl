@@ -1,7 +1,7 @@
 // out of the flow: the canvas follows the box, never drives it (like .equity-chart)
 #chanceriskprofile
     position relative
-    height 350px
+    height 380px
     border-radius 3px
     background-color alpha(#fff, 0.03)
     .uplot
@@ -11,3 +11,38 @@
 #chanceriskprofile-bins
     display flex
     margin-top 12px
+    flex-wrap wrap
+    align-items flex-start
+    gap 12px
+
+// wraps beneath the select once both boxes (220px + gap) no longer fit beside it, then the boxes wrap too
+#chanceriskprofile-legend
+    display flex
+    flex 1 1 452px
+    flex-wrap wrap
+    min-width 0
+    gap 12px
+    &[hidden]
+        display none
+    &.short .loss // shorts lose to the right
+        order 1
+
+.chanceriskprofile-legend-box
+    flex 1 1 220px
+    padding 20px
+    border-radius 3px
+    background-color alpha(#fff, 0.03)
+    line-height 1.5
+    text-align left
+    p
+        font-size 11pt // like the tab labels
+    b // reset.styl sets font: inherit on b
+        font-weight bold
+    .chanceriskprofile-legend-title
+        font-size 13pt // above the bin select's 12pt
+        font-weight bold
+        margin-bottom 10px
+    &.loss .chanceriskprofile-legend-title
+        color cd-down-red
+    &.profit .chanceriskprofile-legend-title
+        color cd-up-green

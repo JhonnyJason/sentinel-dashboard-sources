@@ -11,4 +11,12 @@
 - Bin width select beneath the chart (`.select-wrapper`, global style): `binProfile` returns the `choices` (every nice width within 10–100 bins, plus the FD width, marked "(Auto)"), the select value is the offset from the FD width. Kept in memory only and reset to Auto by `setResults` (new sample), a resize keeps it. 0 stays an edge for every choice.
 - Bars at most 40px wide; a white vertical line marks 0% (drawn over the bars), reaching 10px above the plot area (fixed top padding) and 5px into the x axis, so it stays visible between dense bars.
 - x axis: % labels on the bin edges, thinned to every k-th edge (counted from 0) so they stay ≥ 45px apart.
-- Renders only while visible (ResizeObserver, like `equityperformancemodule`).
+- Renders only while visible (ResizeObserver, like `equityperformancemodule`); a resize re-renders, so the width-dependent labels follow.
+
+## Bell curve (σ indicator)
+- `chanceriskbell.coffee` (pure, unit-tested): `bellFit(sorted, dir)` on `binProfile(...).values` (the same trade-day values the bars count, independent of the bin width). Robust against outlier trades: center = median, σ = 1.4826 · MAD. Returns `{ center, sigma, loss, profit }` - the actual shares of the values on that side of the center within 1σ / 2σ / 3σ - or `null` for σ = 0 (no curve, no lines, legend hidden). `bellCount(fit, n, w, x)`: curve height in counts (area = n) → rescales with the bin width; the y range includes its peak.
+- Drawn in the draw hook after the bars: the curve (`#bbbbbb`, one point per device pixel) and dashed verticals for the center (`#e0e0e0`) and ±1/2/3σ; lines outside the x range are skipped.
+- Direction: the colours follow the trade (red towards the loss: left for longs, right for shorts), the sign follows the bell curve ("−" always left, "+" right). For shorts the "Verlustseite" box sits right (`.short` on `#chanceriskprofile-legend`, CSS `order`).
+- Labels above each line (extra top padding `labelsTop`): name over the position, σ positions always signed (`signedPct`), in the line's colour. By chart width: < 500px no position, < 450px "Mittelwert" → "M", < 250px the rows alternate (center, ±2σ on top; ±σ, ±3σ below).
+- Legend: "Verlustseite" / "Gewinnseite" boxes right of the bin width select, one line per σ: "**−σ:** Zwischen **−1.05%** und **0.12%** liegen **61%**". A share < 99.95% never shows 100% (capped at 99%). Responsive: the boxes (min 220px each) wrap beneath the select, then beneath each other.
+- `reset.styl` strips `b` (font: inherit) → the legend sets `font-weight bold` itself.
